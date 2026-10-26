@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { serverSlug } from '../lib/providers';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Grid, Status } from '../components/Rows';
 import Icon from '../components/Icon';
@@ -18,7 +19,7 @@ const when = (t: number) =>
 function HistoryRow({ w, onRemove }: { w: WatchEntry; onRemove: () => void }) {
   const m = w.media;
   const tv = m.type === 'tv' && w.season && w.episode;
-  const to = `/watch/${m.type}/${m.id}?s=${w.season ?? 1}&e=${w.episode ?? 1}&p=${w.providerId}`;
+  const to = `/watch/${m.type}/${m.id}?s=${w.season ?? 1}&e=${w.episode ?? 1}&p=${serverSlug(w.providerId)}`;
   return (
     <div className="hrow">
       <Link to={to} className="hplay" aria-label={`Resume ${m.title}`}><Icon name="play" size={18} fill /></Link>

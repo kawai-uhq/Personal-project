@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { serverSlug } from '../lib/providers';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from './Icon';
@@ -173,7 +174,7 @@ function ContinueCard({ w, onRemove }: { w: WatchEntry; onRemove: (key: string) 
     };
   }, [m.id, m.type, w]);
 
-  const to = `/watch/${m.type}/${m.id}?s=${w.season ?? 1}&e=${w.episode ?? 1}&p=${w.providerId}`;
+  const to = `/watch/${m.type}/${m.id}?s=${w.season ?? 1}&e=${w.episode ?? 1}&p=${serverSlug(w.providerId)}`;
   const img = m.backdrop ? IMG.large + m.backdrop : m.poster ? posterSrc(m.poster) : null;
   return (
     <div className="continue">

@@ -127,3 +127,10 @@ export const providers: Provider[] = [
 
 export const providerById = (id: string | null | undefined): Provider =>
   providers.find((p) => p.id === id) ?? providers[0];
+
+// URLs carry a neutral server number ("?p=3") instead of the provider's name
+export const serverSlug = (id: string | null | undefined): string =>
+  String(Math.max(0, providers.findIndex((p) => p.id === id)) + 1);
+
+export const providerFromParam = (v: string | null | undefined): Provider =>
+  providers[Number(v) - 1] ?? providerById(v);

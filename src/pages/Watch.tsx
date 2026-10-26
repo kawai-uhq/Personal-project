@@ -4,8 +4,8 @@ import { PosterRow } from '../components/Rows';
 import Icon from '../components/Icon';
 import { votesShort } from '../lib/format';
 import WatchedTick from '../components/WatchedTick';
-import { clearAt, clock, fractionOf, isWatched, resumeAt, saveAt, setSeasonWatched, setWatched } from '../lib/progress';
-import { providerById, providers } from '../lib/providers';
+import { clearAt, fractionOf, isWatched, resumeAt, saveAt, setSeasonWatched, setWatched } from '../lib/progress';
+import { providerById, providerFromParam, providers, serverSlug } from '../lib/providers';
 import { store } from '../lib/storage';
 import { IMG, posterSrc, tmdb } from '../lib/tmdb';
 import type { Details, Episode, Media, MediaType } from '../lib/types';
@@ -21,8 +21,17 @@ export default function Watch() {
 
   const season = Math.max(1, Number(sp.get('s')) || 1);
   const episode = Math.max(1, Number(sp.get('e')) || 1);
-  const pid = providerById(sp.get('p') ?? defaultProvider).id;
+  const pid = providerFromParam(sp.get('p') ?? serverSlug(defaultProvider)).id;
   const provider = providerById(pid);
+  useEffect(() => {
+    const raw = sp.get('p');
+    if (raw && raw !== serverSlug(pid)) {
+      const n = new URLSearchParams(sp);
+      n.set('p', serverSlug(pid));
+      setSp(n, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pid]);
 
   const [d, setD] = useState<Details | null>(null);
   const [eps, setEps] = useState<Episode[]>([]);
@@ -112,7 +121,7 @@ export default function Watch() {
         latest.current = null;
         setWatched(t, mid, season, episode, true);
         internal.current = n;
-        setSp({ s: String(n.s), e: String(n.e), p: pid }, { replace: true });
+        setSp({ s: String(n.s), e: String(n.e), p: serverSlug(pid) }, { replace: true });
         return;
       }
       const r = provider.parse(ev);
@@ -178,11 +187,11 @@ export default function Watch() {
   }, [upNext]);
 
   const go = (s: number, e: number) => {
-    setSp({ s: String(s), e: String(e), p: pid }, { replace: true });
+    setSp({ s: String(s), e: String(e), p: serverSlug(pid) }, { replace: true });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const setServer = (p: string) =>
-    setSp(t === 'tv' ? { s: String(season), e: String(episode), p } : { p }, { replace: true });
+    setSp(t === 'tv' ? { s: String(season), e: String(episode), p: serverSlug(p) } : { p: serverSlug(p) }, { replace: true });
 
   // Servers that refuse to run in a sandbox ("Please disable sandbox") are loaded without it
   const sandbox = sandboxed ? 'allow-scripts allow-same-origin allow-forms allow-presentation' : undefined;
@@ -245,14 +254,6 @@ export default function Watch() {
         <button className="pill" onClick={() => setReload((n) => n + 1)}><Icon name="refresh" size={14} />Reload</button>
         {t === 'tv' && <span className="chip stat wp-ep">Season {season} • Episode {episode}</span>}
       </div>
-      {start > 0 && (
-        <p className="wp-resume"><Icon name="play" size={12} fill /> Resumed from {clock(start)} — 5 seconds before where you stopped.</p>
-      )}
-      {protect && !provider.sandboxOk && (
-        <p className="muted small" style={{ margin: '-4px 0 10px' }}>
-          {provider.name} can't run with popup protection, so it plays without it. Server 1 supports it.
-        </p>
-      )}
 
       <div className="wp-main">
         <div className="wp-left">
@@ -339,7 +340,7 @@ export default function Watch() {
                       key={e.number}
                       className={`ep-row ${now ? 'now' : ''} ${seen ? 'seen' : ''}`}
                       replace
-                      to={`/watch/tv/${mid}?s=${viewSeason}&e=${e.number}&p=${pid}`}
+                      to={`/watch/tv/${mid}?s=${viewSeason}&e=${e.number}&p=${serverSlug(pid)}`}
                       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                     >
                       <span className="ep-img">
