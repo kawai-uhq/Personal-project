@@ -35,38 +35,113 @@ export const rateTone = (r: number) => (r >= 7 ? 'good' : r >= 5 ? 'mid' : 'low'
 const canHover = () =>
   typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-/** Poster card. On devices with a mouse, hovering for a moment plays the trailer on the picture. */
+type Phase = 'idle' | 'prep' | 'open' | 'closing';
+interface Dims { pw: number; iw: number; ih: number; tw: number }
+
+/**
+ * Poster card. On devices with a mouse, hovering for a moment grows the card sideways into a landscape
+ * tile (neighbours move aside, the tile stays centred) and plays the trailer inside it, without controls.
+ */
 export function Poster({ m, rank, fresh }: { m: Media; rank?: number; fresh?: boolean }) {
-  const [trailer, setTrailer] = useState<string | null>(null);
-  const [box, setBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  const [phase, setPhaseState] = useState<Phase>('idle');
+  const [key, setKey] = useState<string | null>(null);
+  const [dm, setDm] = useState<Dims | null>(null);
+  const [ready, setReady] = useState(false);
+  const phaseRef = useRef<Phase>('idle');
   const timer = useRef<number | undefined>(undefined);
+  const endTimer = useRef<number | undefined>(undefined);
   const hovering = useRef(false);
+  const linkRef = useRef<HTMLAnchorElement>(null);
   const imgRef = useRef<HTMLSpanElement>(null);
+  const scroller = useRef<HTMLElement | null>(null);
+  const applied = useRef(0);
+  const raf = useRef(0);
 
-  useEffect(() => () => window.clearTimeout(timer.current), []);
-
-  // A fixed preview would drift if the page or a row scrolls: close it instead
-  useEffect(() => {
-    if (!trailer) return;
-    const close = () => {
-      hovering.current = false;
-      setTrailer(null);
-      setBox(null);
-    };
-    window.addEventListener('scroll', close, true);
-    return () => window.removeEventListener('scroll', close, true);
-  }, [trailer]);
-
-  /** Landscape preview centred over the poster, kept inside the window. */
-  const place = () => {
-    const r = imgRef.current?.getBoundingClientRect();
-    if (!r) return null;
-    const height = Math.round(r.height * 1.08);
-    const width = Math.round((height * 16) / 9);
-    const left = Math.min(Math.max(r.left + r.width / 2 - width / 2, 8), Math.max(8, window.innerWidth - width - 8));
-    const top = Math.min(Math.max(r.top + r.height / 2 - height / 2, 80), Math.max(80, window.innerHeight - height - 8));
-    return { left, top, width, height };
+  const setPhase = (p: Phase) => {
+    phaseRef.current = p;
+    setPhaseState(p);
   };
+
+  /** Slide the row sideways by `to` px (eased like the width change) so the tile grows around its own centre. */
+  const shiftRow = (to: number) => {
+    const sc = scroller.current;
+    if (!sc) return;
+    cancelAnimationFrame(raf.current);
+    const from = applied.current;
+    const base = sc.scrollLeft - from;
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const p = Math.min(1, (now - t0) / 280);
+      const e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      applied.current = from + (to - from) * e;
+      sc.scrollLeft = base + applied.current;
+      if (p < 1) raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+  };
+
+  const close = () => {
+    hovering.current = false;
+    window.clearTimeout(timer.current);
+    if (phaseRef.current === 'idle' || phaseRef.current === 'closing') return;
+    setPhase('closing');
+    setReady(false);
+    shiftRow(0);
+    endTimer.current = window.setTimeout(() => {
+      setPhase('idle');
+      setKey(null);
+      setDm(null);
+      if (scroller.current) scroller.current.style.scrollSnapType = '';
+      scroller.current = null;
+      applied.current = 0;
+    }, 320);
+  };
+
+  const expand = (k: string) => {
+    const sc = linkRef.current?.closest('.row-scroll') as HTMLElement | null;
+    const pr = linkRef.current?.getBoundingClientRect();
+    const ir = imgRef.current?.getBoundingClientRect();
+    if (!sc || !pr || !ir || phaseRef.current !== 'idle') return;
+    const tw = Math.round((ir.height * 16) / 9);
+    // grow around the centre, but never past the window edges
+    const want = (tw - pr.width) / 2;
+    const lo = pr.left + tw - (window.innerWidth - 8);
+    const hi = pr.left - 8;
+    const shift = Math.max(0, Math.min(Math.max(want, lo), hi));
+    scroller.current = sc;
+    applied.current = 0;
+    sc.style.scrollSnapType = 'none';
+    setDm({ pw: pr.width, iw: ir.width, ih: ir.height, tw });
+    setKey(k);
+    setReady(false);
+    setPhase('prep');
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        if (phaseRef.current !== 'prep') return;
+        setPhase('open');
+        shiftRow(shift);
+      })
+    );
+  };
+
+  useEffect(
+    () => () => {
+      window.clearTimeout(timer.current);
+      window.clearTimeout(endTimer.current);
+      cancelAnimationFrame(raf.current);
+      if (scroller.current) scroller.current.style.scrollSnapType = '';
+    },
+    []
+  );
+
+  // Page scrolling would leave the tile behind the pointer: fold it back
+  useEffect(() => {
+    if (phase === 'idle') return;
+    const f = () => close();
+    window.addEventListener('scroll', f);
+    return () => window.removeEventListener('scroll', f);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   // Warm the title page so it opens instantly
   const warm = () => {
@@ -83,30 +158,28 @@ export function Poster({ m, rank, fresh }: { m: Media; rank?: number; fresh?: bo
       tmdb
         .trailer(m.type, m.id)
         .then((k) => {
-          if (!hovering.current || !k) return;
-          setBox(place());
-          setTrailer(k);
+          if (hovering.current && k) expand(k);
         })
         .catch(() => undefined);
-    }, 700);
+    }, 500);
   };
-  const leave = () => {
-    hovering.current = false;
-    window.clearTimeout(timer.current);
-    setTrailer(null);
-    setBox(null);
-  };
+
+  const landscape = phase !== 'idle' && dm;
+  const wide = phase === 'open';
+  const backdrop = m.backdrop ? `${IMG.large}${m.backdrop}` : null;
 
   return (
     <Link
+      ref={linkRef}
       to={`/title/${m.type}/${m.id}`}
-      className={`poster ${rank ? 'ranked' : ''}`}
+      className={`poster ${rank ? 'ranked' : ''} ${landscape ? 'lscape' : ''} ${wide ? 'expanded' : ''}`}
+      style={landscape ? { width: wide ? dm.tw : dm.pw } : undefined}
       onMouseEnter={enter}
       onTouchStart={warm}
-      onMouseLeave={leave}
+      onMouseLeave={close}
     >
       {rank ? <span className="rank" aria-hidden="true">{rank}</span> : null}
-      <span className="poster-img" ref={imgRef}>
+      <span className="poster-img" ref={imgRef} style={landscape ? { width: wide ? dm.tw : dm.iw, height: dm.ih } : undefined}>
         {m.poster ? (
           <img
             src={posterSrc(m.poster)}
@@ -119,21 +192,21 @@ export function Poster({ m, rank, fresh }: { m: Media; rank?: number; fresh?: bo
         ) : (
           <span className="poster-missing">{m.title}</span>
         )}
+        {landscape && <img className={`pbd ${wide ? 'on' : ''}`} src={backdrop ?? (m.poster ? posterSrc(m.poster) : '')} alt="" />}
+        {wide && key && (
+          <iframe
+            className={`ptrailer ${ready ? 'on' : ''}`}
+            src={`https://www.youtube-nocookie.com/embed/${key}?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&fs=0&cc_load_policy=0&loop=1&playlist=${key}`}
+            allow="autoplay; encrypted-media"
+            tabIndex={-1}
+            title=""
+            onLoad={() => window.setTimeout(() => setReady(true), 900)}
+          />
+        )}
         {fresh && <span className="pnew">NEW EP</span>}
         <span className={`pbadge ${m.type}`}>{m.type === 'tv' ? 'TV SERIES' : 'MOVIE'}</span>
         <span className={`prate ${rateTone(m.rating)}`}><Icon name="star" size={11} fill />{m.rating.toFixed(1)}</span>
       </span>
-      {trailer && box && (
-        <span className="hover-preview" style={box} aria-hidden="true">
-          <iframe
-            className="hp-frame"
-            src={`https://www.youtube-nocookie.com/embed/${trailer}?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&fs=0&cc_load_policy=0&loop=1&playlist=${trailer}`}
-            allow="autoplay; encrypted-media"
-            tabIndex={-1}
-            title=""
-          />
-        </span>
-      )}
       <span className="ptitle">{m.title}</span>
       {m.year && <span className="pyear"><Icon name="calendar" size={12} />{m.year}</span>}
     </Link>
