@@ -317,9 +317,9 @@ export function ContinueRow({ items, onRemove }: { items: WatchEntry[]; onRemove
   );
 }
 
-export function Grid({ items, fresh }: { items: Media[]; fresh?: Set<string> }) {
+export function Grid({ items, fresh, cards }: { items: Media[]; fresh?: Set<string>; cards?: boolean }) {
   return (
-    <div className="grid">
+    <div className={`grid ${cards ? 'cards' : ''}`}>
       {items.map((m) => (
         <Poster key={mediaKey(m)} m={m} fresh={fresh?.has(mediaKey(m))} />
       ))}

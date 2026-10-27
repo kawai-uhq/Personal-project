@@ -1,28 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Status } from '../components/Rows';
-import Icon from '../components/Icon';
+import { useSearchParams } from 'react-router-dom';
+import { Grid, Status } from '../components/Rows';
 import SearchBox from '../components/SearchBox';
 import Surprise from '../components/Surprise';
-import { posterSet, posterSrc, tmdb } from '../lib/tmdb';
-import { mediaKey } from '../lib/types';
+import { tmdb } from '../lib/tmdb';
 import type { Media } from '../lib/types';
 
 type Filter = 'all' | 'movie' | 'tv';
-
-function Card({ m }: { m: Media }) {
-  return (
-    <Link to={`/title/${m.type}/${m.id}`} className="rcard">
-      <span className="rimg">
-        {m.poster ? <img src={posterSrc(m.poster)} srcSet={posterSet(m.poster)} sizes="180px" alt="" loading="lazy" /> : null}
-        <span className="rbadge">{m.type === 'tv' ? 'TV SERIES' : 'MOVIE'}</span>
-        {m.rating > 0 && <span className="rrate"><Icon name="star" size={11} fill />{m.rating.toFixed(1)}</span>}
-      </span>
-      <strong>{m.title}</strong>
-      <small>{m.year}</small>
-    </Link>
-  );
-}
 
 export default function Search() {
   const [sp] = useSearchParams();
@@ -140,7 +124,7 @@ export default function Search() {
         ) : results === null ? (
           <>
             <h2 className="section">Top Searches</h2>
-            <div className="rgrid">{top.map((m) => <Card key={mediaKey(m)} m={m} />)}</div>
+            <Grid items={top} cards />
           </>
         ) : (
           <>
@@ -152,7 +136,7 @@ export default function Search() {
             {shown.length === 0 ? (
               <Status kind="empty" text={`Nothing found for "${q.trim()}".`} />
             ) : (
-              <div className="rgrid">{shown.map((m) => <Card key={mediaKey(m)} m={m} />)}</div>
+              <Grid items={shown} cards />
             )}
           </>
         )}
