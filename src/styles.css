@@ -841,3 +841,4 @@ html.has-ambient body { background: transparent; }
 .ptrailer { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; border: 0; pointer-events: none; transform: translate(-50%, -50%) scale(1.38); opacity: 0; transition: opacity .5s; background: #000; }
 .ptrailer.on { opacity: 1; }
 .poster.expanded .pbadge, .poster.expanded .prate, .poster.expanded .pnew { z-index: 2; }
+.pshield { position: absolute; inset: 0; z-index: 1; }
