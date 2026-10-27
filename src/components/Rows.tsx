@@ -53,7 +53,6 @@ export function Poster({ m, rank, fresh }: { m: Media; rank?: number; fresh?: bo
   const hovering = useRef(false);
   const linkRef = useRef<HTMLAnchorElement>(null);
   const imgRef = useRef<HTMLSpanElement>(null);
-  const frameRef = useRef<HTMLIFrameElement>(null);
   const scroller = useRef<HTMLElement | null>(null);
   const applied = useRef(0);
   const raf = useRef(0);
@@ -144,41 +143,6 @@ export function Poster({ m, rank, fresh }: { m: Media; rank?: number; fresh?: bo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-  // YouTube shows its own pause / skip / title overlay for the first seconds of playback on touch-capable
-  // devices, and no embed option hides it. So the trailer plays invisibly and is only revealed once the
-  // overlay has gone, with the tile showing the backdrop meanwhile.
-  useEffect(() => {
-    if (phase !== 'open' || !key) return;
-    let reveal: number | undefined;
-    const fallback = window.setTimeout(() => setReady(true), 7000);
-    const listen = () => frameRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*');
-    const poll = window.setInterval(listen, 600);
-    const onMsg = (e: MessageEvent) => {
-      if (e.source !== frameRef.current?.contentWindow || typeof e.data !== 'string') return;
-      let d: any;
-      try { d = JSON.parse(e.data); } catch { return; }
-      const st = d?.event === 'onStateChange' ? d.info : d?.info?.playerState;
-      if (st === 0) {
-        // loop by hand: the "playlist" embed option that does it natively also adds prev / next buttons
-        const w = frameRef.current?.contentWindow;
-        w?.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [6, true] }), '*');
-        w?.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*');
-      }
-      if (st === 1 && reveal === undefined) {
-        window.clearInterval(poll);
-        window.clearTimeout(fallback);
-        reveal = window.setTimeout(() => setReady(true), 2500);
-      }
-    };
-    window.addEventListener('message', onMsg);
-    return () => {
-      window.removeEventListener('message', onMsg);
-      window.clearInterval(poll);
-      window.clearTimeout(fallback);
-      window.clearTimeout(reveal);
-    };
-  }, [phase, key]);
-
   // Warm the title page so it opens instantly
   const warm = () => {
     if (!isSmooth()) return;
@@ -197,7 +161,7 @@ export function Poster({ m, rank, fresh }: { m: Media; rank?: number; fresh?: bo
           if (hovering.current && k) expand(k);
         })
         .catch(() => undefined);
-    }, 500);
+    }, 700);
   };
 
   const landscape = phase !== 'idle' && dm;
@@ -232,12 +196,12 @@ export function Poster({ m, rank, fresh }: { m: Media; rank?: number; fresh?: bo
         {wide && key && (
           <>
             <iframe
-              ref={frameRef}
               className={`ptrailer ${ready ? 'on' : ''}`}
-              src={`https://www.youtube-nocookie.com/embed/${key}?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&fs=0&cc_load_policy=0&showinfo=0&start=6&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
+              src={`https://www.youtube-nocookie.com/embed/${key}?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&fs=0&cc_load_policy=0&loop=1&playlist=${key}`}
               allow="autoplay; encrypted-media"
               tabIndex={-1}
               title=""
+              onLoad={() => window.setTimeout(() => setReady(true), 900)}
             />
             <span className="pshield" aria-hidden="true" />
           </>
