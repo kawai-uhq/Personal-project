@@ -116,6 +116,26 @@ export const tmdb = {
     }
     return p;
   },
+  /** Title search limited to one streaming service: TMDB can't filter a search itself, so each hit's availability is checked. */
+  searchOn: async (t: MediaType, q: string, id: number, region: string, page: number) => {
+    const enc = encodeURIComponent(q).replace(/[!'()*~]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+    const j = await get(`/search/${t}?query=${enc}&include_adult=false&language=en-US&page=${page}`);
+    const hits = list(j, t);
+    const on = (m: Media) =>
+      get(`/${t}/${m.id}/watch/providers`)
+        .then((w) => {
+          const r = w?.results?.[region];
+          return [r?.flatrate, r?.free, r?.ads].some((a: any[] | undefined) => a?.some((x) => x.provider_id === id));
+        })
+        .catch(() => false);
+    const keep: Media[] = [];
+    for (let i = 0; i < hits.length; i += 10) {
+      const chunk = hits.slice(i, i + 10);
+      const ok = await Promise.all(chunk.map(on));
+      chunk.forEach((m, k) => ok[k] && keep.push(m));
+    }
+    return { items: keep, pages: Math.min((j?.total_pages as number) || 1, 500) };
+  },
   /** Countries TMDB has streaming data for. */
   regions: (): Promise<{ code: string; name: string }[]> =>
     get('/watch/providers/regions').then((j) =>

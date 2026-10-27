@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Icon from '../components/Icon';
 import ProviderLogo from '../components/ProviderLogo';
@@ -23,6 +23,64 @@ export default function Provider() {
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // search inside this service
+  const [q, setQ] = useState('');
+  const [sq, setSq] = useState('');
+  const [sItems, setSItems] = useState<Media[]>([]);
+  const [sPage, setSPage] = useState(0);
+  const [sPages, setSPages] = useState(1);
+  const [sBusy, setSBusy] = useState(false);
+  const [sErr, setSErr] = useState<string | null>(null);
+  const run = useRef(0);
+  useEffect(() => {
+    const h = window.setTimeout(() => setSq(q.trim()), 400);
+    return () => window.clearTimeout(h);
+  }, [q]);
+
+  // fetch search pages until a dozen matches turn up (or the results run out)
+  const searchFrom = useCallback(
+    async (start: number, fresh: boolean) => {
+      if (!id || !sq) return;
+      const mine = ++run.current;
+      setSBusy(true);
+      setSErr(null);
+      try {
+        let page = start;
+        let total = 1;
+        let found = 0;
+        while (page <= total && page < start + 5 && found < 12) {
+          const r = await tmdb.searchOn(type, sq, id, region, page);
+          if (mine !== run.current) return;
+          total = r.pages;
+          found += r.items.length;
+          setSItems((cur) => {
+            const base = fresh && page === start ? [] : cur;
+            const seen = new Set(base.map(mediaKey));
+            return [...base, ...r.items.filter((m) => !seen.has(mediaKey(m)))];
+          });
+          setSPage(page);
+          setSPages(total);
+          page++;
+        }
+      } catch (e) {
+        if (mine === run.current) setSErr((e as Error).message);
+      } finally {
+        if (mine === run.current) setSBusy(false);
+      }
+    },
+    [id, sq, type, region]
+  );
+  useEffect(() => {
+    setSItems([]);
+    setSPage(0);
+    setSPages(1);
+    if (sq) searchFrom(1, true);
+    else {
+      run.current++;
+      setSBusy(false);
+    }
+  }, [sq, searchFrom]);
 
   // name and logo: this country's list first, then the worldwide one
   useEffect(() => {
@@ -83,7 +141,33 @@ export default function Provider() {
             </button>
           ))}
         </div>
-        {error && items.length === 0 ? (
+        <div className="prov-search">
+          <Icon name="search" size={16} />
+          <input
+            className="field"
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={`Search ${type === 'movie' ? 'movies' : 'series'} on ${svc?.name ?? 'this service'}…`}
+            aria-label="Search this service"
+          />
+        </div>
+        {sq ? (
+          sErr && sItems.length === 0 ? (
+            <Status kind="error" text={sErr} retry={() => searchFrom(1, true)} />
+          ) : sItems.length === 0 ? (
+            <Status kind={sBusy ? 'loading' : 'empty'} text={sBusy ? 'Searching…' : `Nothing for “${sq}” on ${svc?.name ?? 'this service'} in this country.`} />
+          ) : (
+            <>
+              <Grid items={sItems} />
+              {sPage < sPages && (
+                <div className="center-row">
+                  <button className="btn" disabled={sBusy} onClick={() => searchFrom(sPage + 1, false)}>{sBusy ? 'Searching…' : 'Search more'}</button>
+                </div>
+              )}
+            </>
+          )
+        ) : error && items.length === 0 ? (
           <Status kind="error" text={error} retry={() => load(1)} />
         ) : items.length === 0 && loading ? (
           <GridSkeleton />

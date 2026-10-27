@@ -826,3 +826,6 @@ html.has-ambient body { background: transparent; }
 .pgrid .ptile { width: auto; }
 .prov-region { margin-left: auto; }
 .prov-head .title { min-height: 1em; }
+.prov-search { position: relative; margin: 4px 0 18px; max-width: 460px; }
+.prov-search .ic { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.prov-search input { width: 100%; padding-left: 40px; }
