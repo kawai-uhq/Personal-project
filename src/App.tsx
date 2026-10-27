@@ -17,6 +17,8 @@ const Help = lazy(() => import('./pages/Help'));
 const Live = lazy(() => import('./pages/Live'));
 const PersonPage = lazy(() => import('./pages/Person'));
 const MyList = lazy(() => import('./pages/MyList'));
+const Providers = lazy(() => import('./pages/Providers'));
+const Provider = lazy(() => import('./pages/Provider'));
 const Search = lazy(() => import('./pages/Search'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Watch = lazy(() => import('./pages/Watch'));
@@ -41,6 +43,8 @@ export default function App() {
         <Route path="/search" element={<Search />} />
         <Route path="/genres" element={<Genres />} />
         <Route path="/genres/:type/:id" element={<GenreResults />} />
+        <Route path="/provider/:id" element={<Provider />} />
+        <Route path="/providers" element={<Providers />} />
         <Route path="/live" element={<Live />} />
         <Route path="/list" element={<MyList />} />
         <Route path="/person/:id" element={<PersonPage />} />

@@ -1,6 +1,6 @@
 // Vercel serverless function: forwards read-only requests to TMDB with the secret token,
 // so visitors never need (or see) a token.
-const ALLOWED = /^\/(trending|movie|tv|search|discover|person)\/[\w\-\/.?=&,%+|'()!*~]*$/;
+const ALLOWED = /^\/(trending|movie|tv|search|discover|person|watch)\/[\w\-\/.?=&,%+|'()!*~]*$/;
 
 export default async function handler(req, res) {
   const token = process.env.TMDB_TOKEN;

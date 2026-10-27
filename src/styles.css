@@ -804,3 +804,25 @@ html.has-ambient body { background: transparent; }
 .faq-a { padding: 0 16px 16px; color: var(--muted); line-height: 1.65; }
 .help-contact { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 30px; padding: 16px 18px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
 .wp { padding-top: calc(var(--nav-h) + 24px); }
+
+/* ---- Browse by Provider ---- */
+.plogo { display: inline-grid; place-items: center; border-radius: 18px; overflow: hidden; flex: none; box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.12); }
+.plogo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.plogo b { font-family: 'Fredoka', sans-serif; font-size: 26px; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.4); }
+.ptile { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 84px; flex: none; text-align: center; color: var(--cream); font-size: 12px; font-weight: 700; line-height: 1.2; transition: transform .2s; }
+.ptile:hover { transform: translateY(-3px); }
+.ptile:active { transform: scale(.96); }
+.prov-page { position: relative; }
+.prov-bg { position: absolute; inset: 0 0 auto 0; height: 560px; pointer-events: none; z-index: 0;
+  background: radial-gradient(60% 70% at 15% 0%, color-mix(in srgb, var(--pc) 55%, transparent), transparent 70%),
+              radial-gradient(50% 60% at 90% 10%, color-mix(in srgb, var(--pc) 35%, transparent), transparent 70%);
+  filter: blur(30px); opacity: .85;
+  -webkit-mask-image: linear-gradient(#000 40%, transparent); mask-image: linear-gradient(#000 40%, transparent); }
+.prov-page .container { position: relative; z-index: 1; }
+.prov-head { display: flex; align-items: center; gap: 16px; margin: 6px 0 4px; }
+.prov-head .title { margin: 0; }
+.plogo.all { display: inline-grid; place-items: center; border-radius: 18px; background: var(--surface); color: var(--cream); font-weight: 800; font-size: 16px; }
+.pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 22px 12px; margin-top: 22px; }
+.pgrid .ptile { width: auto; }
+.prov-region { margin-left: auto; }
+.prov-head .title { min-height: 1em; }

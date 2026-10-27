@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Ambient from '../components/Ambient';
 import Billboard from '../components/Billboard';
+import ProviderRow from '../components/ProviderRow';
 import FeedRow from '../components/FeedRow';
 import { ContinueRow, HomeSkeleton, PosterRow, Status } from '../components/Rows';
 import { tmdb } from '../lib/tmdb';
@@ -49,6 +50,7 @@ export default function Home() {
     <main className="page home">
       <Ambient items={heroes} active={active} />
       <Billboard items={heroes} onActive={onActive} />
+      <ProviderRow />
       <ContinueRow items={history} onRemove={removeWatch} />
       <PosterRow title="My Watchlist" items={favorites} to="/list" fresh={fresh} />
       <PosterRow title="My Favorites" items={loved} to="/list" fresh={fresh} />

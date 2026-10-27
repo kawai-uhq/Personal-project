@@ -90,7 +90,39 @@ export const FEEDS: Record<string, { title: string; path: string; type: 'all' | 
   }
 };
 
+const provCache = new Map<string, Promise<{ id: number; name: string; logo: string | null; prio: number }[]>>();
+
 export const tmdb = {
+  /** Every streaming service TMDB lists (movies + TV merged), most popular first; for one country or worldwide. */
+  providers: (region = ''): Promise<{ id: number; name: string; logo: string | null; prio: number }[]> => {
+    let p = provCache.get(region);
+    if (!p) {
+      const q = region ? `?watch_region=${region}` : '';
+      p = Promise.all([get(`/watch/providers/movie${q}`), get(`/watch/providers/tv${q}`)]).then(([m, t]) => {
+        const by = new Map<number, { id: number; name: string; logo: string | null; prio: number }>();
+        for (const r of [...(m?.results ?? []), ...(t?.results ?? [])] as any[]) {
+          if (!r.provider_id || by.has(r.provider_id)) continue;
+          by.set(r.provider_id, {
+            id: r.provider_id,
+            name: r.provider_name,
+            logo: r.logo_path ?? null,
+            prio: region ? (r.display_priorities?.[region] ?? r.display_priority ?? 999) : (r.display_priority ?? 999)
+          });
+        }
+        return [...by.values()].sort((a, b) => a.prio - b.prio);
+      });
+      p.catch(() => provCache.delete(region));
+      provCache.set(region, p);
+    }
+    return p;
+  },
+  /** Countries TMDB has streaming data for. */
+  regions: (): Promise<{ code: string; name: string }[]> =>
+    get('/watch/providers/regions').then((j) =>
+      ((j?.results ?? []) as any[])
+        .map((r) => ({ code: r.iso_3166_1 as string, name: r.english_name as string }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    ),
   /** A random well-rated title (optionally of one type and genre). */
   surprise: async (type?: MediaType, genre?: string): Promise<Media | null> => {
     const t: MediaType = type ?? (Math.random() < 0.5 ? 'movie' : 'tv');
