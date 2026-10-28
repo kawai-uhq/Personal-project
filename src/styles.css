@@ -852,3 +852,11 @@ html.has-ambient body { background: transparent; }
 .hthumb:hover .hthumb-play { opacity: 1; }
 .htag { text-transform: uppercase; letter-spacing: .03em; }
 @media (max-width: 560px) { .hthumb { width: 104px; } .hrow { gap: 10px; padding: 10px; } }
+
+/* ---- anime section ---- */
+html.anime { --accent: #ff9a2e; --accent-ink: #1f1206; }
+html.anime .btn.primary, html.anime .pill.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+html.anime .htag, html.anime .nav-signin { border-color: rgba(255, 154, 46, .4); }
+.tabbar { grid-auto-flow: column; grid-auto-columns: 1fr; grid-template-columns: none !important; }
+.tabbar a { min-width: 0; }
+.lib-kind { flex-wrap: wrap; }

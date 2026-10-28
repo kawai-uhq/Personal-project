@@ -10,6 +10,8 @@ export interface Media {
   rating: number;
   year: string;
   votes?: number;
+  /** Japanese animation (set when TMDB gave us its genres and language) */
+  anime?: boolean;
 }
 
 export const mediaKey = (m: Media) => `${m.type}:${m.id}`;

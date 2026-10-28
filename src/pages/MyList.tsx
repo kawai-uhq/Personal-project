@@ -9,6 +9,8 @@ import { useNewEpisodes } from '../lib/useNewEpisodes';
 import { mediaKey } from '../lib/types';
 import { IMG, posterSrc } from '../lib/tmdb';
 import type { Media, WatchEntry } from '../lib/types';
+
+type Kind = 'all' | 'movie' | 'tv' | 'anime';
 import { useApp } from '../state';
 
 type Tab = 'history' | 'list' | 'loved' | 'reminders';
@@ -77,12 +79,19 @@ function RemindersPanel() {
   );
 }
 
-export default function MyList() {
+export default function MyList({ anime = false }: { anime?: boolean }) {
   const { favorites, loved, history, removeWatch, session, openAuth } = useApp();
   const fresh = useNewEpisodes();
   const [qs] = useSearchParams();
   const [tab, setTab] = useState<Tab>(() => (TABS.includes(qs.get('tab') as Tab) ? (qs.get('tab') as Tab) : 'history'));
   const { due } = useReminders();
+  const [kind, setKind] = useState<Kind>(anime ? 'anime' : 'all');
+  const keep = (m: Media) => kind === 'all' || (kind === 'anime' ? !!m.anime : m.type === kind);
+  const everything = [...new Map([...history.map((w) => w.media), ...favorites, ...loved].map((m) => [mediaKey(m), m])).values()];
+  const count = (k: Kind) => everything.filter((m) => k === 'all' || (k === 'anime' ? !!m.anime : m.type === k)).length;
+  const hist = history.filter((w) => keep(w.media));
+  const wl = favorites.filter(keep);
+  const lv = loved.filter(keep);
 
   return (
     <main className="page pad-top">
@@ -92,20 +101,25 @@ export default function MyList() {
             <h1 className="title">My <span className="accent">Library</span></h1>
             <p className="muted">Manage your watch history, watchlist and favorites{session ? '.' : ' (saved locally on your device).'}</p>
           </div>
+          <div className="seg lib-kind" role="tablist" aria-label="Show">
+            {([['all', 'All'], ['movie', 'Movies'], ['tv', 'TV Shows'], ['anime', 'Anime']] as [Kind, string][]).map(([k, label]) => (
+              <button key={k} role="tab" aria-selected={kind === k} className={kind === k ? 'on' : ''} onClick={() => setKind(k)}>{label} ({count(k)})</button>
+            ))}
+          </div>
         </div>
 
         <div className="lib-tabs">
           <div className="pills" style={{ margin: 0, justifyContent: 'flex-start' }} role="tablist">
-            <button role="tab" aria-selected={tab === 'history'} className={`pill ${tab === 'history' ? 'on' : ''}`} onClick={() => setTab('history')}><Icon name="history" size={15} />History ({history.length})</button>
-            <button role="tab" aria-selected={tab === 'list'} className={`pill ${tab === 'list' ? 'on' : ''}`} onClick={() => setTab('list')}><Icon name="bookmark" size={15} />Watchlist ({favorites.length})</button>
-            <button role="tab" aria-selected={tab === 'loved'} className={`pill ${tab === 'loved' ? 'on' : ''}`} onClick={() => setTab('loved')}><Icon name="heart" size={15} />Favorites ({loved.length})</button>
+            <button role="tab" aria-selected={tab === 'history'} className={`pill ${tab === 'history' ? 'on' : ''}`} onClick={() => setTab('history')}><Icon name="history" size={15} />History ({hist.length})</button>
+            <button role="tab" aria-selected={tab === 'list'} className={`pill ${tab === 'list' ? 'on' : ''}`} onClick={() => setTab('list')}><Icon name="bookmark" size={15} />Watchlist ({wl.length})</button>
+            <button role="tab" aria-selected={tab === 'loved'} className={`pill ${tab === 'loved' ? 'on' : ''}`} onClick={() => setTab('loved')}><Icon name="heart" size={15} />Favorites ({lv.length})</button>
             <button role="tab" aria-selected={tab === 'reminders'} className={`pill ${tab === 'reminders' ? 'on' : ''}`} onClick={() => setTab('reminders')}><Icon name="bell" size={15} />Reminders{due > 0 && <i className="nav-dot inline" />}</button>
           </div>
-          {tab === 'history' && history.length > 0 && (
+          {tab === 'history' && hist.length > 0 && (
             <button
               className="btn small ghost"
               onClick={() => {
-                if (window.confirm('Clear your whole watch history?')) history.forEach((w) => removeWatch(mediaKey(w.media)));
+                if (window.confirm('Clear your whole watch history?')) hist.forEach((w) => removeWatch(mediaKey(w.media)));
               }}
             >
               <Icon name="trash" size={15} />Clear History
@@ -114,27 +128,27 @@ export default function MyList() {
         </div>
 
         {tab === 'history' ? (
-          history.length === 0 ? (
+          hist.length === 0 ? (
             <Status kind="empty" text="Nothing watched yet. Titles you play show up here so you can resume them." />
           ) : (
             <div className="hlist">
-              {history.map((w) => (
+              {hist.map((w) => (
                 <HistoryRow key={mediaKey(w.media)} w={w} onRemove={() => removeWatch(mediaKey(w.media))} />
               ))}
             </div>
           )
         ) : tab === 'list' ? (
-          favorites.length === 0 ? (
+          wl.length === 0 ? (
             <Status kind="empty" text="Nothing here yet. Tap “Watchlist” on any title to save it for later." />
           ) : (
-            <Grid items={favorites} fresh={fresh} />
+            <Grid items={wl} fresh={fresh} />
           )
         ) : tab === 'reminders' ? (
           <RemindersPanel />
-        ) : loved.length === 0 ? (
+        ) : lv.length === 0 ? (
           <Status kind="empty" text="No favorites yet. Tap the heart on titles you love." />
         ) : (
-          <Grid items={loved} fresh={fresh} />
+          <Grid items={lv} fresh={fresh} />
         )}
 
         {!session && (

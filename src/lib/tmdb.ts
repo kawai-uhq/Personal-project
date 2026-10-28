@@ -59,12 +59,18 @@ function parse(o: any, fallback: 'all' | MediaType): Media | null {
     type,
     rating: o.vote_average ?? 0,
     year: date.slice(0, 4),
-    votes: (o.vote_count as number) ?? 0
+    votes: (o.vote_count as number) ?? 0,
+    anime:
+      o.original_language === 'ja' &&
+      (((o.genre_ids ?? []) as number[]).includes(16) || ((o.genres ?? []) as { id: number }[]).some((g) => g.id === 16))
   };
 }
 
 const list = (json: any, fb: 'all' | MediaType): Media[] =>
   ((json?.results ?? []) as any[]).map((o) => parse(o, fb)).filter((m): m is Media => m !== null);
+
+const dayStr = (offset: number) => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+const JA = 'with_original_language=ja';
 
 /** Home-page and Explore feeds: a TMDB list plus how its items are typed. */
 export const FEEDS: Record<string, { title: string; path: string; type: 'all' | MediaType }> = {
@@ -83,6 +89,25 @@ export const FEEDS: Record<string, { title: string; path: string; type: 'all' | 
   action: { title: 'Action & Explosive Hits', path: '/discover/movie?with_genres=28&sort_by=popularity.desc', type: 'movie' },
   scifi: { title: 'Sci-Fi & Futuristic Worlds', path: '/discover/movie?with_genres=878&sort_by=popularity.desc', type: 'movie' },
   animated: { title: 'Animated Masterpieces', path: '/discover/tv?with_genres=16&sort_by=popularity.desc', type: 'tv' },
+  // ---- anime (Japanese animation) ----
+  'anime-trending': { title: 'Trending Right Now', path: `/discover/tv?with_genres=16&${JA}&sort_by=popularity.desc`, type: 'tv' },
+  'anime-season': {
+    title: 'Popular This Season',
+    path: `/discover/tv?with_genres=16&${JA}&first_air_date.gte=${dayStr(-110)}&first_air_date.lte=${dayStr(0)}&sort_by=popularity.desc`,
+    type: 'tv'
+  },
+  'anime-top': { title: 'All-Time Highest Rated', path: `/discover/tv?with_genres=16&${JA}&sort_by=vote_average.desc&vote_count.gte=400`, type: 'tv' },
+  'anime-popular': { title: 'Most Popular Anime', path: `/discover/tv?with_genres=16&${JA}&sort_by=vote_count.desc`, type: 'tv' },
+  'anime-upcoming': {
+    title: 'Upcoming Anime Releases',
+    path: `/discover/tv?with_genres=16&${JA}&first_air_date.gte=${dayStr(1)}&sort_by=popularity.desc`,
+    type: 'tv'
+  },
+  'anime-films': { title: 'Top Anime Feature Films', path: `/discover/movie?with_genres=16&${JA}&sort_by=vote_average.desc&vote_count.gte=200`, type: 'movie' },
+  'anime-action': { title: 'High-Octane Action', path: `/discover/tv?with_genres=16,10759&${JA}&sort_by=popularity.desc`, type: 'tv' },
+  'anime-fantasy': { title: 'Epic Fantasy Worlds', path: `/discover/tv?with_genres=16,10765&${JA}&sort_by=popularity.desc`, type: 'tv' },
+  'anime-romance': { title: 'Heartwarming Romance', path: `/discover/movie?with_genres=16,10749&${JA}&sort_by=popularity.desc`, type: 'movie' },
+  'anime-scifi': { title: 'Sci-Fi & Cyberpunk', path: `/discover/movie?with_genres=16,878&${JA}&sort_by=popularity.desc`, type: 'movie' },
   drama: {
     title: 'Critically Acclaimed Dramas',
     path: '/discover/movie?with_genres=18&sort_by=vote_average.desc&vote_count.gte=800',

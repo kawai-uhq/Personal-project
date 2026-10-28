@@ -19,6 +19,9 @@ const PersonPage = lazy(() => import('./pages/Person'));
 const MyList = lazy(() => import('./pages/MyList'));
 const Providers = lazy(() => import('./pages/Providers'));
 const Provider = lazy(() => import('./pages/Provider'));
+const AnimeHome = lazy(() => import('./pages/AnimeHome'));
+const AnimeExplore = lazy(() => import('./pages/AnimeExplore'));
+const AnimeGenres = lazy(() => import('./pages/AnimeGenres'));
 const Search = lazy(() => import('./pages/Search'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Watch = lazy(() => import('./pages/Watch'));
@@ -30,6 +33,13 @@ export default function App() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
+  // the anime section has its own orange accent
+  const anime = pathname.startsWith('/anime');
+  useEffect(() => {
+    document.documentElement.classList.toggle('anime', anime);
+    return () => document.documentElement.classList.remove('anime');
+  }, [anime]);
 
   return (
     <>
@@ -45,8 +55,12 @@ export default function App() {
         <Route path="/genres/:type/:id" element={<GenreResults />} />
         <Route path="/provider/:id" element={<Provider />} />
         <Route path="/providers" element={<Providers />} />
+        <Route path="/anime" element={<AnimeHome />} />
+        <Route path="/anime/explore" element={<AnimeExplore />} />
+        <Route path="/anime/genres" element={<AnimeGenres />} />
+        <Route path="/anime/library" element={<MyList key="anime" anime />} />
         <Route path="/live" element={<Live />} />
-        <Route path="/list" element={<MyList />} />
+        <Route path="/list" element={<MyList key="main" />} />
         <Route path="/person/:id" element={<PersonPage />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />

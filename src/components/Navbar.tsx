@@ -13,6 +13,7 @@ export default function Navbar() {
   const { session, openAuth } = useApp();
   const fresh = useNewEpisodes();
   const { due } = useReminders();
+  const anime = pathname.startsWith('/anime');
   const dot = fresh.size + due;
   const dotTip = [fresh.size ? `${fresh.size} new episode${fresh.size > 1 ? 's' : ''}` : '', due ? `${due} release${due > 1 ? 's' : ''} out now` : ''].filter(Boolean).join(' · ');
   const [q, setQ] = useState('');
@@ -29,17 +30,28 @@ export default function Navbar() {
     <>
       <header className={`nav ${solid || pathname !== '/' ? 'solid' : ''}`}>
         <div className="nav-pill">
-          <Link to="/" className="nav-logo" aria-label="Comvie home">
+          <Link to={anime ? '/anime' : '/'} className="nav-logo" aria-label="Comvie home">
             <Logo size={30} />
           </Link>
-          <nav className="nav-links" aria-label="Main">
-            <NavLink to="/" end><Icon name="home" size={18} />Home</NavLink>
-            <NavLink to="/movies"><Icon name="film" size={18} />Movies</NavLink>
-            <NavLink to="/tv"><Icon name="tv" size={18} />TV Shows</NavLink>
-            <NavLink to="/live"><Icon name="live" size={18} />Live TV</NavLink>
-            <NavLink to="/genres"><Icon name="grid" size={18} />Genres</NavLink>
-            <NavLink to="/list"><Icon name="bookmark" size={18} />My Library{dot > 0 && <span className="nav-dot" aria-label={dotTip} data-tip={dotTip} />}</NavLink>
-          </nav>
+          {anime ? (
+            <nav className="nav-links" aria-label="Anime">
+              <NavLink to="/anime" end><Icon name="flame" size={18} />Anime Home</NavLink>
+              <NavLink to="/anime/explore"><Icon name="compass" size={18} />Explore</NavLink>
+              <NavLink to="/anime/genres"><Icon name="grid" size={18} />Genres</NavLink>
+              <NavLink to="/anime/library"><Icon name="bookmark" size={18} />Library</NavLink>
+              <NavLink to="/" end><Icon name="film" size={18} />Cinema</NavLink>
+            </nav>
+          ) : (
+            <nav className="nav-links" aria-label="Main">
+              <NavLink to="/" end><Icon name="home" size={18} />Home</NavLink>
+              <NavLink to="/movies"><Icon name="film" size={18} />Movies</NavLink>
+              <NavLink to="/tv"><Icon name="tv" size={18} />TV Shows</NavLink>
+              <NavLink to="/live"><Icon name="live" size={18} />Live TV</NavLink>
+              <NavLink to="/genres"><Icon name="grid" size={18} />Genres</NavLink>
+              <NavLink to="/anime"><Icon name="flame" size={18} />Anime</NavLink>
+              <NavLink to="/list"><Icon name="bookmark" size={18} />My Library{dot > 0 && <span className="nav-dot" aria-label={dotTip} data-tip={dotTip} />}</NavLink>
+            </nav>
+          )}
           <SearchBox
             className="nav-search"
             value={q}
@@ -63,14 +75,26 @@ export default function Navbar() {
         </div>
       </header>
 
-      <nav className="tabbar" aria-label="Tabs">
-        <NavLink to="/" end><Icon name="home" size={18} /><span>Home</span></NavLink>
-        <NavLink to="/search"><Icon name="search" size={18} /><span>Search</span></NavLink>
-        <NavLink to="/movies"><Icon name="film" size={18} /><span>Movies</span></NavLink>
-        <NavLink to="/tv"><Icon name="tv" size={18} /><span>TV</span></NavLink>
-        <NavLink to="/live"><Icon name="live" size={18} /><span>Live</span></NavLink>
-        <NavLink to="/list"><Icon name="bookmark" size={18} /><span>Library</span>{dot > 0 && <i className="nav-dot" />}</NavLink>
-      </nav>
+      {anime ? (
+        <nav className="tabbar" aria-label="Anime tabs">
+          <NavLink to="/anime" end><Icon name="flame" size={18} /><span>Anime</span></NavLink>
+          <NavLink to="/search"><Icon name="search" size={18} /><span>Search</span></NavLink>
+          <NavLink to="/anime/explore"><Icon name="compass" size={18} /><span>Explore</span></NavLink>
+          <NavLink to="/anime/genres"><Icon name="grid" size={18} /><span>Genres</span></NavLink>
+          <NavLink to="/anime/library"><Icon name="bookmark" size={18} /><span>Library</span></NavLink>
+          <NavLink to="/" end><Icon name="film" size={18} /><span>Cinema</span></NavLink>
+        </nav>
+      ) : (
+        <nav className="tabbar" aria-label="Tabs">
+          <NavLink to="/" end><Icon name="home" size={18} /><span>Home</span></NavLink>
+          <NavLink to="/search"><Icon name="search" size={18} /><span>Search</span></NavLink>
+          <NavLink to="/movies"><Icon name="film" size={18} /><span>Movies</span></NavLink>
+          <NavLink to="/tv"><Icon name="tv" size={18} /><span>TV</span></NavLink>
+          <NavLink to="/anime"><Icon name="flame" size={18} /><span>Anime</span></NavLink>
+          <NavLink to="/live"><Icon name="live" size={18} /><span>Live</span></NavLink>
+          <NavLink to="/list"><Icon name="bookmark" size={18} /><span>Library</span>{dot > 0 && <i className="nav-dot" />}</NavLink>
+        </nav>
+      )}
     </>
   );
 }
