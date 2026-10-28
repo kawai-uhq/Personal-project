@@ -11,6 +11,7 @@ export default function Settings() {
   const [smooth, setSmoothOn] = useState(isSmooth());
   const [autoplay, setAutoplay] = useState(store.getAutoplay());
   const [autoskip, setAutoskip] = useState(store.getAutoskip());
+  const [adult, setAdult] = useState(store.getAdult());
 
   return (
     <main className="page pad-top">
@@ -52,6 +53,20 @@ export default function Settings() {
           <span>Skip intros automatically</span>
         </label>
         <p className="muted small">Works on Server 1 when it knows where the intro is. On the other servers, use the player's own “Skip intro” button.</p>
+
+        <h2 className="label">ANIME</h2>
+        <label className="radio">
+          <input
+            type="checkbox"
+            checked={adult}
+            onChange={(e) => {
+              setAdult(e.target.checked);
+              store.saveAdult(e.target.checked);
+            }}
+          />
+          <span>Show 18+ anime</span>
+        </label>
+        <p className="muted small">Include titles that AniList marks as adult in anime search, Explore and the home rows. Off by default. Only turn this on if you are 18 or older.</p>
 
         <h2 className="label">POPUP PROTECTION</h2>
         <label className="radio">

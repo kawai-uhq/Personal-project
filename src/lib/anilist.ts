@@ -1,3 +1,4 @@
+import { store } from './storage';
 import type { Media } from './types';
 
 /** AniList (anilist.co) GraphQL client: the data source for the anime section. */
@@ -108,13 +109,13 @@ export interface AniQuery {
   perPage?: number;
 }
 
-/** A page of anime. Adult titles are always left out. */
+/** A page of anime. Titles AniList marks as adult are left out unless "Show 18+ anime" is on in Settings. */
 export async function aniList(q: AniQuery): Promise<{ items: Ani[]; more: boolean }> {
-  const query = `query($page:Int,$perPage:Int,$sort:[MediaSort],$search:String,$genre:String,$season:MediaSeason,$seasonYear:Int,$format:MediaFormat,$status:MediaStatus,$pg:Int){
+  const query = `query($page:Int,$perPage:Int,$sort:[MediaSort],$search:String,$genre:String,$season:MediaSeason,$seasonYear:Int,$format:MediaFormat,$status:MediaStatus,$pg:Int,$adult:Boolean){
     Page(page:$page, perPage:$perPage){ pageInfo{ hasNextPage }
-      media(type:ANIME, isAdult:false, sort:$sort, search:$search, genre:$genre, season:$season, seasonYear:$seasonYear, format:$format, status:$status, popularity_greater:$pg){ ${MEDIA} } } }`;
+      media(type:ANIME, isAdult:$adult, sort:$sort, search:$search, genre:$genre, season:$season, seasonYear:$seasonYear, format:$format, status:$status, popularity_greater:$pg){ ${MEDIA} } } }`;
   const { sort, popularityGreater, ...rest } = q;
-  const vars: Record<string, unknown> = { page: 1, perPage: 24, ...rest, pg: popularityGreater };
+  const vars: Record<string, unknown> = { page: 1, perPage: 24, ...rest, pg: popularityGreater, adult: store.getAdult() ? undefined : false };
   if (sort && !q.search) vars.sort = [sort];
   Object.keys(vars).forEach((k) => (vars[k] === undefined || vars[k] === '') && delete vars[k]);
   const d = await gql(query, vars);

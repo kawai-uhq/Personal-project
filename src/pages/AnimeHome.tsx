@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { AniFeedRow, AnimeCard } from '../components/AnimeCard';
 import AnimeBillboard from '../components/AnimeBillboard';
 import { Row, Status, HomeSkeleton } from '../components/Rows';
@@ -53,7 +52,6 @@ export default function AnimeHome() {
       <AniFeedRow title="Epic Fantasy Worlds" q={{ sort: 'POPULARITY_DESC', genre: 'Fantasy' }} to="/anime/explore?genre=Fantasy" />
       <AniFeedRow title="Heartwarming Romance" q={{ sort: 'POPULARITY_DESC', genre: 'Romance' }} to="/anime/explore?genre=Romance" />
       <AniFeedRow title="Sci-Fi & Cyberpunk" q={{ sort: 'POPULARITY_DESC', genre: 'Sci-Fi' }} to="/anime/explore?genre=Sci-Fi" />
-      <p className="muted note" style={{ textAlign: 'center' }}>Anime data from <a href="https://anilist.co" target="_blank" rel="noreferrer" className="link">AniList</a>. <Link to="/anime/genres" className="link">Browse by genre</Link></p>
     </main>
   );
 }
