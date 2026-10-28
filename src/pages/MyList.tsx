@@ -7,7 +7,8 @@ import { signInComingSoon } from '../lib/auth';
 import { dropReminder, useReminders } from '../lib/reminders';
 import { useNewEpisodes } from '../lib/useNewEpisodes';
 import { mediaKey } from '../lib/types';
-import type { WatchEntry } from '../lib/types';
+import { IMG, posterSrc } from '../lib/tmdb';
+import type { Media, WatchEntry } from '../lib/types';
 import { useApp } from '../state';
 
 type Tab = 'history' | 'list' | 'loved' | 'reminders';
@@ -16,17 +17,29 @@ const TABS: Tab[] = ['history', 'list', 'loved', 'reminders'];
 const when = (t: number) =>
   new Date(t).toLocaleString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
+/** Landscape cover (backdrop, else poster) with an optional tag in the corner, like the CineHall library. */
+function Thumb({ m, to, tag, label }: { m: Media; to: string; tag?: string; label: string }) {
+  const src = m.backdrop ? `${IMG.still}${m.backdrop}` : m.poster ? posterSrc(m.poster) : null;
+  return (
+    <Link to={to} className="hthumb" aria-label={label}>
+      {src ? <img src={src} alt="" loading="lazy" /> : <span className="hthumb-none">{m.title.charAt(0)}</span>}
+      {tag && <span className="hthumb-tag">{tag}</span>}
+      <span className="hthumb-play" aria-hidden="true"><Icon name="play" size={18} fill /></span>
+    </Link>
+  );
+}
+
 function HistoryRow({ w, onRemove }: { w: WatchEntry; onRemove: () => void }) {
   const m = w.media;
   const tv = m.type === 'tv' && w.season && w.episode;
   const to = `/watch/${m.type}/${m.id}?s=${w.season ?? 1}&e=${w.episode ?? 1}&p=${serverSlug(w.providerId)}`;
   return (
     <div className="hrow">
-      <Link to={to} className="hplay" aria-label={`Resume ${m.title}`}><Icon name="play" size={18} fill /></Link>
+      <Thumb m={m} to={to} label={`Resume ${m.title}`} tag={tv ? `S${w.season}E${w.episode}` : m.type === 'tv' ? undefined : 'MOVIE'} />
       <div className="hinfo">
         <strong>
           {m.title}
-          {tv ? <span className="htag">S{w.season} • E{w.episode}</span> : null}
+          {tv ? <span className="htag">Season {w.season} • Episode {w.episode}</span> : null}
         </strong>
         <small><Icon name={m.type === 'tv' ? 'tv' : 'film'} size={13} />{m.type === 'tv' ? 'TV Series' : 'Movie'} · {when(w.watchedAt)}</small>
       </div>
@@ -50,7 +63,7 @@ function RemindersPanel() {
         const out = n <= 0;
         return (
           <div className="hrow" key={`${r.media.type}:${r.media.id}`}>
-            <Link to={`/title/${r.media.type}/${r.media.id}`} className="hplay" aria-label={`Open ${r.media.title}`}><Icon name={out ? 'play' : 'bell'} size={18} fill={out} /></Link>
+            <Thumb m={r.media} to={`/title/${r.media.type}/${r.media.id}`} label={`Open ${r.media.title}`} tag={out ? 'OUT NOW' : 'SOON'} />
             <div className="hinfo">
               <strong>{r.media.title}</strong>
               <small><Icon name="calendar" size={13} />{new Date(r.date + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })} · {out ? 'Out now' : n === 1 ? 'Tomorrow' : `In ${n} days`}</small>
