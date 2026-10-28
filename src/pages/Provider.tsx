@@ -12,7 +12,7 @@ import { mediaKey } from '../lib/types';
 import type { Media, MediaType } from '../lib/types';
 
 /** Everything on one streaming service, with Movies / Series tabs. */
-export default function Provider() {
+export default function Provider({ anime = false }: { anime?: boolean }) {
   const { id: param } = useParams();
   const id = Number(param) || LEGACY[param ?? ''] || 0;
   const [region] = useRegion();
@@ -50,7 +50,7 @@ export default function Provider() {
         let total = 1;
         let found = 0;
         while (page <= total && page < start + 5 && found < 12) {
-          const r = await tmdb.searchOn(type, sq, id, region, page);
+          const r = await tmdb.searchOn(type, sq, id, region, page, anime);
           if (mine !== run.current) return;
           total = r.pages;
           found += r.items.length;
@@ -69,7 +69,7 @@ export default function Provider() {
         if (mine === run.current) setSBusy(false);
       }
     },
-    [id, sq, type, region]
+    [id, sq, type, region, anime]
   );
   useEffect(() => {
     setSItems([]);
@@ -99,7 +99,7 @@ export default function Provider() {
       if (!id) return;
       setLoading(true);
       setError(null);
-      const path = `/discover/${type}?with_watch_providers=${id}&watch_region=${region}&with_watch_monetization_types=flatrate|free|ads&sort_by=popularity.desc`;
+      const path = `/discover/${type}?with_watch_providers=${id}&watch_region=${region}&with_watch_monetization_types=flatrate|free|ads&sort_by=popularity.desc${anime ? '&with_genres=16&with_original_language=ja' : ''}`;
       tmdb
         .list(path, type, p)
         .then((r) => {
@@ -113,7 +113,7 @@ export default function Provider() {
         .catch((e: Error) => setError(e.message))
         .finally(() => setLoading(false));
     },
-    [id, type, region]
+    [id, type, region, anime]
   );
 
   useEffect(() => {
@@ -128,7 +128,7 @@ export default function Provider() {
     <main className="page pad-top prov-page" style={{ ['--pc' as string]: colorFor(id) }}>
       <div className="prov-bg" aria-hidden="true" />
       <div className="container">
-        <p className="crumb"><Link to="/providers" className="link"><Icon name="chevronLeft" size={14} />All providers</Link></p>
+        <p className="crumb"><Link to={anime ? '/anime' : '/providers'} className="link"><Icon name="chevronLeft" size={14} />{anime ? 'Anime' : 'All providers'}</Link></p>
         <div className="prov-head">
           {svc && <ProviderLogo s={svc} size={72} />}
           <h1 className="title">{svc?.name ?? ' '}</h1>

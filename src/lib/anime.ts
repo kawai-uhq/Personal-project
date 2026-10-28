@@ -35,3 +35,6 @@ export function animePath(kind: MediaType, o: { genre?: AGenre; sort: ASort; yea
   if (o.year) q.push(`${dk}.gte=${o.year}-01-01`, `${dk}.lte=${o.year}-12-31`);
   return `/discover/${kind}?${q.join('&')}`;
 }
+
+/** Streaming services that carry anime, in the order they're shown (TMDB provider ids; only those in the visitor's country appear). */
+export const ANIME_PROVIDERS = [283, 430, 269, 8, 9, 119, 337, 122, 15, 1899];

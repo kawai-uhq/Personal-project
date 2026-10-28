@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import Icon from './Icon';
 import type { FormEvent, KeyboardEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useSection } from '../lib/section';
 import { store } from '../lib/storage';
 import { thumbSrc, tmdb } from '../lib/tmdb';
 import { mediaKey } from '../lib/types';
@@ -89,6 +90,7 @@ export default function SearchBox({
   const [trend, setTrend] = useState<Media[]>([]);
   const [emptyOpen, setEmptyOpen] = useState(false);
 
+  const anime = useSection() === 'anime';
   const term = value.trim();
   const showEmpty = focus && emptyOpen && term.length === 0 && (recents.length > 0 || trend.length > 0);
 
@@ -106,11 +108,12 @@ export default function SearchBox({
   useEffect(() => {
     if (!emptyOpen || trend.length) return;
     let live = true;
-    tmdb.feed('trending-day').then((r) => live && setTrend(r.items.slice(0, 5))).catch(() => undefined);
+    tmdb.feed(anime ? 'anime-trending' : 'trending-day').then((r) => live && setTrend(r.items.slice(0, 5))).catch(() => undefined);
     return () => {
       live = false;
     };
-  }, [emptyOpen, trend.length]);
+  }, [emptyOpen, trend.length, anime]);
+  useEffect(() => setTrend([]), [anime]);
   const show = focus && !dismissed && term.length >= MIN_CHARS;
   const rows = items.length ? items.length + 1 : 0; // titles + the "See all" row
 
@@ -125,7 +128,7 @@ export default function SearchBox({
     const id = ++ticket.current;
     const t = window.setTimeout(() => {
       tmdb
-        .search(term)
+        .search(term, anime)
         .then((r) => {
           if (id !== ticket.current) return;
           setItems(rank(r, term).slice(0, MAX_ROWS));
@@ -141,7 +144,7 @@ export default function SearchBox({
         });
     }, DELAY_MS);
     return () => window.clearTimeout(t);
-  }, [term]);
+  }, [term, anime]);
 
   const close = () => {
     setDismissed(true);
@@ -212,7 +215,7 @@ export default function SearchBox({
         spellCheck={false}
         autoFocus={autoFocus}
         value={value}
-        placeholder="Search movies, shows, anime…"
+        placeholder={anime ? "Search anime…" : "Search movies, shows, anime…"}
         aria-label="Search"
         role="combobox"
         aria-autocomplete="list"

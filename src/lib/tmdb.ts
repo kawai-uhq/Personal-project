@@ -142,10 +142,10 @@ export const tmdb = {
     return p;
   },
   /** Title search limited to one streaming service: TMDB can't filter a search itself, so each hit's availability is checked. */
-  searchOn: async (t: MediaType, q: string, id: number, region: string, page: number) => {
+  searchOn: async (t: MediaType, q: string, id: number, region: string, page: number, anime = false) => {
     const enc = encodeURIComponent(q).replace(/[!'()*~]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
     const j = await get(`/search/${t}?query=${enc}&include_adult=false&language=en-US&page=${page}`);
-    const hits = list(j, t);
+    const hits = list(j, t).filter((m) => !anime || m.anime);
     const on = (m: Media) =>
       get(`/${t}/${m.id}/watch/providers`)
         .then((w) => {
@@ -203,10 +203,18 @@ export const tmdb = {
   trending: () => get('/trending/all/day?language=en-US').then((j) => list(j, 'all')),
   popular: (t: MediaType) => get(`/${t}/popular?language=en-US&page=1`).then((j) => list(j, t)),
   topRated: (t: MediaType) => get(`/${t}/top_rated?language=en-US&page=1`).then((j) => list(j, t)),
-  search: (q: string) => {
+  /** Search titles; with `anime`, only Japanese animation (series and films, first two result pages of each). */
+  search: (q: string, anime = false) => {
     // encodeURIComponent leaves ! ' ( ) * ~ alone; encode them too so every title is safe to send
     const enc = encodeURIComponent(q).replace(/[!'()*~]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
-    return get(`/search/multi?query=${enc}&include_adult=false&language=en-US&page=1`).then((j) => list(j, 'all'));
+    if (!anime) return get(`/search/multi?query=${enc}&include_adult=false&language=en-US&page=1`).then((j) => list(j, 'all'));
+    const one = (t: MediaType, p: number) =>
+      get(`/search/${t}?query=${enc}&include_adult=false&language=en-US&page=${p}`).then((j) => list(j, t)).catch(() => [] as Media[]);
+    return Promise.all([one('tv', 1), one('tv', 2), one('movie', 1), one('movie', 2)]).then((r) => {
+      const by = new Map<string, Media>();
+      for (const m of r.flat()) if (m.anime && !by.has(`${m.type}:${m.id}`)) by.set(`${m.type}:${m.id}`, m);
+      return [...by.values()].sort((a, b) => (b.votes ?? 0) - (a.votes ?? 0));
+    });
   },
   anime: () =>
     get(

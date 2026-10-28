@@ -1,4 +1,6 @@
 import { Suspense, lazy, useEffect } from 'react';
+import SectionSplash from './components/SectionSplash';
+import { sectionFor } from './lib/section';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import AuthModal from './components/AuthModal';
 import Navbar from './components/Navbar';
@@ -35,7 +37,8 @@ export default function App() {
   }, [pathname]);
 
   // the anime section has its own orange accent
-  const anime = pathname.startsWith('/anime');
+  const section = sectionFor(pathname);
+  const anime = section === 'anime';
   useEffect(() => {
     document.documentElement.classList.toggle('anime', anime);
     return () => document.documentElement.classList.remove('anime');
@@ -44,6 +47,7 @@ export default function App() {
   return (
     <>
       <Navbar />
+      <SectionSplash section={section} />
       <Suspense fallback={<div className="status" style={{ minHeight: '70vh' }}><div className="spinner" aria-label="Loading" /></div>}>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -58,6 +62,7 @@ export default function App() {
         <Route path="/anime" element={<AnimeHome />} />
         <Route path="/anime/explore" element={<AnimeExplore />} />
         <Route path="/anime/genres" element={<AnimeGenres />} />
+        <Route path="/anime/provider/:id" element={<Provider anime />} />
         <Route path="/anime/library" element={<MyList key="anime" anime />} />
         <Route path="/live" element={<Live />} />
         <Route path="/list" element={<MyList key="main" />} />

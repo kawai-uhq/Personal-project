@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useSection } from '../lib/section';
 import { useReminders } from '../lib/reminders';
 import { useNewEpisodes } from '../lib/useNewEpisodes';
 import { useApp } from '../state';
@@ -13,7 +14,7 @@ export default function Navbar() {
   const { session, openAuth } = useApp();
   const fresh = useNewEpisodes();
   const { due } = useReminders();
-  const anime = pathname.startsWith('/anime');
+  const anime = useSection() === 'anime';
   const dot = fresh.size + due;
   const dotTip = [fresh.size ? `${fresh.size} new episode${fresh.size > 1 ? 's' : ''}` : '', due ? `${due} release${due > 1 ? 's' : ''} out now` : ''].filter(Boolean).join(' · ');
   const [q, setQ] = useState('');

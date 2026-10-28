@@ -860,3 +860,18 @@ html.anime .htag, html.anime .nav-signin { border-color: rgba(255, 154, 46, .4);
 .tabbar { grid-auto-flow: column; grid-auto-columns: 1fr; grid-template-columns: none !important; }
 .tabbar a { min-width: 0; }
 .lib-kind { flex-wrap: wrap; }
+
+/* ---- switching between Cinema and Anime ---- */
+.splash { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 24px;
+  background: radial-gradient(70% 60% at 50% 40%, color-mix(in srgb, var(--sa) 28%, #120c18), #0b0710 75%); animation: splash-fade 1.15s ease forwards; pointer-events: all; }
+.splash.anime { --sa: #ff9a2e; }
+.splash.cinema { --sa: #ff6b57; }
+.splash svg { filter: drop-shadow(0 8px 30px color-mix(in srgb, var(--sa) 60%, transparent)); animation: splash-pop .5s cubic-bezier(.2, 1.4, .4, 1); }
+.splash h2 { margin: 14px 0 0; font-family: var(--display, 'Fredoka', sans-serif); font-size: 26px; color: #fff; }
+.splash p { margin: 0; color: var(--muted); font-size: 14px; max-width: 320px; }
+.splash-bar { width: min(220px, 60vw); height: 4px; margin-top: 16px; border-radius: 4px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.splash-bar i { display: block; height: 100%; width: 0; background: var(--sa); border-radius: 4px; animation: splash-fill .95s ease-out forwards; }
+@keyframes splash-fade { 0% { opacity: 0; } 15% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+@keyframes splash-pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes splash-fill { to { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .splash, .splash svg, .splash-bar i { animation-duration: .01s; } .splash { animation: none; } }

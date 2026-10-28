@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Grid, Status } from '../components/Rows';
 import SearchBox from '../components/SearchBox';
 import Surprise from '../components/Surprise';
+import { useSection } from '../lib/section';
 import { tmdb } from '../lib/tmdb';
 import type { Media } from '../lib/types';
 
@@ -18,21 +19,23 @@ export default function Search() {
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
   const ticket = useRef(0);
+  const anime = useSection() === 'anime';
 
   useEffect(() => {
     setQ(urlQ);
   }, [urlQ]);
 
   useEffect(() => {
-    tmdb.trending().then(setTop).catch(() => undefined);
-  }, []);
+    setTop([]);
+    (anime ? tmdb.feed('anime-trending').then((r) => r.items) : tmdb.trending()).then(setTop).catch(() => undefined);
+  }, [anime]);
 
   const run = useCallback((term: string) => {
     const id = ++ticket.current;
     setBusy(true);
     setError(null);
     tmdb
-      .search(term)
+      .search(term, anime)
       .then((r) => {
         if (id !== ticket.current) return;
         setResults(r);
@@ -43,7 +46,7 @@ export default function Search() {
         setError(e.message || "Couldn't search. Try again.");
         setBusy(false);
       });
-  }, []);
+  }, [anime]);
 
   const keepUrl = (term: string) => {
     try {
@@ -85,8 +88,8 @@ export default function Search() {
     <main className="page pad-top">
       <div className="container">
         <div className="s-hero">
-          <h1>Search Comvie</h1>
-          <p>Find your next favourite movie or series</p>
+          <h1>{anime ? 'Search Anime' : 'Search Comvie'}</h1>
+          <p>{anime ? 'Find your next favourite anime' : 'Find your next favourite movie or series'}</p>
           <div className="s-bar">
             <SearchBox
               wide

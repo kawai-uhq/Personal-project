@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Ambient from '../components/Ambient';
+import AnimeProviderRow from '../components/AnimeProviderRow';
 import Billboard from '../components/Billboard';
 import FeedRow from '../components/FeedRow';
 import { ContinueRow, HomeSkeleton, PosterRow, Status } from '../components/Rows';
@@ -37,6 +38,7 @@ export default function AnimeHome() {
     <main className="page home">
       <Ambient items={heroes} active={active} />
       <Billboard items={heroes} onActive={onActive} />
+      <AnimeProviderRow />
       <ContinueRow items={mine} onRemove={removeWatch} />
       <PosterRow title="My Anime Watchlist" items={favorites.filter((m) => m.anime)} to="/anime/library" />
       <PosterRow title="My Anime Favorites" items={loved.filter((m) => m.anime)} to="/anime/library" />
