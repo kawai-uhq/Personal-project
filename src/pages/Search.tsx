@@ -5,11 +5,12 @@ import SearchBox from '../components/SearchBox';
 import Surprise from '../components/Surprise';
 import { useSection } from '../lib/section';
 import { tmdb } from '../lib/tmdb';
+import AnimeSearch from './AnimeSearch';
 import type { Media } from '../lib/types';
 
 type Filter = 'all' | 'movie' | 'tv';
 
-export default function Search() {
+function CinemaSearch() {
   const [sp] = useSearchParams();
   const urlQ = sp.get('q') ?? '';
   const [q, setQ] = useState(urlQ);
@@ -146,4 +147,9 @@ export default function Search() {
       </div>
     </main>
   );
+}
+
+/** In the anime section the search is AniList-only. */
+export default function Search() {
+  return useSection() === 'anime' ? <AnimeSearch /> : <CinemaSearch />;
 }

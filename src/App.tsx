@@ -24,6 +24,9 @@ const Provider = lazy(() => import('./pages/Provider'));
 const AnimeHome = lazy(() => import('./pages/AnimeHome'));
 const AnimeExplore = lazy(() => import('./pages/AnimeExplore'));
 const AnimeGenres = lazy(() => import('./pages/AnimeGenres'));
+const AnimeDetail = lazy(() => import('./pages/AnimeDetail'));
+const AnimeWatch = lazy(() => import('./pages/AnimeWatch'));
+const AnimeLibrary = lazy(() => import('./pages/AnimeLibrary'));
 const Search = lazy(() => import('./pages/Search'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Watch = lazy(() => import('./pages/Watch'));
@@ -62,8 +65,9 @@ export default function App() {
         <Route path="/anime" element={<AnimeHome />} />
         <Route path="/anime/explore" element={<AnimeExplore />} />
         <Route path="/anime/genres" element={<AnimeGenres />} />
-        <Route path="/anime/provider/:id" element={<Provider anime />} />
-        <Route path="/anime/library" element={<MyList key="anime" anime />} />
+        <Route path="/anime/library" element={<AnimeLibrary />} />
+        <Route path="/anime/title/:id" element={<AnimeDetail />} />
+        <Route path="/anime/watch/:id" element={<AnimeWatch />} />
         <Route path="/live" element={<Live />} />
         <Route path="/list" element={<MyList key="main" />} />
         <Route path="/person/:id" element={<PersonPage />} />

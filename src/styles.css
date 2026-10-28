@@ -875,3 +875,34 @@ html.anime .htag, html.anime .nav-signin { border-color: rgba(255, 154, 46, .4);
 @keyframes splash-pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes splash-fill { to { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { .splash, .splash svg, .splash-bar i { animation-duration: .01s; } .splash { animation: none; } }
+
+/* ---- anime billboard ---- */
+.abb { position: relative; min-height: 520px; height: 72vh; max-height: 680px; overflow: hidden; margin-top: -8px; }
+.abb-slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity .7s ease, visibility .7s; }
+.abb-slide.on { opacity: 1; visibility: visible; }
+.abb-slide > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+.abb-slide > img.abb-cover { filter: blur(26px) brightness(.6); transform: scale(1.15); }
+.abb-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(18, 12, 24, .92) 8%, rgba(18, 12, 24, .45) 55%, rgba(18, 12, 24, .1)), linear-gradient(0deg, var(--bg) 2%, transparent 40%); }
+.abb-body { position: absolute; left: 0; bottom: 0; width: min(640px, 100%); padding: 0 var(--pad) 64px; display: flex; flex-direction: column; gap: 12px; }
+.abb-body h1 { margin: 0; font-size: clamp(28px, 4.4vw, 52px); line-height: 1.05; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.abb-genres { margin: 0; color: var(--accent); font-weight: 800; }
+.abb-desc { margin: 0; color: var(--cream); opacity: .85; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.abb-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+.abb-dots { position: absolute; right: var(--pad); bottom: 28px; display: flex; gap: 8px; }
+.abb-dots button { width: 9px; height: 9px; padding: 0; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .35); }
+.abb-dots button.on { width: 26px; border-radius: 6px; background: var(--accent); transition: width .25s; }
+@media (max-width: 760px) { .abb { height: 64vh; min-height: 440px; } .abb-body { padding-bottom: 54px; } }
+
+/* ---- anime episodes + explore tools ---- */
+.aep-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin: 6px 0 26px; }
+.aep-grid.compact { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.aep { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 12px 12px 10px; text-align: left; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--cream); min-height: 62px; }
+.aep:hover { background: var(--surface2); }
+.aep b { font-size: 14px; }
+.aep small { color: var(--muted); font-size: 11px; }
+.aep.now { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.aep.seen b { opacity: .6; }
+.aep .ep-check { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; }
+.aep-grid.compact .aep { min-height: 46px; padding: 9px 10px; }
+.aex-tools { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 18px; }
+.aex-tools input.field { flex: 1 1 220px; min-width: 0; }

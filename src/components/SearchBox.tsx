@@ -4,9 +4,13 @@ import type { FormEvent, KeyboardEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSection } from '../lib/section';
 import { store } from '../lib/storage';
+import { aniList, aniToMedia } from '../lib/anilist';
 import { thumbSrc, tmdb } from '../lib/tmdb';
 import { mediaKey } from '../lib/types';
 import type { Media } from '../lib/types';
+
+const href = (m: Media) => (m.ani ? `/anime/title/${m.id}` : `/title/${m.type}/${m.id}`);
+const thumb = (m: Media) => m.img ?? (m.poster ? thumbSrc(m.poster) : null);
 
 const MIN_CHARS = 2; // start suggesting after this many letters
 const MAX_ROWS = 7;
@@ -108,7 +112,9 @@ export default function SearchBox({
   useEffect(() => {
     if (!emptyOpen || trend.length) return;
     let live = true;
-    tmdb.feed(anime ? 'anime-trending' : 'trending-day').then((r) => live && setTrend(r.items.slice(0, 5))).catch(() => undefined);
+    (anime ? aniList({ sort: 'TRENDING_DESC', perPage: 5 }).then((r) => r.items.map(aniToMedia)) : tmdb.feed('trending-day').then((r) => r.items.slice(0, 5)))
+      .then((l) => live && setTrend(l))
+      .catch(() => undefined);
     return () => {
       live = false;
     };
@@ -127,8 +133,7 @@ export default function SearchBox({
     }
     const id = ++ticket.current;
     const t = window.setTimeout(() => {
-      tmdb
-        .search(term, anime)
+      (anime ? aniList({ search: term, perPage: 12 }).then((r) => r.items.map(aniToMedia)) : tmdb.search(term))
         .then((r) => {
           if (id !== ticket.current) return;
           setItems(rank(r, term).slice(0, MAX_ROWS));
@@ -181,7 +186,7 @@ export default function SearchBox({
       if (show && active >= 0 && active < items.length) {
         e.preventDefault();
         const m = items[active];
-        nav(`/title/${m.type}/${m.id}`);
+        nav(href(m));
         picked();
       }
     } else if (e.key === 'Escape' && (show || showEmpty)) {
@@ -286,7 +291,7 @@ export default function SearchBox({
                 {trend.map((m) => (
                   <li key={mediaKey(m)}>
                     <Link
-                      to={`/title/${m.type}/${m.id}`}
+                      to={href(m)}
                       className="suggest-item"
                       onClick={() => {
                         setEmptyOpen(false);
@@ -294,7 +299,7 @@ export default function SearchBox({
                       }}
                     >
                       <span className="suggest-thumb">
-                        {m.poster ? <img src={thumbSrc(m.poster)} alt="" width={40} height={60} loading="lazy" /> : <b>{m.title.slice(0, 1)}</b>}
+                        {thumb(m) ? <img src={thumb(m) as string} alt="" width={40} height={60} loading="lazy" /> : <b>{m.title.slice(0, 1)}</b>}
                       </span>
                       <span className="suggest-text">
                         <strong>{m.title}</strong>
@@ -323,12 +328,12 @@ export default function SearchBox({
                   className={active === i ? 'on' : ''}
                   onMouseEnter={() => setActive(i)}
                 >
-                  <Link to={`/title/${m.type}/${m.id}`} className="suggest-item" tabIndex={-1} onClick={() => {
+                  <Link to={href(m)} className="suggest-item" tabIndex={-1} onClick={() => {
                       addRecent(m.title);
                       picked();
                     }}>
                     <span className="suggest-thumb">
-                      {m.poster ? <img src={thumbSrc(m.poster)} alt="" width={40} height={60} loading="lazy" /> : <b>{m.title.slice(0, 1)}</b>}
+                      {thumb(m) ? <img src={thumb(m) as string} alt="" width={40} height={60} loading="lazy" /> : <b>{m.title.slice(0, 1)}</b>}
                     </span>
                     <span className="suggest-text">
                       <strong><Highlight text={m.title} term={term} /></strong>

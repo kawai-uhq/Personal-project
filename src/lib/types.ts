@@ -12,6 +12,9 @@ export interface Media {
   votes?: number;
   /** Japanese animation (set when TMDB gave us its genres and language) */
   anime?: boolean;
+  /** Set for AniList entries (open /anime/title/:id) with a full cover URL */
+  ani?: boolean;
+  img?: string;
 }
 
 export const mediaKey = (m: Media) => `${m.type}:${m.id}`;

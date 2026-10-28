@@ -1,51 +1,59 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import Ambient from '../components/Ambient';
-import AnimeProviderRow from '../components/AnimeProviderRow';
-import Billboard from '../components/Billboard';
-import FeedRow from '../components/FeedRow';
-import { ContinueRow, HomeSkeleton, PosterRow, Status } from '../components/Rows';
-import { tmdb } from '../lib/tmdb';
-import type { Media } from '../lib/types';
-import { useApp } from '../state';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AniFeedRow, AnimeCard } from '../components/AnimeCard';
+import AnimeBillboard from '../components/AnimeBillboard';
+import { Row, Status, HomeSkeleton } from '../components/Rows';
+import { aniList, seasonNow } from '../lib/anilist';
+import type { Ani } from '../lib/anilist';
+import { useAnimeStore } from '../lib/animeStore';
 
-const ROWS = [
-  'anime-season', 'anime-top', 'anime-popular', 'anime-upcoming', 'anime-films',
-  'anime-action', 'anime-fantasy', 'anime-romance', 'anime-scifi'
-];
-
-/** The anime section's home: billboard, continue watching, then rows of Japanese animation. */
+/** The anime section's home, powered by AniList. */
 export default function AnimeHome() {
-  const { favorites, loved, history, removeWatch } = useApp();
-  const [trending, setTrending] = useState<Media[] | null>(null);
+  const store = useAnimeStore();
+  const [hero, setHero] = useState<Ani[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [active, setActive] = useState(0);
-  const onActive = useCallback((n: number) => setActive(n), []);
 
   const load = () => {
     setError(null);
-    setTrending(null);
-    tmdb.feed('anime-trending').then((r) => setTrending(r.items)).catch((e: Error) => setError(e.message));
+    setHero(null);
+    aniList({ sort: 'TRENDING_DESC', perPage: 12 })
+      .then((r) => setHero(r.items.filter((a) => a.banner && a.desc).slice(0, 6)))
+      .catch((e: Error) => setError(e.message));
   };
   useEffect(load, []);
 
-  const mine = useMemo(() => history.filter((w) => w.media.anime), [history]);
-
   if (error) return <main className="page pad-top"><Status kind="error" text={error} retry={load} /></main>;
-  if (!trending) return <HomeSkeleton />;
-  const heroes = trending.filter((m) => m.backdrop && m.overview).slice(0, 5);
+  if (!hero) return <HomeSkeleton />;
+
+  const now = seasonNow();
+  const next = seasonNow(1);
+  const watching = store.history();
+  const list = store.list();
+  const loved = store.loved();
 
   return (
     <main className="page home">
-      <Ambient items={heroes} active={active} />
-      <Billboard items={heroes} onActive={onActive} />
-      <AnimeProviderRow />
-      <ContinueRow items={mine} onRemove={removeWatch} />
-      <PosterRow title="My Anime Watchlist" items={favorites.filter((m) => m.anime)} to="/anime/library" />
-      <PosterRow title="My Anime Favorites" items={loved.filter((m) => m.anime)} to="/anime/library" />
-      <PosterRow title="Trending Right Now" items={trending} to="/explore/anime-trending" />
-      {ROWS.map((f) => (
-        <FeedRow key={f} feed={f} />
-      ))}
+      <AnimeBillboard items={hero} />
+      {watching.length > 0 && (
+        <Row title="Continue Watching">
+          {watching.map((w) => (
+            <AnimeCard key={w.id} a={w} tag={`EP ${w.episode}`} to={`/anime/watch/${w.id}?e=${w.episode}&p=${w.server}&l=${w.lang}`} />
+          ))}
+        </Row>
+      )}
+      {list.length > 0 && <Row title="My Anime Watchlist" to="/anime/library">{list.map((a) => <AnimeCard key={a.id} a={a} />)}</Row>}
+      {loved.length > 0 && <Row title="My Anime Favorites" to="/anime/library">{loved.map((a) => <AnimeCard key={a.id} a={a} />)}</Row>}
+      <AniFeedRow title="Trending Right Now" q={{ sort: 'TRENDING_DESC' }} to="/anime/explore?sort=TRENDING_DESC" />
+      <AniFeedRow title="Popular This Season" q={{ sort: 'POPULARITY_DESC', season: now.season, seasonYear: now.year }} to={`/anime/explore?season=${now.season}&year=${now.year}`} />
+      <AniFeedRow title="Upcoming Next Season" q={{ sort: 'POPULARITY_DESC', season: next.season, seasonYear: next.year }} to={`/anime/explore?season=${next.season}&year=${next.year}`} />
+      <AniFeedRow title="All-Time Popular" q={{ sort: 'POPULARITY_DESC' }} to="/anime/explore?sort=POPULARITY_DESC" />
+      <AniFeedRow title="Highest Rated" q={{ sort: 'SCORE_DESC', popularityGreater: 60000 }} to="/anime/explore?sort=SCORE_DESC" />
+      <AniFeedRow title="Top Anime Films" q={{ sort: 'SCORE_DESC', format: 'MOVIE', popularityGreater: 20000 }} to="/anime/explore?format=MOVIE&sort=SCORE_DESC" />
+      <AniFeedRow title="High-Octane Action" q={{ sort: 'POPULARITY_DESC', genre: 'Action' }} to="/anime/explore?genre=Action" />
+      <AniFeedRow title="Epic Fantasy Worlds" q={{ sort: 'POPULARITY_DESC', genre: 'Fantasy' }} to="/anime/explore?genre=Fantasy" />
+      <AniFeedRow title="Heartwarming Romance" q={{ sort: 'POPULARITY_DESC', genre: 'Romance' }} to="/anime/explore?genre=Romance" />
+      <AniFeedRow title="Sci-Fi & Cyberpunk" q={{ sort: 'POPULARITY_DESC', genre: 'Sci-Fi' }} to="/anime/explore?genre=Sci-Fi" />
+      <p className="muted note" style={{ textAlign: 'center' }}>Anime data from <a href="https://anilist.co" target="_blank" rel="noreferrer" className="link">AniList</a>. <Link to="/anime/genres" className="link">Browse by genre</Link></p>
     </main>
   );
 }

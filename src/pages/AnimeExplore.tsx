@@ -1,65 +1,70 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Icon from '../components/Icon';
-import { Grid, GridSkeleton, Status } from '../components/Rows';
-import { A_GENRES, animePath } from '../lib/anime';
-import type { ASort } from '../lib/anime';
-import { tmdb } from '../lib/tmdb';
-import { mediaKey } from '../lib/types';
-import type { Media, MediaType } from '../lib/types';
+import { AnimeCard } from '../components/AnimeCard';
+import { GridSkeleton, Status } from '../components/Rows';
+import { FORMAT_LABEL, GENRES, STATUS_LABEL, aniList } from '../lib/anilist';
+import type { Ani } from '../lib/anilist';
 
-type Format = 'all' | MediaType;
-const YEARS = Array.from({ length: 30 }, (_, i) => String(new Date().getFullYear() + 1 - i));
+const YEARS = Array.from({ length: 40 }, (_, i) => String(new Date().getFullYear() + 1 - i));
+const SORTS: [string, string][] = [['TRENDING_DESC', 'Trending'], ['POPULARITY_DESC', 'Most Popular'], ['SCORE_DESC', 'Top Rated'], ['START_DATE_DESC', 'Newest'], ['FAVOURITES_DESC', 'Most Favourited']];
+const SEASONS = ['WINTER', 'SPRING', 'SUMMER', 'FALL'];
+const FORMATS = ['TV', 'MOVIE', 'OVA', 'ONA', 'SPECIAL'];
+const STATUSES = ['RELEASING', 'FINISHED', 'NOT_YET_RELEASED'];
+const cap = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
 
-/** Explore anime with filters: format, sort, genre and year. */
+/** Explore anime with filters (genre, year, season, format, status, sort) and a search box. */
 export default function AnimeExplore() {
   const [qs] = useSearchParams();
-  const [format, setFormat] = useState<Format>('all');
-  const [sort, setSort] = useState<ASort>('pop');
-  const [slug, setSlug] = useState(() => (A_GENRES.some((g) => g.slug === qs.get('genre')) ? (qs.get('genre') as string) : ''));
-  const [year, setYear] = useState('');
-  const [items, setItems] = useState<Media[]>([]);
+  const pick = (k: string, ok: (v: string) => boolean) => (ok(qs.get(k) ?? '') ? (qs.get(k) as string) : '');
+  const [sort, setSort] = useState(() => pick('sort', (v) => SORTS.some(([k]) => k === v)) || 'TRENDING_DESC');
+  const [genre, setGenre] = useState(() => pick('genre', (v) => GENRES.includes(v)));
+  const [year, setYear] = useState(() => pick('year', (v) => /^\d{4}$/.test(v)));
+  const [season, setSeason] = useState(() => pick('season', (v) => SEASONS.includes(v)));
+  const [format, setFormat] = useState(() => pick('format', (v) => FORMATS.includes(v)));
+  const [status, setStatus] = useState(() => pick('status', (v) => STATUSES.includes(v)));
+  const [text, setText] = useState('');
+  const [term, setTerm] = useState('');
+  const [items, setItems] = useState<Ani[]>([]);
   const [page, setPage] = useState(0);
-  const [pages, setPages] = useState(1);
+  const [more, setMore] = useState(false);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // the address can change (e.g. a genre card) without remounting this page
+  // the address can change (a genre card, a row's "Explore all") without remounting
   useEffect(() => {
-    const g = qs.get('genre');
-    setSlug(A_GENRES.some((x) => x.slug === g) ? (g as string) : '');
+    setSort(pick('sort', (v) => SORTS.some(([k]) => k === v)) || 'TRENDING_DESC');
+    setGenre(pick('genre', (v) => GENRES.includes(v)));
+    setYear(pick('year', (v) => /^\d{4}$/.test(v)));
+    setSeason(pick('season', (v) => SEASONS.includes(v)));
+    setFormat(pick('format', (v) => FORMATS.includes(v)));
+    setStatus(pick('status', (v) => STATUSES.includes(v)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qs]);
 
+  useEffect(() => {
+    const h = window.setTimeout(() => setTerm(text.trim()), 400);
+    return () => window.clearTimeout(h);
+  }, [text]);
+
   const load = useCallback(
-    async (p: number) => {
-      const genre = A_GENRES.find((g) => g.slug === slug);
-      const kinds: MediaType[] = format === 'all' ? ['tv', 'movie'] : [format];
+    (p: number) => {
       setBusy(true);
       setError(null);
-      try {
-        const parts = await Promise.all(
-          kinds.map((k) => {
-            const path = animePath(k, { genre, sort, year });
-            return path ? tmdb.list(path, k, p) : Promise.resolve({ items: [] as Media[], pages: 1 });
-          })
-        );
-        // interleave series and films so "All" isn't one kind first
-        const merged: Media[] = [];
-        for (let i = 0; i < Math.max(...parts.map((x) => x.items.length)); i++) parts.forEach((x) => x.items[i] && merged.push(x.items[i]));
-        setItems((cur) => {
-          const base = p === 1 ? [] : cur;
-          const seen = new Set(base.map(mediaKey));
-          return [...base, ...merged.filter((m) => !seen.has(mediaKey(m)))];
-        });
-        setPage(p);
-        setPages(Math.max(...parts.map((x) => x.pages)));
-      } catch (e) {
-        setError((e as Error).message);
-      } finally {
-        setBusy(false);
-      }
+      aniList({ sort, genre, seasonYear: year ? Number(year) : undefined, season, format, status, search: term, page: p, perPage: 30 })
+        .then((r) => {
+          setItems((cur) => {
+            const base = p === 1 ? [] : cur;
+            const seen = new Set(base.map((x) => x.id));
+            return [...base, ...r.items.filter((x) => !seen.has(x.id))];
+          });
+          setPage(p);
+          setMore(r.more);
+        })
+        .catch((e: Error) => setError(e.message))
+        .finally(() => setBusy(false));
     },
-    [format, sort, slug, year]
+    [sort, genre, year, season, format, status, term]
   );
 
   useEffect(() => {
@@ -68,42 +73,46 @@ export default function AnimeExplore() {
     load(1);
   }, [load]);
 
-  const dirty = format !== 'all' || sort !== 'pop' || slug !== '' || year !== '';
-
+  const dirty = genre || year || season || format || status || text || sort !== 'TRENDING_DESC';
   return (
     <main className="page pad-top">
       <div className="container mid">
         <div className="page-head">
           <div>
             <h1 className="title">Explore <span className="accent">Anime</span></h1>
-            <p className="muted">Filter series and films by genre, year and more.</p>
+            <p className="muted">Filter by genre, year, season, format and more.</p>
           </div>
-          <div className="head-tools">
-            <select className="field select dd" value={format} onChange={(e) => setFormat(e.target.value as Format)} aria-label="Format">
-              <option value="all">All Formats</option>
-              <option value="tv">Series</option>
-              <option value="movie">Films</option>
-            </select>
-            <select className="field select dd" value={sort} onChange={(e) => setSort(e.target.value as ASort)} aria-label="Sort by">
-              <option value="pop">Trending</option>
-              <option value="rated">Top Rated</option>
-              <option value="votes">Most Voted</option>
-              <option value="new">Newest</option>
-            </select>
-            <select className="field select dd" value={slug} onChange={(e) => setSlug(e.target.value)} aria-label="Genre">
-              <option value="">All Genres</option>
-              {A_GENRES.map((g) => <option key={g.slug} value={g.slug}>{g.name}</option>)}
-            </select>
-            <select className="field select dd" value={year} onChange={(e) => setYear(e.target.value)} aria-label="Year">
-              <option value="">Any Year</option>
-              {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-            </select>
-            {dirty && (
-              <button className="btn small ghost" onClick={() => { setFormat('all'); setSort('pop'); setSlug(''); setYear(''); }}>
-                <Icon name="x" size={14} />Reset
-              </button>
-            )}
-          </div>
+        </div>
+        <div className="head-tools aex-tools">
+          <input className="field" type="search" placeholder="Search anime…" value={text} onChange={(e) => setText(e.target.value)} aria-label="Search anime" />
+          <select className="field select dd" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort by" disabled={!!term}>
+            {SORTS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}
+          </select>
+          <select className="field select dd" value={genre} onChange={(e) => setGenre(e.target.value)} aria-label="Genre">
+            <option value="">All Genres</option>
+            {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
+          </select>
+          <select className="field select dd" value={year} onChange={(e) => setYear(e.target.value)} aria-label="Year">
+            <option value="">Any Year</option>
+            {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <select className="field select dd" value={season} onChange={(e) => setSeason(e.target.value)} aria-label="Season">
+            <option value="">Any Season</option>
+            {SEASONS.map((s) => <option key={s} value={s}>{cap(s)}</option>)}
+          </select>
+          <select className="field select dd" value={format} onChange={(e) => setFormat(e.target.value)} aria-label="Format">
+            <option value="">All Formats</option>
+            {FORMATS.map((f) => <option key={f} value={f}>{FORMAT_LABEL[f]}</option>)}
+          </select>
+          <select className="field select dd" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status">
+            <option value="">Any Status</option>
+            {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+          </select>
+          {dirty && (
+            <button className="btn small ghost" onClick={() => { setSort('TRENDING_DESC'); setGenre(''); setYear(''); setSeason(''); setFormat(''); setStatus(''); setText(''); }}>
+              <Icon name="x" size={14} />Reset
+            </button>
+          )}
         </div>
 
         {error && items.length === 0 ? (
@@ -111,11 +120,11 @@ export default function AnimeExplore() {
         ) : items.length === 0 && busy ? (
           <GridSkeleton />
         ) : items.length === 0 ? (
-          <Status kind="empty" text="Nothing found. Try another filter." />
+          <Status kind="empty" text="Nothing found. Try other filters." />
         ) : (
           <>
-            <Grid items={items} />
-            {page < pages && (
+            <div className="grid cards">{items.map((a) => <AnimeCard key={a.id} a={a} />)}</div>
+            {more && (
               <div className="center-row">
                 <button className="btn" disabled={busy} onClick={() => load(page + 1)}>{busy ? 'Loading…' : 'Load more'}</button>
               </div>
