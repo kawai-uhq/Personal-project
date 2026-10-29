@@ -4,7 +4,6 @@ import { AnimeCard } from '../components/AnimeCard';
 import SearchBox from '../components/SearchBox';
 import { Status } from '../components/Rows';
 import { aniList } from '../lib/anilist';
-import { store } from '../lib/storage';
 import type { Ani } from '../lib/anilist';
 
 /** Search inside the anime section: AniList only, so no movies or TV shows come up. */
@@ -86,7 +85,7 @@ export default function AnimeSearch() {
         ) : items === null ? (
           <Status kind="loading" />
         ) : items.length === 0 ? (
-          <Status kind="empty" text={`No anime found for "${term}".${store.getAdult() ? '' : ' Titles marked 18+ are hidden: you can show them with “Show 18+ anime” in Settings.'}`} />
+          <Status kind="empty" text={`No anime found for "${term}".`} />
         ) : (
           <>
             <p className="muted" style={{ margin: '4px 2px 14px' }}>{items.length}{more ? '+' : ''} results</p>
