@@ -58,7 +58,7 @@ export default function Navbar() {
             value={q}
             onChange={setQ}
             onSubmit={(t) => {
-              nav(`/search?q=${encodeURIComponent(t)}`);
+              nav(`${anime ? '/anime/search' : '/search'}?q=${encodeURIComponent(t)}`);
               setQ('');
             }}
             onPick={() => setQ('')}
@@ -79,7 +79,7 @@ export default function Navbar() {
       {anime ? (
         <nav className="tabbar" aria-label="Anime tabs">
           <NavLink to="/anime" end><Icon name="flame" size={18} /><span>Anime</span></NavLink>
-          <NavLink to="/search"><Icon name="search" size={18} /><span>Search</span></NavLink>
+          <NavLink to="/anime/search"><Icon name="search" size={18} /><span>Search</span></NavLink>
           <NavLink to="/anime/explore"><Icon name="compass" size={18} /><span>Explore</span></NavLink>
           <NavLink to="/anime/genres"><Icon name="grid" size={18} /><span>Genres</span></NavLink>
           <NavLink to="/anime/library"><Icon name="bookmark" size={18} /><span>Library</span></NavLink>

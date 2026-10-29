@@ -27,6 +27,7 @@ const AnimeGenres = lazy(() => import('./pages/AnimeGenres'));
 const AnimeDetail = lazy(() => import('./pages/AnimeDetail'));
 const AnimeWatch = lazy(() => import('./pages/AnimeWatch'));
 const AnimeLibrary = lazy(() => import('./pages/AnimeLibrary'));
+const AnimeSearch = lazy(() => import('./pages/AnimeSearch'));
 const Search = lazy(() => import('./pages/Search'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Watch = lazy(() => import('./pages/Watch'));
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="/provider/:id" element={<Provider />} />
         <Route path="/providers" element={<Providers />} />
         <Route path="/anime" element={<AnimeHome />} />
+        <Route path="/anime/search" element={<AnimeSearch />} />
         <Route path="/anime/explore" element={<AnimeExplore />} />
         <Route path="/anime/genres" element={<AnimeGenres />} />
         <Route path="/anime/library" element={<AnimeLibrary />} />
