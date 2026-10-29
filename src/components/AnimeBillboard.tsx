@@ -19,7 +19,7 @@ export default function AnimeBillboard({ items, onActive }: { items: Ani[]; onAc
   }, [i, n, paused]);
   if (!n) return null;
   return (
-    <section className="abb" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+    <section className={`abb ${paused ? 'paused' : ''}`} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       {items.map((a, k) => (
         <div key={a.id} className={`abb-slide ${k === i ? 'on' : ''}`} aria-hidden={k !== i}>
           <img src={a.banner || a.cover} alt="" className={a.banner ? '' : 'abb-cover'} loading={k === 0 ? 'eager' : 'lazy'} />
@@ -42,10 +42,23 @@ export default function AnimeBillboard({ items, onActive }: { items: Ani[]; onAc
         </div>
       ))}
       {n > 1 && (
-        <div className="abb-dots">
+        <div className="dots" role="tablist" aria-label="Choose a featured anime">
+          <button className="dot-arrow prev" aria-label="Previous anime" onClick={() => setI((x) => (x - 1 + n) % n)}>
+            <Icon name="chevronLeft" size={16} />
+          </button>
           {items.map((a, k) => (
-            <button key={a.id} className={k === i ? 'on' : ''} aria-label={`Show ${a.title}`} onClick={() => setI(k)} />
+            <button key={a.id} role="tab" aria-selected={k === i} aria-label={`Show ${a.title}`} className={`dot ${k === i ? 'on' : ''}`} onClick={() => setI(k)}>
+              {k === i && (
+                <svg key={i} className="dot-ring" viewBox="0 0 28 28" aria-hidden="true">
+                  <circle className="trk" cx="14" cy="14" r="11" />
+                  <circle className="arc" cx="14" cy="14" r="11" />
+                </svg>
+              )}
+            </button>
           ))}
+          <button className="dot-arrow next" aria-label="Next anime" onClick={() => setI((x) => (x + 1) % n)}>
+            <Icon name="chevronRight" size={16} />
+          </button>
         </div>
       )}
     </section>

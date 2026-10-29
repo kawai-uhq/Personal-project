@@ -910,3 +910,9 @@ html.anime .htag, html.anime .nav-signin { border-color: rgba(255, 154, 46, .4);
 /* Anime home: the billboard melts into the frosted-glass backdrop like the cinema home */
 .home .abb-slide > img { -webkit-mask-image: linear-gradient(180deg, #000 68%, transparent 100%); mask-image: linear-gradient(180deg, #000 68%, transparent 100%); }
 .home .abb-shade { background: linear-gradient(90deg, rgba(18, 12, 24, .85), transparent 65%), linear-gradient(0deg, rgba(18, 12, 24, 0) 0%, rgba(18, 12, 24, .22) 55%, rgba(18, 12, 24, .5)); }
+
+/* Anime billboard: same round pager with a progress ring as the cinema home; no visible seam at the bottom */
+.abb .dots { bottom: 28px; }
+.abb.paused .dot-ring .arc { animation-play-state: paused; }
+.home .abb-slide > img, .home .abb-shade { -webkit-mask-image: linear-gradient(180deg, #000 45%, transparent 100%); mask-image: linear-gradient(180deg, #000 45%, transparent 100%); }
+.home .abb-shade { background: linear-gradient(90deg, rgba(18, 12, 24, .85), transparent 65%), linear-gradient(0deg, rgba(18, 12, 24, .25), transparent 50%); }
