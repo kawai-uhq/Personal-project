@@ -5,10 +5,13 @@ import { FORMAT_LABEL, STATUS_LABEL } from '../lib/anilist';
 import type { Ani } from '../lib/anilist';
 
 /** Rotating billboard for anime (banner art when AniList has it). */
-export default function AnimeBillboard({ items }: { items: Ani[] }) {
+export default function AnimeBillboard({ items, onActive }: { items: Ani[]; onActive?: (index: number) => void }) {
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
   const n = items.length;
+  useEffect(() => {
+    onActive?.(i);
+  }, [i, onActive]);
   useEffect(() => {
     if (n < 2 || paused) return;
     const t = window.setTimeout(() => setI((x) => (x + 1) % n), 7000);

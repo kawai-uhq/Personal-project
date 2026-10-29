@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import Ambient from '../components/Ambient';
 import { AniFeedRow, AnimeCard } from '../components/AnimeCard';
 import AnimeBillboard from '../components/AnimeBillboard';
 import { Row, Status, HomeSkeleton } from '../components/Rows';
@@ -11,6 +12,8 @@ export default function AnimeHome() {
   const store = useAnimeStore();
   const [hero, setHero] = useState<Ani[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [active, setActive] = useState(0);
+  const onActive = useCallback((n: number) => setActive(n), []);
 
   const load = () => {
     setError(null);
@@ -32,7 +35,8 @@ export default function AnimeHome() {
 
   return (
     <main className="page home">
-      <AnimeBillboard items={hero} />
+      <Ambient urls={hero.map((a) => a.banner || a.cover)} active={active} />
+      <AnimeBillboard items={hero} onActive={onActive} />
       {watching.length > 0 && (
         <Row title="Continue Watching">
           {watching.map((w) => (
