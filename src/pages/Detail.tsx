@@ -11,6 +11,7 @@ import { IMG, backdropSrc, posterSrc, profileSrc, tmdb } from '../lib/tmdb';
 import { mediaKey } from '../lib/types';
 import type { CastMember, Details, Episode, Media, MediaType } from '../lib/types';
 import { useApp } from '../state';
+import Select from '../components/Select';
 
 const fmtDate = (d: string) =>
   d ? new Date(d + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
@@ -166,11 +167,11 @@ export default function DetailPage() {
         <div className="container">
           <div className="season-head">
             <h2 className="section">Episodes &amp; Seasons</h2>
-            <select className="field select" value={season} onChange={(e) => setSeason(Number(e.target.value))} aria-label="Season">
+            <Select className="field select" value={season} onChange={(e) => setSeason(Number(e.target.value))} aria-label="Season">
               {d.seasons.map((s) => (
                 <option key={s.number} value={s.number}>{s.name} ({s.episodeCount} episodes)</option>
               ))}
-            </select>
+            </Select>
           </div>
           <p className="ep-sub">Select a season to view detailed episode list</p>
           <div className="ep-list">

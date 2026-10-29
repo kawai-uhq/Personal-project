@@ -10,6 +10,7 @@ import { animeServers, serverAt, serverNo } from '../lib/animeProviders';
 import type { Lang } from '../lib/animeProviders';
 import { animeStore, resumeFrom, useAnimeStore } from '../lib/animeStore';
 import { store as settings } from '../lib/storage';
+import Select from '../components/Select';
 
 const CHUNK = 100;
 
@@ -213,11 +214,11 @@ export default function AnimeWatch() {
             <div className="season-head">
               <h2 className="section">Episodes</h2>
               {ranges > 1 && (
-                <select className="field select dd" value={rangeNow} onChange={(e) => setRange(Number(e.target.value))} aria-label="Episode range">
+                <Select className="field select dd" value={rangeNow} onChange={(e) => setRange(Number(e.target.value))} aria-label="Episode range">
                   {Array.from({ length: ranges }, (_, i) => (
                     <option key={i} value={i}>{i * CHUNK + 1} – {Math.min((i + 1) * CHUNK, nums.length)}</option>
                   ))}
-                </select>
+                </Select>
               )}
             </div>
             <div className="aep-grid compact">

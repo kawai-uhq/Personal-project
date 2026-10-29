@@ -10,6 +10,7 @@ import { store } from '../lib/storage';
 import { IMG, posterSrc, tmdb } from '../lib/tmdb';
 import type { Details, Episode, Media, MediaType } from '../lib/types';
 import { useApp } from '../state';
+import Select from '../components/Select';
 
 export default function Watch() {
   const { type, id } = useParams();
@@ -324,11 +325,11 @@ export default function Watch() {
                 >
                   <Icon name="check" size={14} />{eps.length > 0 && eps.every((x) => isWatched('tv', mid, viewSeason, x.number)) ? 'Unmark season' : 'Mark season watched'}
                 </button>
-                <select className="field select dd" value={viewSeason} onChange={(e) => setViewSeason(Number(e.target.value))} aria-label="Season">
+                <Select className="field select dd" value={viewSeason} onChange={(e) => setViewSeason(Number(e.target.value))} aria-label="Season">
                   {d.seasons.map((s) => (
                     <option key={s.number} value={s.number}>{s.name} ({s.episodeCount} Ep)</option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="ep-list">
                 {eps.map((e) => {

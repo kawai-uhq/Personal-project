@@ -5,6 +5,7 @@ import { AnimeCard } from '../components/AnimeCard';
 import { GridSkeleton, Status } from '../components/Rows';
 import { FORMAT_LABEL, GENRES, STATUS_LABEL, aniList } from '../lib/anilist';
 import type { Ani } from '../lib/anilist';
+import Select from '../components/Select';
 
 const YEARS = Array.from({ length: 40 }, (_, i) => String(new Date().getFullYear() + 1 - i));
 const SORTS: [string, string][] = [['TRENDING_DESC', 'Trending'], ['POPULARITY_DESC', 'Most Popular'], ['SCORE_DESC', 'Top Rated'], ['START_DATE_DESC', 'Newest'], ['FAVOURITES_DESC', 'Most Favourited']];
@@ -93,39 +94,39 @@ export default function AnimeExplore() {
           </div>
           <div className="aex-fields">
             {field('Sort By', (
-              <select className="field select" value={sort} onChange={(e) => setSort(e.target.value)}>
+              <Select className="field select" value={sort} onChange={(e) => setSort(e.target.value)}>
                 {SORTS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}
-              </select>
+              </Select>
             ))}
             {field('Genre', (
-              <select className="field select" value={genre} onChange={(e) => setGenre(e.target.value)}>
+              <Select className="field select" value={genre} onChange={(e) => setGenre(e.target.value)}>
                 <option value="">All Genres</option>
                 {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
-              </select>
+              </Select>
             ))}
             {field('Format', (
-              <select className="field select" value={format} onChange={(e) => setFormat(e.target.value)}>
+              <Select className="field select" value={format} onChange={(e) => setFormat(e.target.value)}>
                 <option value="">All Formats</option>
                 {FORMATS.map((f) => <option key={f} value={f}>{FORMAT_LABEL[f]}</option>)}
-              </select>
+              </Select>
             ))}
             {field('Season', (
-              <select className="field select" value={season} onChange={(e) => setSeason(e.target.value)}>
+              <Select className="field select" value={season} onChange={(e) => setSeason(e.target.value)}>
                 <option value="">All Seasons</option>
                 {SEASONS.map((s) => <option key={s} value={s}>{cap(s)}</option>)}
-              </select>
+              </Select>
             ))}
             {field('Year', (
-              <select className="field select" value={year} onChange={(e) => setYear(e.target.value)}>
+              <Select className="field select" value={year} onChange={(e) => setYear(e.target.value)}>
                 <option value="">All Years</option>
                 {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-              </select>
+              </Select>
             ))}
             {field('Status', (
-              <select className="field select" value={status} onChange={(e) => setStatus(e.target.value)}>
+              <Select className="field select" value={status} onChange={(e) => setStatus(e.target.value)}>
                 <option value="">Any Status</option>
                 {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-              </select>
+              </Select>
             ))}
           </div>
         </section>

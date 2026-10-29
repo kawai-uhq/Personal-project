@@ -6,6 +6,7 @@ import { Status } from '../components/Rows';
 import { countryName, flag, loadChannels } from '../lib/iptv';
 import type { Channel } from '../lib/iptv';
 import { store } from '../lib/storage';
+import Select from '../components/Select';
 
 const PAGE = 48;
 const BAD_MS = 3 * 24 * 3600 * 1000;
@@ -178,12 +179,12 @@ export default function Live() {
           <>
             <div className="live-filters" ref={listTop}>
               <input className="field" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search channels by name, country or category…" aria-label="Search channels" />
-              <select className="field select" value={country} onChange={(e) => setCountry(e.target.value)} aria-label="Country">
+              <Select className="field select" value={country} onChange={(e) => setCountry(e.target.value)} aria-label="Country">
                 <option value="">All countries</option>
                 {countries.map((c) => (
                   <option key={c.code} value={c.code}>{flag(c.code)} {c.name}</option>
                 ))}
-              </select>
+              </Select>
               <label className="radio toggle">
                 <input type="checkbox" checked={httpsOnly} onChange={(e) => setHttpsOnly(e.target.checked)} />
                 <span>HTTPS only</span>

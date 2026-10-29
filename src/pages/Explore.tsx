@@ -7,6 +7,7 @@ import { genresFor } from '../lib/genres';
 import { FEEDS, tmdb } from '../lib/tmdb';
 import { mediaKey } from '../lib/types';
 import type { Media, MediaType } from '../lib/types';
+import Select from '../components/Select';
 
 const TABS: Record<MediaType, { feed: string; label: string }[]> = {
   movie: [
@@ -151,33 +152,33 @@ export default function Explore({ kind }: { kind?: MediaType }) {
           {kind && (
             <div className="head-tools">
               <Surprise type={kind} genre={genre} />
-              <select className="field select dd" value={genre} onChange={(e) => setGenre(e.target.value)} aria-label="Genre">
+              <Select className="field select dd" value={genre} onChange={(e) => setGenre(e.target.value)} aria-label="Genre">
                 <option value="">{kind === 'tv' ? 'All TV Genres' : 'All Genres'}</option>
                 {genresFor(kind).map((g) => (
                   <option key={g.id} value={g.id}>{g.name}</option>
                 ))}
-              </select>
-              <select className="field select dd" value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort by">
+              </Select>
+              <Select className="field select dd" value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort by">
                 <option value="pop">Most Popular</option>
                 <option value="rated">Top Rated</option>
                 <option value="new">Newest</option>
-              </select>
-              <select className="field select dd" value={year} onChange={(e) => setYear(e.target.value)} aria-label="Year">
+              </Select>
+              <Select className="field select dd" value={year} onChange={(e) => setYear(e.target.value)} aria-label="Year">
                 <option value="">Any Year</option>
                 {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
                 <option value="2010s">2010s</option>
                 <option value="2000s">2000s</option>
                 <option value="1990s">1990s</option>
                 <option value="old">Before 1990</option>
-              </select>
-              <select className="field select dd" value={minRating} onChange={(e) => setMinRating(e.target.value)} aria-label="Minimum rating">
+              </Select>
+              <Select className="field select dd" value={minRating} onChange={(e) => setMinRating(e.target.value)} aria-label="Minimum rating">
                 <option value="">Any Rating</option>
                 {RATINGS.map((r) => <option key={r} value={r}>{r}+ rating</option>)}
-              </select>
-              <select className="field select dd" value={lang} onChange={(e) => setLang(e.target.value)} aria-label="Language">
+              </Select>
+              <Select className="field select dd" value={lang} onChange={(e) => setLang(e.target.value)} aria-label="Language">
                 <option value="">Any Language</option>
                 {LANGS.map(([c, n]) => <option key={c} value={c}>{n}</option>)}
-              </select>
+              </Select>
               {custom && (
                 <button className="btn small ghost" onClick={() => { setGenre(''); setSort('pop'); setYear(''); setMinRating(''); setLang(''); }}>
                   <Icon name="x" size={14} />Reset

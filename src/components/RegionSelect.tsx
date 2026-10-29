@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRegion } from '../lib/region';
 import { tmdb } from '../lib/tmdb';
+import Select from './Select';
 
 /** Country picker for the streaming catalogues (shared choice, remembered on this device). */
 export default function RegionSelect() {
@@ -11,10 +12,10 @@ export default function RegionSelect() {
   }, []);
   const opts = list.length ? list : [{ code: value, name: value }];
   return (
-    <select className="field select dd" value={value} onChange={(e) => setValue(e.target.value)} aria-label="Country">
+    <Select className="field select dd" value={value} onChange={(e) => setValue(e.target.value)} aria-label="Country">
       {opts.map((r) => (
         <option key={r.code} value={r.code}>{r.name}</option>
       ))}
-    </select>
+    </Select>
   );
 }

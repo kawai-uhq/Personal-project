@@ -9,6 +9,7 @@ import { FORMAT_LABEL, STATUS_LABEL, aniFull, availableEpisodes } from '../lib/a
 import type { AniFull } from '../lib/anilist';
 import { animeStore, useAnimeStore } from '../lib/animeStore';
 import { clock } from '../lib/progress';
+import Select from '../components/Select';
 
 const CHUNK = 100;
 
@@ -118,11 +119,11 @@ export default function AnimeDetail() {
         <div className="season-head">
           <h2 className="section">Episodes</h2>
           {ranges > 1 && (
-            <select className="field select" value={range} onChange={(e) => setRange(Number(e.target.value))} aria-label="Episode range">
+            <Select className="field select" value={range} onChange={(e) => setRange(Number(e.target.value))} aria-label="Episode range">
               {Array.from({ length: ranges }, (_, i) => (
                 <option key={i} value={i}>{i * CHUNK + 1} – {Math.min((i + 1) * CHUNK, nums.length)}</option>
               ))}
-            </select>
+            </Select>
           )}
         </div>
         {nums.length === 0 ? (
