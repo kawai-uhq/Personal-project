@@ -169,16 +169,16 @@ export interface AniQuery {
 }
 
 /** A page of anime. Titles AniList marks as adult are left out unless "Show 18+ anime" is on in Settings. */
-export async function aniList(q: AniQuery): Promise<{ items: Ani[]; more: boolean }> {
+export async function aniList(q: AniQuery): Promise<{ items: Ani[]; more: boolean; last: number }> {
   const query = `query($page:Int,$perPage:Int,$sort:[MediaSort],$search:String,$genre:String,$season:MediaSeason,$seasonYear:Int,$format:MediaFormat,$status:MediaStatus,$pg:Int,$adult:Boolean){
-    Page(page:$page, perPage:$perPage){ pageInfo{ hasNextPage }
+    Page(page:$page, perPage:$perPage){ pageInfo{ hasNextPage lastPage }
       media(type:ANIME, isAdult:$adult, sort:$sort, search:$search, genre:$genre, season:$season, seasonYear:$seasonYear, format:$format, status:$status, popularity_greater:$pg){ ${MEDIA} } } }`;
   const { sort, popularityGreater, ...rest } = q;
   const vars: Record<string, unknown> = { page: 1, perPage: 24, ...rest, pg: popularityGreater, adult: store.getAdult() ? undefined : false };
   if (sort && !q.search) vars.sort = [sort];
   Object.keys(vars).forEach((k) => (vars[k] === undefined || vars[k] === '') && delete vars[k]);
   const d = await gql(query, vars);
-  return { items: ((d?.Page?.media ?? []) as any[]).map(mapAni), more: !!d?.Page?.pageInfo?.hasNextPage };
+  return { items: ((d?.Page?.media ?? []) as any[]).map(mapAni), more: !!d?.Page?.pageInfo?.hasNextPage, last: d?.Page?.pageInfo?.lastPage ?? 1 };
 }
 
 export async function aniFull(id: number): Promise<AniFull> {

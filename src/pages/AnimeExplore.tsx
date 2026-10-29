@@ -23,11 +23,9 @@ export default function AnimeExplore() {
   const [season, setSeason] = useState(() => pick('season', (v) => SEASONS.includes(v)));
   const [format, setFormat] = useState(() => pick('format', (v) => FORMATS.includes(v)));
   const [status, setStatus] = useState(() => pick('status', (v) => STATUSES.includes(v)));
-  const [text, setText] = useState('');
-  const [term, setTerm] = useState('');
   const [items, setItems] = useState<Ani[]>([]);
-  const [page, setPage] = useState(0);
-  const [more, setMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [last, setLast] = useState(1);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,93 +40,110 @@ export default function AnimeExplore() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qs]);
 
-  useEffect(() => {
-    const h = window.setTimeout(() => setTerm(text.trim()), 400);
-    return () => window.clearTimeout(h);
-  }, [text]);
-
   const load = useCallback(
     (p: number) => {
       setBusy(true);
       setError(null);
-      aniList({ sort, genre, seasonYear: year ? Number(year) : undefined, season, format, status, search: term, page: p, perPage: 30 })
+      aniList({ sort, genre, seasonYear: year ? Number(year) : undefined, season, format, status, page: p, perPage: 30 })
         .then((r) => {
-          setItems((cur) => {
-            const base = p === 1 ? [] : cur;
-            const seen = new Set(base.map((x) => x.id));
-            return [...base, ...r.items.filter((x) => !seen.has(x.id))];
-          });
+          setItems(r.items);
           setPage(p);
-          setMore(r.more);
+          setLast(Math.max(r.last, 1));
         })
         .catch((e: Error) => setError(e.message))
         .finally(() => setBusy(false));
     },
-    [sort, genre, year, season, format, status, term]
+    [sort, genre, year, season, format, status]
   );
 
+  // any filter change starts again from page 1
   useEffect(() => {
-    setItems([]);
-    setPage(0);
     load(1);
   }, [load]);
 
-  const dirty = genre || year || season || format || status || text || sort !== 'TRENDING_DESC';
+  const go = (p: number) => {
+    load(p);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const dirty = genre || year || season || format || status || sort !== 'TRENDING_DESC';
+  const field = (label: string, el: JSX.Element) => (
+    <label className="aex-field"><span className="aex-label">{label}</span>{el}</label>
+  );
   return (
     <main className="page pad-top">
       <div className="container mid">
-        <div className="page-head">
+        <header className="aex-head">
           <div>
-            <h1 className="title">Explore <span className="accent">Anime</span></h1>
-            <p className="muted">Filter by genre, year, season, format and more.</p>
+            <span className="aex-eyebrow"><Icon name="flame" size={14} />ANIME CATALOG</span>
+            <h1 className="title">Explore Anime <span className="accent">Universe</span></h1>
+            <p className="muted">Filter through thousands of anime series, feature films, and seasonal releases.</p>
           </div>
-        </div>
-        <div className="head-tools aex-tools">
-          <input className="field" type="search" placeholder="Search anime…" value={text} onChange={(e) => setText(e.target.value)} aria-label="Search anime" />
-          <select className="field select dd" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort by" disabled={!!term}>
-            {SORTS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}
-          </select>
-          <select className="field select dd" value={genre} onChange={(e) => setGenre(e.target.value)} aria-label="Genre">
-            <option value="">All Genres</option>
-            {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
-          </select>
-          <select className="field select dd" value={year} onChange={(e) => setYear(e.target.value)} aria-label="Year">
-            <option value="">Any Year</option>
-            {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <select className="field select dd" value={season} onChange={(e) => setSeason(e.target.value)} aria-label="Season">
-            <option value="">Any Season</option>
-            {SEASONS.map((s) => <option key={s} value={s}>{cap(s)}</option>)}
-          </select>
-          <select className="field select dd" value={format} onChange={(e) => setFormat(e.target.value)} aria-label="Format">
-            <option value="">All Formats</option>
-            {FORMATS.map((f) => <option key={f} value={f}>{FORMAT_LABEL[f]}</option>)}
-          </select>
-          <select className="field select dd" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status">
-            <option value="">Any Status</option>
-            {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-          </select>
-          {dirty && (
-            <button className="btn small ghost" onClick={() => { setSort('TRENDING_DESC'); setGenre(''); setYear(''); setSeason(''); setFormat(''); setStatus(''); setText(''); }}>
-              <Icon name="x" size={14} />Reset
-            </button>
-          )}
-        </div>
+          {!error && <span className="aex-badge">Page {page} of {last}</span>}
+        </header>
+
+        <section className="aex-panel" aria-label="Filter and sort">
+          <div className="aex-panel-head">
+            <span><Icon name="filter" size={14} />Filter &amp; Sort</span>
+            {dirty && (
+              <button className="aex-reset" onClick={() => { setSort('TRENDING_DESC'); setGenre(''); setYear(''); setSeason(''); setFormat(''); setStatus(''); }}>
+                <Icon name="x" size={13} />Reset
+              </button>
+            )}
+          </div>
+          <div className="aex-fields">
+            {field('Sort By', (
+              <select className="field select" value={sort} onChange={(e) => setSort(e.target.value)}>
+                {SORTS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}
+              </select>
+            ))}
+            {field('Genre', (
+              <select className="field select" value={genre} onChange={(e) => setGenre(e.target.value)}>
+                <option value="">All Genres</option>
+                {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
+              </select>
+            ))}
+            {field('Format', (
+              <select className="field select" value={format} onChange={(e) => setFormat(e.target.value)}>
+                <option value="">All Formats</option>
+                {FORMATS.map((f) => <option key={f} value={f}>{FORMAT_LABEL[f]}</option>)}
+              </select>
+            ))}
+            {field('Season', (
+              <select className="field select" value={season} onChange={(e) => setSeason(e.target.value)}>
+                <option value="">All Seasons</option>
+                {SEASONS.map((s) => <option key={s} value={s}>{cap(s)}</option>)}
+              </select>
+            ))}
+            {field('Year', (
+              <select className="field select" value={year} onChange={(e) => setYear(e.target.value)}>
+                <option value="">All Years</option>
+                {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
+            ))}
+            {field('Status', (
+              <select className="field select" value={status} onChange={(e) => setStatus(e.target.value)}>
+                <option value="">Any Status</option>
+                {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+              </select>
+            ))}
+          </div>
+        </section>
 
         {error && items.length === 0 ? (
-          <Status kind="error" text={error} retry={() => load(1)} />
+          <Status kind="error" text={error} retry={() => load(page)} />
         ) : items.length === 0 && busy ? (
           <GridSkeleton />
         ) : items.length === 0 ? (
           <Status kind="empty" text="Nothing found. Try other filters." />
         ) : (
           <>
-            <div className="grid cards">{items.map((a) => <AnimeCard key={a.id} a={a} />)}</div>
-            {more && (
-              <div className="center-row">
-                <button className="btn" disabled={busy} onClick={() => load(page + 1)}>{busy ? 'Loading…' : 'Load more'}</button>
-              </div>
-            )}
+            <div className={`grid cards ${busy ? 'aex-busy' : ''}`}>{items.map((a) => <AnimeCard key={a.id} a={a} />)}</div>
+            <nav className="aex-pager" aria-label="Pages">
+              <button className="aex-pg" disabled={busy || page <= 1} onClick={() => go(page - 1)}><Icon name="chevronLeft" size={14} />Previous</button>
+              <span className="aex-pg cur" aria-current="page">{page} / {last}</span>
+              <button className="aex-pg" disabled={busy || page >= last} onClick={() => go(page + 1)}>Next<Icon name="chevronRight" size={14} /></button>
+            </nav>
           </>
         )}
       </div>
