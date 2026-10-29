@@ -17,7 +17,6 @@ export default function AnimeSearch() {
   const [more, setMore] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [all, setAll] = useState(false);
   const ticket = useRef(0);
 
   useEffect(() => setQ(urlQ), [urlQ]);
@@ -65,10 +64,6 @@ export default function AnimeSearch() {
   }, [q, run]);
 
   const term = q.trim();
-  // later seasons hide behind their first season (open it to switch season)
-  const ids = new Set((items ?? []).map((x) => x.id));
-  const shown = (items ?? []).filter((x) => all || !x.pre.some((p) => ids.has(p)));
-  const hidden = (items ?? []).length - shown.length;
   return (
     <main className="page pad-top">
       <div className="container">
@@ -93,12 +88,8 @@ export default function AnimeSearch() {
           <Status kind="empty" text={`No anime found for "${term}".`} />
         ) : (
           <>
-            <p className="muted" style={{ margin: '4px 2px 14px' }}>
-              {shown.length}{more ? '+' : ''} results
-              {hidden > 0 && <> · {hidden} later season{hidden === 1 ? '' : 's'} grouped under the first season. <button className="link" onClick={() => setAll(true)}>Show every season</button></>}
-              {all && <> · <button className="link" onClick={() => setAll(false)}>Group seasons</button></>}
-            </p>
-            <div className="grid cards">{shown.map((a) => <AnimeCard key={a.id} a={a} />)}</div>
+            <p className="muted" style={{ margin: '4px 2px 14px' }}>{items.length}{more ? '+' : ''} results</p>
+            <div className="grid cards">{items.map((a) => <AnimeCard key={a.id} a={a} />)}</div>
             {more && (
               <div className="center-row">
                 <button className="btn" disabled={busy} onClick={() => run(term, page + 1)}>{busy ? 'Loading…' : 'Load more'}</button>
