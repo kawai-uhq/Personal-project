@@ -30,6 +30,8 @@ const SANDBOX: Record<Mode, string | undefined> = {
   off: undefined
 };
 
+const LANG_NAME: Record<Lang, string> = { sub: 'Sub', dub: 'Dub', hsub: 'Hard-sub' };
+
 /** The anime player page: server and language bar, episode list and recommendations. */
 export default function AnimeWatch() {
   const { id } = useParams();
