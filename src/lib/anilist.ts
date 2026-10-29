@@ -32,33 +32,92 @@ export interface AniFull extends Ani {
   recs: Ani[];
 }
 
-const URL = 'https://graphql.anilist.co';
+const DIRECT = 'https://graphql.anilist.co';
 const cache = new Map<string, Promise<any>>();
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const hash = (s: string) => {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36) + s.length.toString(36);
+};
+
+/** Last good answers are kept on the device, so a busy AniList still shows something. */
+const SAVED = 'comvie.ani.';
+function savedGet(key: string): any {
+  try {
+    const raw = localStorage.getItem(SAVED + key);
+    return raw ? JSON.parse(raw).d : undefined;
+  } catch {
+    return undefined;
+  }
+}
+function savedSet(key: string, d: unknown) {
+  try {
+    const idxKey = SAVED + 'index';
+    const idx: string[] = JSON.parse(localStorage.getItem(idxKey) || '[]').filter((k: string) => k !== key);
+    idx.push(key);
+    while (idx.length > 40) localStorage.removeItem(SAVED + idx.shift());
+    localStorage.setItem(SAVED + key, JSON.stringify({ d }));
+    localStorage.setItem(idxKey, JSON.stringify(idx));
+  } catch {
+    /* storage full or blocked */
+  }
+}
+
+async function send(query: string, variables: Record<string, unknown>): Promise<Response> {
+  // Preferred: our own cached relay. Fallback: AniList directly.
+  try {
+    const r = await fetch('/api/anime?q=' + encodeURIComponent(JSON.stringify({ query, variables })));
+    if (r.status !== 404 && r.status < 500) return r;
+  } catch {
+    /* fall through */
+  }
+  return fetch(DIRECT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ query, variables })
+  });
+}
+
 async function gql<T = any>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
-  const key = query + JSON.stringify(variables);
+  const key = hash(query + JSON.stringify(variables));
   const hit = cache.get(key);
   if (hit) return hit;
   const p = (async () => {
-    let r: Response;
-    try {
-      r = await fetch(URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ query, variables })
-      });
-    } catch {
-      throw new Error("Can't reach AniList. Check your internet connection.");
+    let lastErr = 'AniList is busy right now. Wait a minute and try again.';
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let r: Response;
+      try {
+        r = await send(query, variables);
+      } catch {
+        lastErr = "Can't reach AniList. Check your internet connection.";
+        break;
+      }
+      if (r.status === 429) {
+        const wait = Math.min(Math.max(Number(r.headers.get('retry-after')) || 0, 2 + attempt * 3), 12);
+        if (attempt < 2) {
+          await sleep(wait * 1000);
+          continue;
+        }
+        break;
+      }
+      let j: any = null;
+      try {
+        j = await r.json();
+      } catch {
+        /* not json */
+      }
+      if (!r.ok || j?.errors) {
+        lastErr = j?.errors?.[0]?.message || j?.error || `AniList error (${r.status}).`;
+        break;
+      }
+      savedSet(key, j.data);
+      return j.data as T;
     }
-    if (r.status === 429) throw new Error('AniList is busy right now. Wait a minute and try again.');
-    let j: any = null;
-    try {
-      j = await r.json();
-    } catch {
-      /* not json */
-    }
-    if (!r.ok || j?.errors) throw new Error(j?.errors?.[0]?.message || `AniList error (${r.status}).`);
-    return j.data as T;
+    const old = savedGet(key);
+    if (old !== undefined) return old as T;
+    throw new Error(lastErr);
   })();
   cache.set(key, p);
   p.catch(() => cache.delete(key));
