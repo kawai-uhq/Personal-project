@@ -5,6 +5,7 @@ import { AnimeCard } from '../components/AnimeCard';
 import { GridSkeleton, Status } from '../components/Rows';
 import { FORMAT_LABEL, GENRES, STATUS_LABEL, aniList } from '../lib/anilist';
 import type { Ani } from '../lib/anilist';
+import { store } from '../lib/storage';
 
 const YEARS = Array.from({ length: 40 }, (_, i) => String(new Date().getFullYear() + 1 - i));
 const SORTS: [string, string][] = [['TRENDING_DESC', 'Trending'], ['POPULARITY_DESC', 'Most Popular'], ['SCORE_DESC', 'Top Rated'], ['START_DATE_DESC', 'Newest'], ['FAVOURITES_DESC', 'Most Favourited']];
@@ -135,7 +136,7 @@ export default function AnimeExplore() {
         ) : items.length === 0 && busy ? (
           <GridSkeleton />
         ) : items.length === 0 ? (
-          <Status kind="empty" text="Nothing found. Try other filters." />
+          <Status kind="empty" text={genre === 'Hentai' && !store.getAdult() ? 'This genre is 18+. Turn on "Show 18+ anime" in Settings to see it.' : 'Nothing found. Try other filters.'} />
         ) : (
           <>
             <div className={`grid cards ${busy ? 'aex-busy' : ''}`}>{items.map((a) => <AnimeCard key={a.id} a={a} />)}</div>

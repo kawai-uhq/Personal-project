@@ -3,29 +3,27 @@ import Icon from '../components/Icon';
 import type { IconName } from '../components/Icon';
 import { GENRES } from '../lib/anilist';
 
-const ICON: Record<string, string> = {
-  Action: 'zap', Adventure: 'compass', Comedy: 'smile', Drama: 'ticket', Ecchi: 'heart', Fantasy: 'moon', Horror: 'ghost',
-  'Mahou Shoujo': 'sparkles', Mecha: 'rocket', Music: 'music', Mystery: 'search', Psychological: 'flame', Romance: 'heart',
-  'Sci-Fi': 'rocket', 'Slice of Life': 'sun', Sports: 'flag', Supernatural: 'ghost', Thriller: 'flame'
+const ICON: Record<string, IconName> = {
+  Action: 'swords', Adventure: 'compass', Comedy: 'smile', Drama: 'mask', Ecchi: 'flame', Fantasy: 'wand', Hentai: 'heart', Horror: 'ghost',
+  'Mahou Shoujo': 'sparkles', Mecha: 'chip', Music: 'music', Mystery: 'search', Psychological: 'brain', Romance: 'heart',
+  'Sci-Fi': 'rocket', 'Slice of Life': 'coffee', Sports: 'trophy', Supernatural: 'ghost', Thriller: 'shield'
 };
 
 export default function AnimeGenres() {
   return (
     <main className="page pad-top">
       <div className="container mid">
-        <div className="page-head">
-          <div>
-            <h1 className="title">Browse Anime by <span className="accent">Genre</span></h1>
-            <p className="muted">Pick a genre to explore series and films.</p>
-          </div>
-        </div>
-        <div className="genre-grid">
-          {GENRES.map((g, i) => (
-            <Link key={g} to={`/anime/explore?genre=${encodeURIComponent(g)}`} className="genre-card" style={{ '--h': (i * 37) % 360 } as React.CSSProperties}>
-              <span className="g-icon" aria-hidden="true"><Icon name={(ICON[g] ?? 'film') as IconName} size={24} /></span>
-              <span className="g-big" aria-hidden="true"><Icon name={(ICON[g] ?? 'film') as IconName} size={120} /></span>
+        <header className="ag-head">
+          <h1 className="title">Browse Anime by <span className="accent">Genre</span></h1>
+          <p className="muted">Select a genre to discover top rated anime, fresh seasonal airings, and hidden gems.</p>
+        </header>
+        <div className="ag-grid">
+          {GENRES.map((g) => (
+            <Link key={g} to={`/anime/explore?genre=${encodeURIComponent(g)}`} className="ag-card">
+              <span className="ag-icon" aria-hidden="true"><Icon name={ICON[g] ?? 'film'} size={22} /></span>
+              <span className="ag-big" aria-hidden="true"><Icon name={ICON[g] ?? 'film'} size={104} /></span>
               <strong>{g}</strong>
-              <small>Explore Anime<Icon name="arrowRight" size={13} /></small>
+              <small>{g === 'Hentai' ? '18+ · Explore Anime' : 'Explore Anime'}<Icon name="arrowRight" size={12} /></small>
             </Link>
           ))}
         </div>

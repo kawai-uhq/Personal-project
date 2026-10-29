@@ -940,3 +940,20 @@ html.anime .htag, html.anime .nav-signin { border-color: rgba(255, 154, 46, .4);
 .aex-pg:disabled { opacity: .4; cursor: default; }
 .aex-pg.cur { border-color: var(--accent); background: rgba(255, 154, 46, .16); color: var(--accent); }
 @media (max-width: 760px) { .aex-fields { grid-template-columns: 1fr 1fr; } }
+
+/* ---- Anime Genres ---- */
+.ag-head { padding: 28px 0 26px; margin-bottom: 26px; border-bottom: 1px solid var(--line); }
+.ag-head .title { margin: 0 0 8px; }
+.ag-head .muted { margin: 0; }
+.ag-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; }
+.ag-card { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; min-height: 176px; padding: 22px; border-radius: 18px; border: 1px solid var(--line); background: rgba(18, 12, 24, .5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform .2s, border-color .2s; }
+.ag-card:hover { transform: translateY(-3px); border-color: rgba(255, 154, 46, .6); }
+.ag-card:active { transform: scale(.97); }
+.ag-icon { position: absolute; top: 22px; left: 22px; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 13px; border: 1px solid rgba(255, 154, 46, .35); background: rgba(255, 154, 46, .12); color: var(--accent); }
+.ag-big { position: absolute; right: -14px; bottom: -14px; color: var(--accent); opacity: .16; transition: opacity .2s, transform .3s; pointer-events: none; }
+.ag-card:hover .ag-big { opacity: .28; transform: scale(1.06) rotate(-4deg); }
+.ag-card strong { position: relative; font-size: 17px; font-weight: 900; }
+.ag-card small { position: relative; display: inline-flex; align-items: center; gap: 4px; color: var(--muted, #b9a9b0); font-size: 12px; }
+@media (max-width: 1100px) { .ag-grid { grid-template-columns: repeat(4, 1fr); gap: 18px; } }
+@media (max-width: 860px) { .ag-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; } }
+@media (max-width: 560px) { .ag-grid { grid-template-columns: repeat(2, 1fr); } .ag-card { min-height: 150px; padding: 16px; } .ag-icon { top: 16px; left: 16px; } }
