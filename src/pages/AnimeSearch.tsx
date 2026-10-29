@@ -49,10 +49,6 @@ export default function AnimeSearch() {
 
   useEffect(() => {
     const term = q.trim();
-  // later seasons hide behind their first season (open it to switch season)
-  const ids = new Set((items ?? []).map((x) => x.id));
-  const shown = (items ?? []).filter((x) => all || !x.pre.some((p) => ids.has(p)));
-  const hidden = (items ?? []).length - shown.length;
     if (!term) {
       ticket.current++;
       setItems(null);
@@ -69,6 +65,10 @@ export default function AnimeSearch() {
   }, [q, run]);
 
   const term = q.trim();
+  // later seasons hide behind their first season (open it to switch season)
+  const ids = new Set((items ?? []).map((x) => x.id));
+  const shown = (items ?? []).filter((x) => all || !x.pre.some((p) => ids.has(p)));
+  const hidden = (items ?? []).length - shown.length;
   return (
     <main className="page pad-top">
       <div className="container">
