@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AniRow } from '../components/AnimeCard';
 import Icon from '../components/Icon';
+import AnimeSeasons from '../components/AnimeSeasons';
 import WatchedTick from '../components/WatchedTick';
 import { FORMAT_LABEL, STATUS_LABEL, aniFull, availableEpisodes, lite } from '../lib/anilist';
 import type { AniFull } from '../lib/anilist';
@@ -12,15 +13,22 @@ import { store as settings } from '../lib/storage';
 
 const CHUNK = 100;
 
-// Popup / redirect protection is remembered per server (some players refuse to run inside it)
-const PKEY = 'comvie.aprotect';
-const readOff = (): Record<string, boolean> => {
+// Popup / redirect protection is remembered per server: 'balanced' (default) stops the player from sending
+// this page elsewhere but still lets it open windows, 'strict' blocks both, 'off' runs the player unrestricted.
+type Mode = 'balanced' | 'strict' | 'off';
+const PKEY = 'comvie.amode';
+const readModes = (): Record<string, Mode> => {
   try { return JSON.parse(localStorage.getItem(PKEY) || '{}') || {}; } catch { return {}; }
 };
-const writeOff = (m: Record<string, boolean>) => {
+const writeModes = (m: Record<string, Mode>) => {
   try { localStorage.setItem(PKEY, JSON.stringify(m)); } catch { /* storage blocked */ }
 };
-const LANG_NAME: Record<Lang, string> = { sub: 'Sub', dub: 'Dub', hsub: 'Hard-sub' };
+const NEXT_MODE: Record<Mode, Mode> = { balanced: 'strict', strict: 'off', off: 'balanced' };
+const SANDBOX: Record<Mode, string | undefined> = {
+  balanced: 'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox allow-modals allow-pointer-lock allow-orientation-lock',
+  strict: 'allow-scripts allow-same-origin allow-forms allow-presentation',
+  off: undefined
+};
 
 /** The anime player page: server and language bar, episode list and recommendations. */
 export default function AnimeWatch() {
@@ -31,7 +39,7 @@ export default function AnimeWatch() {
   const lib = useAnimeStore();
   const [a, setA] = useState<AniFull | null>(null);
   const [reload, setReload] = useState(0);
-  const [off, setOff] = useState<Record<string, boolean>>(readOff);
+  const [modes, setModes] = useState<Record<string, Mode>>(readModes);
   const [range, setRange] = useState(0);
   const [upNext, setUpNext] = useState<number | null>(null);
   const [left, setLeft] = useState(5);
@@ -41,7 +49,15 @@ export default function AnimeWatch() {
 
   const ep = Math.max(1, Number(sp.get('e')) || 1);
   const server = serverAt(sp.get('p'));
-  const sandboxed = !off[String(serverNo(server))];
+  const mode: Mode = modes[String(serverNo(server))] ?? 'balanced';
+  const sandboxed = mode !== 'off';
+  // With protection off a player can send the whole page elsewhere; ask before the browser leaves
+  useEffect(() => {
+    if (mode !== 'off') return;
+    const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', h);
+    return () => window.removeEventListener('beforeunload', h);
+  }, [mode]);
   const wanted = sp.get('l') as Lang | null;
   const lang: Lang = wanted && server.langs.includes(wanted) ? wanted : 'sub';
   const autoplay = settings.getAutoplay();
@@ -162,14 +178,14 @@ export default function AnimeWatch() {
       </div>
 
       <iframe
-        key={`${src}|${reload}|${sandboxed}`}
+        key={`${src}|${reload}|${mode}`}
         ref={frame}
         className="wp-frame"
         src={src}
         title={a?.title ?? 'Player'}
         allow="autoplay *; fullscreen *; picture-in-picture; encrypted-media *"
         allowFullScreen
-        sandbox={sandboxed ? 'allow-scripts allow-same-origin allow-forms allow-presentation' : undefined}
+        sandbox={SANDBOX[mode]}
       />
 
       {upNext != null && (
@@ -190,15 +206,14 @@ export default function AnimeWatch() {
         <button className="pill" onClick={() => setReload((n) => n + 1)}><Icon name="refresh" size={14} />Reload</button>
         <button
           className={`pill ${sandboxed ? 'on' : ''}`}
-          aria-pressed={sandboxed}
-          title="Blocks popups and redirects from the player"
+          title="Tap to change: Balanced, Strict or Off"
           onClick={() => {
-            const next = { ...off, [String(serverNo(server))]: sandboxed };
-            setOff(next);
-            writeOff(next);
+            const next = { ...modes, [String(serverNo(server))]: NEXT_MODE[mode] };
+            setModes(next);
+            writeModes(next);
           }}
         >
-          <Icon name="shield" size={14} />Popup protection: {sandboxed ? 'On' : 'Off'}
+          <Icon name="shield" size={14} />Protection: {mode === 'balanced' ? 'Balanced' : mode === 'strict' ? 'Strict' : 'Off'}
         </button>
         <span className="chip stat wp-ep">Episode {ep}</span>
       </div>
@@ -207,7 +222,7 @@ export default function AnimeWatch() {
         {server.langs.map((l) => (
           <button key={l} className={`pill ${l === lang ? 'on' : ''}`} onClick={() => setSp({ e: String(ep), p: String(serverNo(server)), l }, { replace: true })}>{LANG_NAME[l]}</button>
         ))}
-        <span className="muted small">Player blank or says “disable sandbox”? Turn popup protection off. </span>
+        <span className="muted small">Player blank or says “sandbox”? Tap Protection to try Strict or Off. </span>
         <span className="muted small">Not loading? Try <button className="link" onClick={() => setSp({ e: String(ep), p: String(serverNo(nextServer)), l: nextServer.langs.includes(lang) ? lang : 'sub' }, { replace: true })}>{nextServer.name}</button>.</span>
       </div>
 
@@ -220,6 +235,7 @@ export default function AnimeWatch() {
             {a?.status && <span className={`chip stat ${a.status === 'FINISHED' || a.status === 'RELEASING' ? 'ok' : ''}`}>{STATUS_LABEL[a.status] ?? a.status}</span>}
           </div>
           <h1>{a?.title ?? 'Loading…'}</h1>
+          <AnimeSeasons id={aid} to="/anime/watch/" />
           {a && a.genres.length > 0 && <div className="td-chips">{a.genres.map((g) => <span key={g} className="chip">{g}</span>)}</div>}
           <h3 className="wp-h">Overview</h3>
           <p className="wp-overview">{a?.desc || 'No description available.'}</p>

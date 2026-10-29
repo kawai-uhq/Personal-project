@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AniRow, AnimeCard } from '../components/AnimeCard';
 import Icon from '../components/Icon';
+import AnimeSeasons from '../components/AnimeSeasons';
 import { DetailSkeleton, Row, Status } from '../components/Rows';
 import WatchedTick from '../components/WatchedTick';
 import { FORMAT_LABEL, STATUS_LABEL, aniFull, availableEpisodes } from '../lib/anilist';
@@ -99,6 +100,7 @@ export default function AnimeDetail() {
             </div>
             <h1>{a.title}</h1>
             {a.alt && <p className="tagline">{a.alt}</p>}
+            <AnimeSeasons id={a.id} />
             {a.genres.length > 0 && <p className="genres">{a.genres.map((g) => <Link key={g} to={`/anime/explore?genre=${encodeURIComponent(g)}`}>{g}</Link>)}</p>}
             <h3>Overview</h3>
             <p className="overview" style={{ marginTop: 0 }}>{a.desc || 'No description available.'}</p>

@@ -957,3 +957,8 @@ html.anime .htag, html.anime .nav-signin { border-color: rgba(255, 154, 46, .4);
 @media (max-width: 1100px) { .ag-grid { grid-template-columns: repeat(4, 1fr); gap: 18px; } }
 @media (max-width: 860px) { .ag-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; } }
 @media (max-width: 560px) { .ag-grid { grid-template-columns: repeat(2, 1fr); } .ag-card { min-height: 150px; padding: 16px; } .ag-icon { top: 16px; left: 16px; } }
+
+/* Season drop-down on anime pages */
+.aseasons { display: inline-flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; max-width: min(100%, 460px); }
+.aseasons > span { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted, #b9a9b0); }
+.aseasons .select { width: 100%; }

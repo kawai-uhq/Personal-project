@@ -22,6 +22,8 @@ export interface Ani extends AniLite {
   duration: number | null;
   genres: string[];
   next: { episode: number; at: number } | null;
+  /** ids of the entries this one continues (its prequels) */
+  pre: number[];
 }
 
 export interface AniFull extends Ani {
@@ -124,7 +126,8 @@ async function gql<T = any>(query: string, variables: Record<string, unknown> = 
 }
 
 const MEDIA = `id idMal title { romaji english } coverImage { extraLarge large color } bannerImage description(asHtml: false)
-  averageScore format status episodes duration seasonYear startDate { year } genres nextAiringEpisode { episode airingAt }`;
+  averageScore format status episodes duration seasonYear startDate { year } genres nextAiringEpisode { episode airingAt }
+  relations{ edges{ relationType node{ id type } } }`;
 
 const clean = (s: string | null | undefined) =>
   (s ?? '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/\n{3,}/g, '\n\n').trim();
@@ -146,6 +149,7 @@ export function mapAni(o: any): Ani {
     duration: o.duration ?? null,
     year: o.seasonYear ?? o.startDate?.year ?? null,
     genres: o.genres ?? [],
+    pre: ((o.relations?.edges ?? []) as any[]).filter((e) => e.relationType === 'PREQUEL' && e.node?.type === 'ANIME').map((e) => e.node.id),
     next: o.nextAiringEpisode ? { episode: o.nextAiringEpisode.episode, at: o.nextAiringEpisode.airingAt } : null
   };
 }
@@ -235,3 +239,44 @@ export const aniToMedia = (a: Ani | AniLite): Media => ({
   id: a.id, title: a.title, poster: null, backdrop: null, overview: '', type: 'tv', rating: a.score / 10,
   year: a.year ? String(a.year) : '', anime: true, ani: true, img: a.cover
 });
+
+export interface SeasonItem { id: number; title: string; format: string | null; year: number | null; episodes: number | null }
+
+/** Every season / part of a franchise, found by following prequel and sequel links, oldest first. */
+export async function aniSeasons(id: number): Promise<SeasonItem[]> {
+  const seen = new Map<number, SeasonItem & { at: number }>();
+  let frontier = [id];
+  const queue = new Set<number>([id]);
+  while (frontier.length && seen.size < 14) {
+    const got = await Promise.all(
+      frontier.map((n) =>
+        gql(
+          `query($id:Int){ Media(id:$id, type:ANIME){ id title{ romaji english } format episodes seasonYear startDate{ year month day }
+            relations{ edges{ relationType node{ id type } } } } }`,
+          { id: n }
+        ).then((d) => d?.Media).catch(() => null)
+      )
+    );
+    const next: number[] = [];
+    for (const m of got) {
+      if (!m) continue;
+      const sd = m.startDate ?? {};
+      seen.set(m.id, {
+        id: m.id,
+        title: m.title?.english || m.title?.romaji || 'Untitled',
+        format: m.format ?? null,
+        year: m.seasonYear ?? sd.year ?? null,
+        episodes: m.episodes ?? null,
+        at: (sd.year ?? 9999) * 10000 + (sd.month ?? 0) * 100 + (sd.day ?? 0)
+      });
+      for (const e of (m.relations?.edges ?? []) as any[]) {
+        if ((e.relationType === 'PREQUEL' || e.relationType === 'SEQUEL') && e.node?.type === 'ANIME' && !queue.has(e.node.id)) {
+          queue.add(e.node.id);
+          next.push(e.node.id);
+        }
+      }
+    }
+    frontier = next;
+  }
+  return [...seen.values()].sort((a, b) => a.at - b.at).map(({ at: _at, ...r }) => r);
+}
