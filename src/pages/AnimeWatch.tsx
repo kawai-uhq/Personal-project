@@ -11,6 +11,15 @@ import { animeStore, resumeFrom, useAnimeStore } from '../lib/animeStore';
 import { store as settings } from '../lib/storage';
 
 const CHUNK = 100;
+
+// Popup / redirect protection is remembered per server (some players refuse to run inside it)
+const PKEY = 'comvie.aprotect';
+const readOff = (): Record<string, boolean> => {
+  try { return JSON.parse(localStorage.getItem(PKEY) || '{}') || {}; } catch { return {}; }
+};
+const writeOff = (m: Record<string, boolean>) => {
+  try { localStorage.setItem(PKEY, JSON.stringify(m)); } catch { /* storage blocked */ }
+};
 const LANG_NAME: Record<Lang, string> = { sub: 'Sub', dub: 'Dub', hsub: 'Hard-sub' };
 
 /** The anime player page: server and language bar, episode list and recommendations. */
@@ -22,6 +31,7 @@ export default function AnimeWatch() {
   const lib = useAnimeStore();
   const [a, setA] = useState<AniFull | null>(null);
   const [reload, setReload] = useState(0);
+  const [off, setOff] = useState<Record<string, boolean>>(readOff);
   const [range, setRange] = useState(0);
   const [upNext, setUpNext] = useState<number | null>(null);
   const [left, setLeft] = useState(5);
@@ -31,6 +41,7 @@ export default function AnimeWatch() {
 
   const ep = Math.max(1, Number(sp.get('e')) || 1);
   const server = serverAt(sp.get('p'));
+  const sandboxed = !off[String(serverNo(server))];
   const wanted = sp.get('l') as Lang | null;
   const lang: Lang = wanted && server.langs.includes(wanted) ? wanted : 'sub';
   const autoplay = settings.getAutoplay();
@@ -151,13 +162,14 @@ export default function AnimeWatch() {
       </div>
 
       <iframe
-        key={`${src}|${reload}`}
+        key={`${src}|${reload}|${sandboxed}`}
         ref={frame}
         className="wp-frame"
         src={src}
         title={a?.title ?? 'Player'}
         allow="autoplay *; fullscreen *; picture-in-picture; encrypted-media *"
         allowFullScreen
+        sandbox={sandboxed ? 'allow-scripts allow-same-origin allow-forms allow-presentation' : undefined}
       />
 
       {upNext != null && (
@@ -176,6 +188,18 @@ export default function AnimeWatch() {
           </button>
         ))}
         <button className="pill" onClick={() => setReload((n) => n + 1)}><Icon name="refresh" size={14} />Reload</button>
+        <button
+          className={`pill ${sandboxed ? 'on' : ''}`}
+          aria-pressed={sandboxed}
+          title="Blocks popups and redirects from the player"
+          onClick={() => {
+            const next = { ...off, [String(serverNo(server))]: sandboxed };
+            setOff(next);
+            writeOff(next);
+          }}
+        >
+          <Icon name="shield" size={14} />Popup protection: {sandboxed ? 'On' : 'Off'}
+        </button>
         <span className="chip stat wp-ep">Episode {ep}</span>
       </div>
       <div className="wp-servers">
@@ -183,6 +207,7 @@ export default function AnimeWatch() {
         {server.langs.map((l) => (
           <button key={l} className={`pill ${l === lang ? 'on' : ''}`} onClick={() => setSp({ e: String(ep), p: String(serverNo(server)), l }, { replace: true })}>{LANG_NAME[l]}</button>
         ))}
+        <span className="muted small">Player blank or says “disable sandbox”? Turn popup protection off. </span>
         <span className="muted small">Not loading? Try <button className="link" onClick={() => setSp({ e: String(ep), p: String(serverNo(nextServer)), l: nextServer.langs.includes(lang) ? lang : 'sub' }, { replace: true })}>{nextServer.name}</button>.</span>
       </div>
 
