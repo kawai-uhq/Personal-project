@@ -29,7 +29,6 @@ const AnimeWatch = lazy(() => import('./pages/AnimeWatch'));
 const AnimeLibrary = lazy(() => import('./pages/AnimeLibrary'));
 const AnimeSearch = lazy(() => import('./pages/AnimeSearch'));
 const Search = lazy(() => import('./pages/Search'));
-const Settings = lazy(() => import('./pages/Settings'));
 const Watch = lazy(() => import('./pages/Watch'));
 
 /** Keeps each page on its own sub-domain: anime pages on anime.comvie.lol, everything else on cinema.comvie.lol. */
@@ -104,7 +103,6 @@ export default function App() {
         <Route path="/terms" element={<Navigate to="/legal/terms" replace />} />
         <Route path="/privacy" element={<Navigate to="/legal/privacy" replace />} />
         <Route path="/takedown" element={<Navigate to="/legal/dmca" replace />} />
-        <Route path="/settings" element={<Settings />} />
         <Route path="/title/:type/:id" element={<Detail />} />
         <Route path="/watch/:type/:id" element={<Watch />} />
         <Route path="*" element={<Home />} />

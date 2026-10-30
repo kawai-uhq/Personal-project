@@ -27,12 +27,11 @@ const GROUPS: Group[] = [
   {
     title: 'Playback',
     items: [
-      qa('Why isn\'t a title playing?', <>The players belong to other services and some are slow or down at times. Try Reload, pick another server under the player, or turn popup protection off. Very new or obscure titles may not be on every server yet.</>, 'not playing loading stuck error reload server popup protection'),
+      qa('Why isn\'t a title playing?', <>The players belong to other services and some are slow or down at times. Try Reload, pick another server under the player. Very new or obscure titles may not be on every server yet.</>, 'not playing loading stuck error reload server'),
       qa('How do I try another server?', <>Use the <b>Streaming server</b> buttons under the player. If a server takes too long, a bar appears with a one-tap button for the next server.</>, 'switch server change'),
       qa('Why are new releases missing?', <>Streams can take a while to appear on the players after a title is released. Check back later or try a different server.</>, 'new releases missing latest'),
-      qa('What is popup protection?', <>It blocks popups and redirects from the player. Server 1 works with it on. The other servers refuse to run inside it, so they load without it automatically. You can switch it in <Link className="link" to="/settings">Settings</Link>.</>, 'popup protection sandbox disable ads redirects'),
       qa('Does Comvie remember where I stopped?', <>Yes. While you watch, the position is saved on this device, and next time playback starts 5 seconds before where you left off. Finished episodes are marked as watched.</>, 'resume continue where i left timestamp progress'),
-      qa('How do autoplay and skip intro work?', <>In <Link className="link" to="/settings">Settings → Playback</Link> you can turn on autoplay of the next episode and automatic intro skipping. Skipping intros works on Server 1 when it knows where the intro is; other servers have their own skip button inside the player.</>, 'autoplay next episode skip intro outro')
+      qa('How does skip intro work?', <>Skipping intros works on Server 1 when it knows where the intro is; other servers have their own skip button inside the player.</>, 'skip intro outro')
     ]
   },
   {
@@ -50,7 +49,7 @@ const GROUPS: Group[] = [
     items: [
       qa('Why is a channel not working?', <>Live channels are free public streams. They go offline or get blocked in some regions without notice. Try another channel or press Refresh on the Live TV page.</>, 'live tv channel offline blocked refresh'),
       qa('Can I install Comvie as an app?', <>Yes. Use the Install App button when your browser offers it, or “Add to Home screen” in your browser's menu.</>, 'install app home screen pwa'),
-      qa('The site feels slow', <>Open <Link className="link" to="/settings">Settings</Link> and check <b>Smooth mode</b>. It's on by default; on some devices switching it off feels lighter.</>, 'slow lag smooth mode performance')
+      qa('The site feels slow', <>Try another server, close other tabs, and make sure your browser is up to date. An ad blocker also makes pages lighter.</>, 'slow lag performance')
     ]
   },
   {

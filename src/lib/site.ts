@@ -21,7 +21,7 @@ export function hostSection(): Section | null {
 export const sectionHome = (s: Section) => (onProd() ? (s === 'anime' ? `${ANIME_ORIGIN}/anime` : `${CINEMA_ORIGIN}/`) : s === 'anime' ? '/anime' : '/');
 
 /** Pages both sub-domains share */
-export const SHARED = ['/contact', '/about', '/help', '/legal', '/terms', '/privacy', '/takedown', '/settings'];
+export const SHARED = ['/contact', '/about', '/help', '/legal', '/terms', '/privacy', '/takedown'];
 export const isShared = (p: string) => SHARED.some((s) => p === s || p.startsWith(s + '/'));
 
 // ---- carrying saved data over from comvie.lol to cinema.comvie.lol (browser storage is per address) ----

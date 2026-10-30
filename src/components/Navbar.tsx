@@ -11,7 +11,7 @@ import SiteSwitch from './SiteSwitch';
 export default function Navbar() {
   const nav = useNavigate();
   const { pathname } = useLocation();
-  const { session, openAuth } = useApp();
+  const { session, openAuth, signOut } = useApp();
   const fresh = useNewEpisodes();
   const { due } = useReminders();
   const anime = useSection() === 'anime';
@@ -59,13 +59,10 @@ export default function Navbar() {
             }}
             onPick={() => setQ('')}
           />
-          <Link to="/settings" className="gear" aria-label="Settings">
-            <Icon name="settings" size={18} />
-          </Link>
           {session ? (
-            <Link to="/settings" className="avatar" aria-label="Account settings">
+            <button className="avatar" title={`${session.email} · tap to sign out`} aria-label="Sign out" onClick={() => window.confirm(`Sign out of ${session.email}?`) && signOut()}>
               {session.email.slice(0, 1).toUpperCase()}
-            </Link>
+            </button>
           ) : (
             <button className="nav-signin" onClick={openAuth}>Sign in</button>
           )}
