@@ -7,17 +7,9 @@ import { countryName, flag, loadChannels } from '../lib/iptv';
 import type { Channel } from '../lib/iptv';
 import { store } from '../lib/storage';
 import Select from '../components/Select';
-import { aliasCategory, clock, nowOn, searchGuide, useClock, useGuide, when } from '../lib/epg';
 
 const PAGE = 48;
 const BAD_MS = 3 * 24 * 3600 * 1000;
-const ROWS: { id: string; label: string }[] = [
-  { id: 'sports', label: 'Sports on now' },
-  { id: 'kids', label: 'Kids & cartoons on now' },
-  { id: 'news', label: 'News on now' },
-  { id: 'movies', label: 'Movies on now' },
-  { id: 'entertainment', label: 'Entertainment on now' }
-];
 
 const CATS: { id: string; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -46,8 +38,6 @@ export default function Live() {
   const listTop = useRef<HTMLDivElement>(null);
   const [bad, setBad] = useState<Record<string, number>>(() => store.getTvBad());
   const [showBad, setShowBad] = useState(false);
-  const guide = useGuide();
-  const now = useClock();
   const [lastId, setLastId] = useState(() => store.getTvLast());
   const [recent, setRecent] = useState<string[]>(() => store.getTvRecent());
 
@@ -82,45 +72,17 @@ export default function Live() {
       list = list.filter((c) => order.has(c.id)).sort((a, b) => order.get(a.id)! - order.get(b.id)!);
     } else if (cat !== 'all') list = list.filter((c) => c.categories.includes(cat));
     if (term) {
-      const byText = list.filter(
+      list = list.filter(
         (c) =>
           c.name.toLowerCase().includes(term) ||
           countryName(c.country).toLowerCase().includes(term) ||
           c.categories.some((x) => x.includes(term))
       );
-      const alias = aliasCategory(term);
-      list = byText.length || !alias ? byText : list.filter((c) => c.categories.includes(alias));
     }
     return list;
   }, [all, q, country, httpsOnly, cat, favs, recent, bad, showBad, current]);
 
   useEffect(() => setShown(PAGE), [q, country, httpsOnly, cat, showBad]);
-
-  const byId = useMemo(() => new Map((all ?? []).map((c) => [c.id, c])), [all]);
-  const playable = (c: Channel) => (httpsOnly ? c.url.startsWith('https://') : true) && (showBad || Date.now() - (bad[c.id] ?? 0) >= BAD_MS);
-
-  // Programmes matching the search (match, show, event), from the TV guide
-  const airing = useMemo(
-    () => (q.trim().length > 1 ? searchGuide(guide, byId, q, now).filter((a) => playable(a.channel)) : []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [guide, byId, q, now, httpsOnly, bad, showBad]
-  );
-
-  // "On now" rows per kind of channel
-  const onNow = useMemo(() => {
-    if (!guide || !all) return [];
-    return ROWS.map((r) => {
-      const items: { c: Channel; title: string; start: number; end: number }[] = [];
-      for (const c of all) {
-        if (!c.categories.includes(r.id) || !playable(c)) continue;
-        const { cur } = nowOn(guide, c.id, now);
-        if (cur) items.push({ c, title: cur[2], start: cur[0], end: cur[1] });
-      }
-      items.sort((a, b) => (b.c.quality ? 1 : 0) - (a.c.quality ? 1 : 0));
-      return { ...r, items: items.slice(0, 14) };
-    }).filter((r) => r.items.length);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [guide, all, now, httpsOnly, bad, showBad]);
 
   const lastChannel = useMemo(() => (all && lastId ? all.find((c) => c.id === lastId) ?? null : null), [all, lastId]);
 
@@ -239,42 +201,6 @@ export default function Live() {
                 <button key={c.id} role="tab" aria-selected={cat === c.id} className={`chip ${cat === c.id ? 'on' : ''}`} onClick={() => setCat(c.id)}>{c.label}</button>
               ))}
             </div>
-            {airing.length > 0 && (
-              <section className="epg-box">
-                <h2 className="section">On air &amp; coming up for “{q.trim()}”</h2>
-                <div className="epg-list">
-                  {airing.map((a, i) => (
-                    <button key={a.channel.id + a.start + i} className="epg-row" onClick={() => play(a.channel)}>
-                      <ChannelLogo name={a.channel.name} logos={a.channel.logos} />
-                      <span className="epg-info">
-                        <strong>{a.title}</strong>
-                        <small>{a.channel.name} · {a.live ? `until ${clock(a.end)}` : `starts ${when(a.start, now)}`}</small>
-                        {a.live && <i className="epg-bar"><b style={{ width: `${Math.min(100, Math.max(4, ((now - a.start) / (a.end - a.start)) * 100))}%` }} /></i>}
-                      </span>
-                      <em className={a.live ? 'epg-live' : 'epg-soon'}>{a.live ? 'LIVE' : 'SOON'}</em>
-                    </button>
-                  ))}
-                </div>
-              </section>
-            )}
-            {q.trim().length > 1 && airing.length === 0 && guide && aliasCategory(q.trim().toLowerCase()) && filtered.length > 0 && !all.some((c) => c.name.toLowerCase().includes(q.trim().toLowerCase())) && (
-              <p className="muted small">Nothing in the TV guide matches “{q.trim()}” right now, so here are {aliasCategory(q.trim().toLowerCase())} channels instead.</p>
-            )}
-            {!q.trim() && cat === 'all' && !country && onNow.map((r) => (
-              <section key={r.id} className="epg-box">
-                <h2 className="section">{r.label}</h2>
-                <div className="epg-scroll">
-                  {r.items.map((it) => (
-                    <button key={it.c.id} className="epg-card" onClick={() => play(it.c)}>
-                      <span className="epg-card-top"><ChannelLogo name={it.c.name} logos={it.c.logos} /><em className="epg-live">LIVE</em></span>
-                      <strong>{it.title}</strong>
-                      <small>{it.c.name} · until {clock(it.end)}</small>
-                      <i className="epg-bar"><b style={{ width: `${Math.min(100, Math.max(4, ((now - it.start) / (it.end - it.start)) * 100))}%` }} /></i>
-                    </button>
-                  ))}
-                </div>
-              </section>
-            ))}
             <p className="muted small">Showing {Math.min(shown, filtered.length)} of {filtered.length.toLocaleString()} channels</p>
             {!httpsOnly && <p className="muted small">Non-HTTPS channels usually can't play on a secure website. Leave “HTTPS only” on for best results.</p>}
 
@@ -291,7 +217,6 @@ export default function Live() {
                     <button className="channel-play" onClick={() => play(c)} aria-label={`Play ${c.name}`}>
                       <ChannelLogo name={c.name} logos={c.logos} />
                       <strong>{c.name}</strong>
-                      {guide && nowOn(guide, c.id, now).cur && <span className="channel-now">{nowOn(guide, c.id, now).cur![2]}</span>}
                       <span className="channel-meta">
                         <small>{c.categories[0] ?? 'general'}</small>
                         {c.quality && <em>{c.quality}</em>}
