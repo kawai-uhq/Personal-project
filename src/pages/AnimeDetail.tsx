@@ -108,7 +108,7 @@ export default function AnimeDetail() {
             <div className="tstats">
               <div><small>Episodes</small><strong>{a.episodes ?? (avail || '—')}</strong></div>
               <div><small>Aired so far</small><strong>{avail || '—'}</strong></div>
-              <div><small>Studio</small><strong>{a.studio || '—'}</strong></div>
+              <div><small>Studio</small><strong>{a.studioId ? <Link className="link" to={`/anime/studio/${a.studioId}`}>{a.studio}</Link> : a.studio || '—'}</strong></div>
               <div><small>Next episode</small><strong>{a.next ? `EP ${a.next.episode} in ${airsIn(a.next.at)}` : '—'}</strong></div>
             </div>
           </div>

@@ -5,7 +5,7 @@ import { aniCovers } from '../lib/anilist';
 import { mangaCovers } from '../lib/manga';
 import { useSection } from '../lib/section';
 import type { Section } from '../lib/section';
-import { sectionHome } from '../lib/site';
+import { sectionHome, toLogical } from '../lib/site';
 import { store } from '../lib/storage';
 import { posterSrc, tmdb } from '../lib/tmdb';
 
@@ -50,7 +50,7 @@ interface Slide { to: Section; art: string | null }
  */
 export default function CrossPromo() {
   const section = useSection();
-  const { pathname } = useLocation();
+  const pathname = toLogical(useLocation().pathname);
   const [open, setOpen] = useState(false);
   const [slides, setSlides] = useState<Slide[]>([]);
   const [at, setAt] = useState(0);

@@ -151,7 +151,7 @@ export default function MangaDetail() {
             <div className="tstats">
               <div><small>Chapters</small><strong>{m.chapters ?? '—'}</strong></div>
               <div><small>Volumes</small><strong>{m.volumes ?? '—'}</strong></div>
-              <div><small>Author</small><strong>{m.authors.join(', ') || '—'}</strong></div>
+              <div><small>Author</small><strong>{m.creators.length ? m.creators.map((c, i) => <span key={c.id}>{i > 0 && ', '}<Link className="link" to={`/manga/creator/${c.id}`}>{c.name}</Link></span>) : m.authors.join(', ') || '—'}</strong></div>
               <div><small>Readable here</small><strong>{chs ? readable.length : '…'}</strong></div>
             </div>
           </div>

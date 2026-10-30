@@ -1150,3 +1150,24 @@ html.manga .htag, html.manga .nav-signin { border-color: rgba(143, 134, 255, .45
 /* Remove button on Continue Watching / Reading cards (anime, manga) */
 .card-x { position: absolute; top: 8px; right: 8px; z-index: 3; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border-radius: 50%; border: 1px solid rgba(255, 233, 214, .25); background: rgba(18, 12, 24, .78); color: var(--cream); cursor: pointer; }
 .card-x:hover { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+/* ---- Anime studios & streaming / manga publishers & mangaka ---- */
+.src-logo { display: grid; place-items: center; flex: none; border-radius: 12px; overflow: hidden; }
+.src-logo img { width: 62%; height: 62%; object-fit: contain; }
+.src-logo b { color: #fff; font-size: 18px; }
+.studio-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); margin-bottom: 24px; }
+.studio { position: relative; display: flex; flex-direction: column; justify-content: flex-end; min-height: 120px; padding: 14px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); color: var(--cream); }
+.studio:hover { border-color: var(--accent); }
+.studio-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .45; transition: opacity .2s ease, transform .3s ease; }
+.studio:hover .studio-art { opacity: .6; transform: scale(1.04); }
+.studio-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(18, 12, 24, 0) 20%, rgba(18, 12, 24, .9) 100%); }
+.studio-face { position: relative; width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255, 233, 214, .4); margin-bottom: 8px; }
+.studio strong, .studio small { position: relative; }
+.studio strong { font-size: 16px; }
+.studio small { display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; color: var(--accent); font-weight: 800; font-size: 12px; }
+.creator-head { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 18px; }
+.creator-head > img { width: 120px; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 14px; border: 1px solid var(--line); }
+.creator-head .title { margin: 0 0 4px; }
+.creator-about { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; white-space: pre-line; }
+.creator-about.open { display: block; }
+@media (max-width: 600px) { .creator-head > img { width: 90px; } }

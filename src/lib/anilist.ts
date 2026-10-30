@@ -28,6 +28,7 @@ export interface Ani extends AniLite {
 
 export interface AniFull extends Ani {
   studio: string;
+  studioId: number | null;
   links: { site: string; url: string; color: string | null }[];
   related: { relation: string; item: Ani }[];
   recs: Ani[];
@@ -167,18 +168,20 @@ export interface AniQuery {
   format?: string;
   status?: string;
   popularityGreater?: number;
+  /** only titles on this streaming / reading site (an AniList link-source id) */
+  licensedById?: number;
   page?: number;
   perPage?: number;
 }
 
 /** A page of anime (all titles, including those AniList marks as adult). */
 export async function aniList(q: AniQuery): Promise<{ items: Ani[]; more: boolean; last: number }> {
-  const query = `query($page:Int,$perPage:Int,$sort:[MediaSort],$search:String,$genre:String,$season:MediaSeason,$seasonYear:Int,$format:MediaFormat,$status:MediaStatus,$pg:Int)
+  const query = `query($page:Int,$perPage:Int,$sort:[MediaSort],$search:String,$genre:String,$season:MediaSeason,$seasonYear:Int,$format:MediaFormat,$status:MediaStatus,$pg:Int,$lic:Int)
 {
     Page(page:$page, perPage:$perPage){ pageInfo{ hasNextPage lastPage }
-      media(type:ANIME, sort:$sort, search:$search, genre:$genre, season:$season, seasonYear:$seasonYear, format:$format, status:$status, popularity_greater:$pg){ ${MEDIA} } } }`;
-  const { sort, popularityGreater, ...rest } = q;
-  const vars: Record<string, unknown> = { page: 1, perPage: 24, ...rest, pg: popularityGreater, };
+      media(type:ANIME, sort:$sort, search:$search, genre:$genre, season:$season, seasonYear:$seasonYear, format:$format, status:$status, popularity_greater:$pg, licensedById:$lic){ ${MEDIA} } } }`;
+  const { sort, popularityGreater, licensedById, ...rest } = q;
+  const vars: Record<string, unknown> = { page: 1, perPage: 24, ...rest, pg: popularityGreater, lic: licensedById };
   if (sort && !q.search) vars.sort = [sort];
   Object.keys(vars).forEach((k) => (vars[k] === undefined || vars[k] === '') && delete vars[k]);
   const d = await gql(query, vars);
@@ -189,7 +192,7 @@ export async function aniFull(id: number): Promise<AniFull> {
   const lt = `id title { romaji english } coverImage { extraLarge large color } averageScore format seasonYear startDate { year } episodes status`;
   const d = await gql(
     `query($id:Int){ Media(id:$id, type:ANIME){ ${MEDIA}
-      studios(isMain:true){ nodes{ name } }
+      studios(isMain:true){ nodes{ id name } }
       externalLinks{ site url type color }
       relations{ edges{ relationType node{ ${lt} type } } }
       recommendations(perPage:14, sort:RATING_DESC){ nodes{ mediaRecommendation{ ${lt} } } } } }`,
@@ -200,6 +203,7 @@ export async function aniFull(id: number): Promise<AniFull> {
   return {
     ...mapAni(m),
     studio: m.studios?.nodes?.[0]?.name ?? '',
+    studioId: m.studios?.nodes?.[0]?.id ?? null,
     links: ((m.externalLinks ?? []) as any[]).filter((l) => l.type === 'STREAMING').map((l) => ({ site: l.site, url: l.url, color: l.color ?? null })),
     related: ((m.relations?.edges ?? []) as any[])
       .filter((e) => e.node?.type === 'ANIME')
@@ -287,4 +291,61 @@ export async function aniCovers(): Promise<string[]> {
     `query{ Page(perPage:30){ media(type:ANIME, sort:TRENDING_DESC, isAdult:false, genre_not_in:["Hentai"]){ coverImage{ extraLarge large } } } }`
   );
   return ((d?.Page?.media ?? []) as any[]).map((m) => m.coverImage?.extraLarge || m.coverImage?.large).filter(Boolean);
+}
+
+
+/* ------------------------------ providers: streaming / reading sites, studios ------------------------------ */
+
+export interface LinkSource { id: number; site: string; icon: string | null; color: string | null }
+
+const FIRST = ['Crunchyroll', 'Netflix', 'HIDIVE', 'Funimation', 'Disney Plus', 'Amazon Prime Video', 'Hulu', 'Bilibili TV', 'Muse Asia', 'Ani-One Asia', 'YouTube',
+  'MANGA Plus', 'Viz', 'Webtoon', 'K MANGA', 'Azuki', 'Comikey', 'INKR', 'Tapas', 'Tappytoon', 'Lezhin', 'Manta', 'Pocket Comics', 'BookWalker', 'Kodansha', 'Shonen Jump'];
+const srcCache: Record<string, Promise<LinkSource[]>> = {};
+
+/** Every streaming site (anime) or reading site (manga) AniList knows, popular ones first. */
+export function linkSources(media: 'ANIME' | 'MANGA'): Promise<LinkSource[]> {
+  return (srcCache[media] ??= gql(
+    `query($t:ExternalLinkMediaType){ ExternalLinkSourceCollection(mediaType:$t, type:STREAMING){ id site siteId icon color isDisabled } }`,
+    { t: media }
+  ).then((d) => {
+    const seen = new Set<string>();
+    const out: LinkSource[] = [];
+    for (const x of (d?.ExternalLinkSourceCollection ?? []) as any[]) {
+      if (!x?.site || x.isDisabled || seen.has(x.site)) continue;
+      seen.add(x.site);
+      out.push({ id: x.siteId || x.id, site: x.site, icon: x.icon ?? null, color: x.color ?? null });
+    }
+    const rank = (n: string) => {
+      const i = FIRST.findIndex((f) => n.toLowerCase().startsWith(f.toLowerCase()));
+      return i < 0 ? 999 : i;
+    };
+    return out.sort((a, b) => rank(a.site) - rank(b.site) || a.site.localeCompare(b.site));
+  }));
+}
+
+export interface StudioLite { id: number; name: string; art: string | null }
+
+/** The best-known animation studios (by AniList favourites), each with a picture from its most popular show. */
+export async function topStudios(): Promise<StudioLite[]> {
+  const d = await gql(
+    `query{ Page(perPage:50){ studios(sort:FAVOURITES_DESC){ id name isAnimationStudio media(sort:POPULARITY_DESC, isMain:true, perPage:1){ nodes{ bannerImage coverImage{ large } } } } } }`
+  );
+  return ((d?.Page?.studios ?? []) as any[])
+    .filter((x) => x.isAnimationStudio)
+    .map((x) => ({ id: x.id, name: x.name, art: x.media?.nodes?.[0]?.bannerImage || x.media?.nodes?.[0]?.coverImage?.large || null }));
+}
+
+/** A studio's anime, most popular first. */
+export async function studioAnime(id: number, page = 1): Promise<{ name: string; items: Ani[]; more: boolean }> {
+  const d = await gql(
+    `query($id:Int,$page:Int){ Studio(id:$id){ name media(sort:POPULARITY_DESC, isMain:true, page:$page, perPage:30){ pageInfo{ hasNextPage } nodes{ ${MEDIA} type } } } }`,
+    { id, page }
+  );
+  const st = d?.Studio;
+  if (!st) throw new Error('Studio not found.');
+  return {
+    name: st.name,
+    items: ((st.media?.nodes ?? []) as any[]).filter((n) => n.type === 'ANIME').map(mapAni),
+    more: !!st.media?.pageInfo?.hasNextPage
+  };
 }

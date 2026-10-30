@@ -23,6 +23,8 @@ export interface Manga extends MangaLite {
   volumes: number | null;
   genres: string[];
   authors: string[];
+  /** story / art creators with their AniList ids */
+  creators: { id: number; name: string }[];
   /** other titles (native, synonyms) used to find it on MangaDex */
   names: string[];
 }
@@ -48,7 +50,7 @@ export const MANGA_STATUS: Record<string, string> = { RELEASING: 'Ongoing', FINI
 
 const MEDIA = `id idMal synonyms title { romaji english native } coverImage { extraLarge large color } bannerImage description(asHtml: false)
   averageScore format status chapters volumes countryOfOrigin startDate { year } genres
-  staff(perPage: 3, sort: RELEVANCE){ edges{ role node{ name{ full } } } }`;
+  staff(perPage: 3, sort: RELEVANCE){ edges{ role node{ id name{ full } } } }`;
 const LT = `id idMal title { romaji english } coverImage { extraLarge large color } averageScore format status chapters volumes countryOfOrigin startDate { year } genres`;
 
 const clean = (s: string | null | undefined) =>
@@ -73,6 +75,7 @@ export function mapManga(o: any): Manga {
     country: o.countryOfOrigin ?? null,
     genres: o.genres ?? [],
     names: [o.title?.native, ...((o.synonyms ?? []) as string[])].filter(Boolean).slice(0, 5),
+    creators: ((o.staff?.edges ?? []) as any[]).filter((e) => /story|art/i.test(e.role || '') && e.node?.id).map((e) => ({ id: e.node.id, name: e.node.name?.full ?? '' })).filter((c, i, a) => a.findIndex((x) => x.id === c.id) === i).slice(0, 2),
     authors: ((o.staff?.edges ?? []) as any[]).filter((e) => /story|art/i.test(e.role || '')).map((e) => e.node?.name?.full).filter(Boolean).slice(0, 2)
   };
 }
@@ -89,16 +92,18 @@ export interface MangaQuery {
   format?: string; // MANGA, ONE_SHOT
   status?: string;
   popularityGreater?: number;
+  /** only titles on this reading site (an AniList link-source id) */
+  licensedById?: number;
   page?: number;
   perPage?: number;
 }
 
 export async function mangaList(q: MangaQuery): Promise<{ items: Manga[]; more: boolean; last: number }> {
-  const query = `query($page:Int,$perPage:Int,$sort:[MediaSort],$search:String,$genre:String,$country:CountryCode,$format:MediaFormat,$status:MediaStatus,$pg:Int)
+  const query = `query($page:Int,$perPage:Int,$sort:[MediaSort],$search:String,$genre:String,$country:CountryCode,$format:MediaFormat,$status:MediaStatus,$pg:Int,$lic:Int)
 { Page(page:$page, perPage:$perPage){ pageInfo{ hasNextPage lastPage }
-  media(type:MANGA, format_not:NOVEL, sort:$sort, search:$search, genre:$genre, countryOfOrigin:$country, format:$format, status:$status, popularity_greater:$pg){ ${MEDIA} } } }`;
-  const { sort, popularityGreater, ...rest } = q;
-  const vars: Record<string, unknown> = { page: 1, perPage: 24, ...rest, pg: popularityGreater };
+  media(type:MANGA, format_not:NOVEL, sort:$sort, search:$search, genre:$genre, countryOfOrigin:$country, format:$format, status:$status, popularity_greater:$pg, licensedById:$lic){ ${MEDIA} } } }`;
+  const { sort, popularityGreater, licensedById, ...rest } = q;
+  const vars: Record<string, unknown> = { page: 1, perPage: 24, ...rest, pg: popularityGreater, lic: licensedById };
   if (sort && !q.search) vars.sort = [sort];
   Object.keys(vars).forEach((k) => (vars[k] === undefined || vars[k] === '') && delete vars[k]);
   const d = await gql(query, vars);
@@ -285,4 +290,60 @@ export async function mangaCovers(): Promise<string[]> {
     `query{ Page(perPage:30){ media(type:MANGA, format_not:NOVEL, sort:TRENDING_DESC, isAdult:false, genre_not_in:["Hentai","Ecchi"]){ coverImage{ extraLarge large } } } }`
   );
   return ((d?.Page?.media ?? []) as any[]).map((m) => m.coverImage?.extraLarge || m.coverImage?.large).filter(Boolean);
+}
+
+
+/* ------------------------------ mangaka ------------------------------ */
+
+export interface Creator { id: number; name: string; image: string | null; art: string | null }
+
+// well-known manga, manhwa and manhua creators (AniList's spelling)
+const MANGAKA = [
+  'Eiichirou Oda', 'Masashi Kishimoto', 'Tite Kubo', 'Akira Toriyama', 'Hajime Isayama', 'Gege Akutami', 'Tatsuki Fujimoto',
+  'Koyoharu Gotouge', 'Kouhei Horikoshi', 'Yoshihiro Togashi', 'Kentarou Miura', 'Naoki Urasawa', 'Hiromu Arakawa', 'Yuusuke Murata',
+  'Junji Itou', 'Rumiko Takahashi', 'Takehiko Inoue', 'Inio Asano', 'Hirohiko Araki', 'Sui Ishida', 'Tsugumi Ooba', 'Takeshi Obata',
+  'Makoto Yukimura', 'Kaiu Shirai', 'Yukinobu Tatsu', 'Chugong'
+];
+
+let creatorsCache: Promise<Creator[]> | null = null;
+
+/** Famous mangaka, looked up on AniList in one request. */
+export function topCreators(): Promise<Creator[]> {
+  if (creatorsCache) return creatorsCache;
+  const fields = 'id name{ full } image{ large } staffMedia(type:MANGA, sort:POPULARITY_DESC, perPage:1){ nodes{ bannerImage coverImage{ large } } }';
+  const body = MANGAKA.map((n, i) => `s${i}: Staff(search:${JSON.stringify(n)}){ ${fields} }`).join('\n');
+  creatorsCache = gql(`query{ ${body} }`).then((d) => {
+    const out: Creator[] = [];
+    MANGAKA.forEach((_, i) => {
+      const x = d?.['s' + i];
+      if (!x?.id || out.some((c) => c.id === x.id)) return;
+      const n = x.staffMedia?.nodes?.[0];
+      out.push({ id: x.id, name: x.name?.full ?? '', image: x.image?.large ?? null, art: n?.bannerImage || n?.coverImage?.large || null });
+    });
+    return out;
+  });
+  creatorsCache.catch(() => (creatorsCache = null));
+  return creatorsCache;
+}
+
+export interface CreatorPage { name: string; native: string; image: string | null; about: string; items: Manga[]; more: boolean }
+
+/** A mangaka's works, most popular first. */
+export async function creatorWorks(id: number, page = 1): Promise<CreatorPage> {
+  const d = await gql(
+    `query($id:Int,$page:Int){ Staff(id:$id){ name{ full native } image{ large } description(asHtml:false)
+      staffMedia(type:MANGA, sort:POPULARITY_DESC, page:$page, perPage:30){ pageInfo{ hasNextPage } nodes{ ${MEDIA} } } } }`,
+    { id, page }
+  );
+  const st = d?.Staff;
+  if (!st) throw new Error('Creator not found.');
+  const seen = new Set<number>();
+  return {
+    name: st.name?.full ?? '',
+    native: st.name?.native ?? '',
+    image: st.image?.large ?? null,
+    about: clean(st.description).replace(/__|~!|!~/g, ''),
+    items: ((st.staffMedia?.nodes ?? []) as any[]).filter((n) => n && !seen.has(n.id) && seen.add(n.id) && n.format !== 'NOVEL').map(mapManga),
+    more: !!st.staffMedia?.pageInfo?.hasNextPage
+  };
 }

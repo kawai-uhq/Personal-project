@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect } from 'react';
 import { sectionFor } from './lib/section';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { CINEMA_ORIGIN, ORIGINS, hostSection, isShared, migrationHash, onProd } from './lib/site';
+import { CINEMA_ORIGIN, ORIGINS, hostSection, isCinemaPath, isShared, migrationHash, onProd, stripSection, toLogical } from './lib/site';
 import AuthModal from './components/AuthModal';
 import Navbar from './components/Navbar';
 const Detail = lazy(() => import('./pages/Detail'));
@@ -34,37 +34,49 @@ const MangaDetail = lazy(() => import('./pages/MangaDetail'));
 const MangaRead = lazy(() => import('./pages/MangaRead'));
 const MangaLibrary = lazy(() => import('./pages/MangaLibrary'));
 const MangaGenres = lazy(() => import('./pages/MangaGenres'));
+const AnimeProviders = lazy(() => import('./pages/AniProviders').then((m) => ({ default: m.AnimeProviders })));
+const MangaProviders = lazy(() => import('./pages/AniProviders').then((m) => ({ default: m.MangaProviders })));
+const AnimeSource = lazy(() => import('./pages/AniProviders').then((m) => ({ default: m.AnimeSource })));
+const MangaSource = lazy(() => import('./pages/AniProviders').then((m) => ({ default: m.MangaSource })));
+const StudioPage = lazy(() => import('./pages/AniProviders').then((m) => ({ default: m.StudioPage })));
+const CreatorPage = lazy(() => import('./pages/AniProviders').then((m) => ({ default: m.CreatorPageView })));
 const Search = lazy(() => import('./pages/Search'));
 const Watch = lazy(() => import('./pages/Watch'));
 
 const pathSection = (p: string) => (p.startsWith('/anime') ? 'anime' : p.startsWith('/manga') ? 'manga' : null);
 
-/** Keeps each page on its own sub-domain: anime on anime.comvie.lol, manga on manga.comvie.lol, everything else on cinema.comvie.lol. */
+/** Keeps each page on its own sub-domain (anime on anime.comvie.lol, manga on manga.comvie.lol, the rest on cinema.comvie.lol)
+ *  and keeps the addresses clean there (anime.comvie.lol/explore, not anime.comvie.lol/anime/explore). */
 function useHostRouting() {
   const { pathname, search, hash } = useLocation();
   const nav = useNavigate();
   useEffect(() => {
     if (!onProd()) return;
-    const rest = pathname + search + hash;
+    const tail = search + hash;
     const h = location.hostname;
     const ps = pathSection(pathname);
+    const away = (s: 'cinema' | 'anime' | 'manga', path: string) => window.location.replace(ORIGINS[s] + stripSection(path, s) + tail);
     if (h === 'comvie.lol' || h === 'www.comvie.lol') {
       // the bare domain opens Cinema (or Anime / Manga for their links), bringing this browser's saved data along
-      window.location.replace(ORIGINS[ps ?? 'cinema'] + rest + (ps ? '' : migrationHash()));
+      if (ps) away(ps, pathname);
+      else window.location.replace(CINEMA_ORIGIN + pathname + tail + migrationHash());
       return;
     }
     const hs = hostSection();
     if (hs && hs !== 'cinema') {
-      if (pathname === '/') nav(`/${hs}`, { replace: true });
-      else if (ps !== hs && !isShared(pathname)) window.location.replace(ORIGINS[ps ?? 'cinema'] + rest);
+      if (ps && ps !== hs) away(ps, pathname); // a manga link on the anime site, or the other way round
+      else if (ps === hs) nav(stripSection(pathname, hs) + tail, { replace: true }); // tidy /anime/x -> /x
+      else if (isCinemaPath(pathname)) away('cinema', pathname);
     } else if (ps) {
-      window.location.replace(ORIGINS[ps] + rest);
+      away(ps, pathname);
     }
   }, [pathname, search, hash, nav]);
 }
 
 export default function App() {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const pathname = toLogical(location.pathname);
+  const logical = pathname === location.pathname ? location : { ...location, pathname };
   useHostRouting();
   const watching = pathname.startsWith('/watch/');
 
@@ -85,7 +97,7 @@ export default function App() {
     <>
       <Navbar />
       <Suspense fallback={<div className="status" style={{ minHeight: '70vh' }}><div className="spinner" aria-label="Loading" /></div>}>
-      <Routes>
+      <Routes location={logical}>
         <Route path="/" element={<Home />} />
         <Route path="/movies" element={<Explore key="m" kind="movie" />} />
         <Route path="/tv" element={<Explore key="t" kind="tv" />} />
@@ -106,9 +118,17 @@ export default function App() {
         <Route path="/manga/explore" element={<MangaBrowse />} />
         <Route path="/manga/search" element={<MangaBrowse />} />
         <Route path="/manga/genres" element={<MangaGenres />} />
+        <Route path="/manga/providers" element={<MangaProviders />} />
+        <Route path="/manga/provider/:id" element={<MangaSource />} />
+        <Route path="/manga/creator/:id" element={<CreatorPage />} />
+        <Route path="/anime/providers" element={<AnimeProviders />} />
+        <Route path="/anime/provider/:id" element={<AnimeSource />} />
+        <Route path="/anime/studio/:id" element={<StudioPage />} />
         <Route path="/manga/library" element={<MangaLibrary />} />
         <Route path="/manga/title/:id" element={<MangaDetail />} />
         <Route path="/manga/read/:id" element={<MangaRead />} />
+        <Route path="/manga/*" element={<MangaHome />} />
+        <Route path="/anime/*" element={<AnimeHome />} />
         <Route path="/live" element={<Live />} />
         <Route path="/list" element={<MyList key="main" />} />
         <Route path="/person/:id" element={<PersonPage />} />

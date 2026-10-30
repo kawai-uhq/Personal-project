@@ -7,6 +7,7 @@ import { useApp } from '../state';
 import Icon from './Icon';
 import SearchBox from './SearchBox';
 import SiteSwitch from './SiteSwitch';
+import { toPublic as P } from '../lib/site';
 
 export default function Navbar() {
   const nav = useNavigate();
@@ -36,17 +37,19 @@ export default function Navbar() {
           <SiteSwitch />
           {manga ? (
             <nav className="nav-links" aria-label="Manga">
-              <NavLink to="/manga" end><Icon name="book" size={18} />Manga Home</NavLink>
-              <NavLink to="/manga/explore"><Icon name="compass" size={18} />Explore</NavLink>
-              <NavLink to="/manga/genres"><Icon name="grid" size={18} />Genres</NavLink>
-              <NavLink to="/manga/library"><Icon name="bookmark" size={18} />Library</NavLink>
+              <NavLink to={P('/manga')} end><Icon name="book" size={18} />Manga Home</NavLink>
+              <NavLink to={P('/manga/explore')}><Icon name="compass" size={18} />Explore</NavLink>
+              <NavLink to={P('/manga/genres')}><Icon name="grid" size={18} />Genres</NavLink>
+              <NavLink to={P('/manga/providers')}><Icon name="star" size={18} />Publishers</NavLink>
+              <NavLink to={P('/manga/library')}><Icon name="bookmark" size={18} />Library</NavLink>
             </nav>
           ) : anime ? (
             <nav className="nav-links" aria-label="Anime">
-              <NavLink to="/anime" end><Icon name="flame" size={18} />Anime Home</NavLink>
-              <NavLink to="/anime/explore"><Icon name="compass" size={18} />Explore</NavLink>
-              <NavLink to="/anime/genres"><Icon name="grid" size={18} />Genres</NavLink>
-              <NavLink to="/anime/library"><Icon name="bookmark" size={18} />Library</NavLink>
+              <NavLink to={P('/anime')} end><Icon name="flame" size={18} />Anime Home</NavLink>
+              <NavLink to={P('/anime/explore')}><Icon name="compass" size={18} />Explore</NavLink>
+              <NavLink to={P('/anime/genres')}><Icon name="grid" size={18} />Genres</NavLink>
+              <NavLink to={P('/anime/providers')}><Icon name="tv" size={18} />Studios</NavLink>
+              <NavLink to={P('/anime/library')}><Icon name="bookmark" size={18} />Library</NavLink>
             </nav>
           ) : (
             <nav className="nav-links" aria-label="Main">
@@ -63,7 +66,7 @@ export default function Navbar() {
             value={q}
             onChange={setQ}
             onSubmit={(t) => {
-              nav(`${manga ? '/manga/search' : anime ? '/anime/search' : '/search'}?q=${encodeURIComponent(t)}`);
+              nav(`${manga ? P('/manga/search') : anime ? P('/anime/search') : '/search'}?q=${encodeURIComponent(t)}`);
               setQ('');
             }}
             onPick={() => setQ('')}
@@ -80,19 +83,19 @@ export default function Navbar() {
 
       {manga ? (
         <nav className="tabbar" aria-label="Manga tabs">
-          <NavLink to="/manga" end><Icon name="book" size={18} /><span>Home</span></NavLink>
-          <NavLink to="/manga/search"><Icon name="search" size={18} /><span>Search</span></NavLink>
-          <NavLink to="/manga/explore"><Icon name="compass" size={18} /><span>Explore</span></NavLink>
-          <NavLink to="/manga/genres"><Icon name="grid" size={18} /><span>Genres</span></NavLink>
-          <NavLink to="/manga/library"><Icon name="bookmark" size={18} /><span>Library</span></NavLink>
+          <NavLink to={P('/manga')} end><Icon name="book" size={18} /><span>Home</span></NavLink>
+          <NavLink to={P('/manga/search')}><Icon name="search" size={18} /><span>Search</span></NavLink>
+          <NavLink to={P('/manga/explore')}><Icon name="compass" size={18} /><span>Explore</span></NavLink>
+          <NavLink to={P('/manga/genres')}><Icon name="grid" size={18} /><span>Genres</span></NavLink>
+          <NavLink to={P('/manga/library')}><Icon name="bookmark" size={18} /><span>Library</span></NavLink>
         </nav>
       ) : anime ? (
         <nav className="tabbar" aria-label="Anime tabs">
-          <NavLink to="/anime" end><Icon name="flame" size={18} /><span>Home</span></NavLink>
-          <NavLink to="/anime/search"><Icon name="search" size={18} /><span>Search</span></NavLink>
-          <NavLink to="/anime/explore"><Icon name="compass" size={18} /><span>Explore</span></NavLink>
-          <NavLink to="/anime/genres"><Icon name="grid" size={18} /><span>Genres</span></NavLink>
-          <NavLink to="/anime/library"><Icon name="bookmark" size={18} /><span>Library</span></NavLink>
+          <NavLink to={P('/anime')} end><Icon name="flame" size={18} /><span>Home</span></NavLink>
+          <NavLink to={P('/anime/search')}><Icon name="search" size={18} /><span>Search</span></NavLink>
+          <NavLink to={P('/anime/explore')}><Icon name="compass" size={18} /><span>Explore</span></NavLink>
+          <NavLink to={P('/anime/genres')}><Icon name="grid" size={18} /><span>Genres</span></NavLink>
+          <NavLink to={P('/anime/library')}><Icon name="bookmark" size={18} /><span>Library</span></NavLink>
         </nav>
       ) : (
         <nav className="tabbar" aria-label="Tabs">

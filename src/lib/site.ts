@@ -20,11 +20,45 @@ export function hostSection(): Section | null {
 }
 
 /** Where a section's home is: its own sub-domain on the real site, a plain path elsewhere. */
-export const sectionHome = (s: Section) => (onProd() ? (s === 'cinema' ? `${CINEMA_ORIGIN}/` : `${ORIGINS[s]}/${s}`) : s === 'cinema' ? '/' : `/${s}`);
+export const sectionHome = (s: Section) => (onProd() ? `${ORIGINS[s]}/` : s === 'cinema' ? '/' : `/${s}`);
 
 /** Pages both sub-domains share */
 export const SHARED = ['/contact', '/about', '/help', '/legal', '/terms', '/privacy', '/takedown'];
 export const isShared = (p: string) => SHARED.some((s) => p === s || p.startsWith(s + '/'));
+
+// ---- clean addresses: anime.comvie.lol/explore instead of anime.comvie.lol/anime/explore ----
+// Inside the app every anime page still lives under /anime/… and every manga page under /manga/…;
+// on their own sub-domain the prefix is simply left out of the address bar.
+
+/** "/anime/explore" -> "/explore" (for the given section) */
+export function stripSection(path: string, s: Section): string {
+  if (s === 'cinema') return path;
+  const p = '/' + s;
+  if (path === p) return '/';
+  return path.startsWith(p + '/') ? path.slice(p.length) : path;
+}
+
+/** The address to show for an in-app path (prefix dropped on its own sub-domain). Use for links. */
+export function toPublic(path: string): string {
+  const hs = hostSection();
+  return hs && hs !== 'cinema' ? stripSection(path, hs) : path;
+}
+
+/** The in-app path for the current address (prefix added back on the anime / manga sub-domains). */
+export function toLogical(path: string): string {
+  const hs = hostSection();
+  if (!hs || hs === 'cinema' || isShared(path) || path === '/' + hs || path.startsWith('/' + hs + '/')) return path;
+  return path === '/' ? '/' + hs : '/' + hs + path;
+}
+
+/** Cinema-only addresses (they always open on cinema.comvie.lol). */
+export function isCinemaPath(p: string): boolean {
+  return (
+    ['/movies', '/tv', '/live', '/list', '/providers'].includes(p) ||
+    /^\/(person|provider|explore|genres)\//.test(p) ||
+    /^\/(title|watch)\/(movie|tv)\//.test(p)
+  );
+}
 
 // ---- carrying saved data over from comvie.lol to cinema.comvie.lol (browser storage is per address) ----
 const SKIP = 'comvie.ani.';

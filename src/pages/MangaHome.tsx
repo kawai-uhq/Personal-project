@@ -21,6 +21,7 @@ export default function MangaHome() {
           <Link to="/manga/explore?country=CN" className="chip">Manhua</Link>
           <Link to="/manga/explore?format=ONE_SHOT" className="chip">One-shots</Link>
           <Link to="/manga/genres" className="chip">Genres</Link>
+          <Link to="/manga/providers" className="chip">Publishers &amp; Mangaka</Link>
         </div>
       </section>
       {reading.length > 0 && (
