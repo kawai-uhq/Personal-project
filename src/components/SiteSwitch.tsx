@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from './Icon';
+import Logo, { LogoMark } from './Logo';
 import { useSection } from '../lib/section';
 import type { Section } from '../lib/section';
 import { onProd, sectionHome } from '../lib/site';
 
-const ITEMS: { id: Section; label: string }[] = [
-  { id: 'cinema', label: 'cinema' },
-  { id: 'anime', label: 'anime' }
+const ITEMS: { id: Section; label: string; color: string }[] = [
+  { id: 'cinema', label: 'cinema', color: '#ff6b57' },
+  { id: 'anime', label: 'anime', color: '#ff9a2e' }
 ];
 
 /** Drop-down next to the logo: pick Comvie Cinema or Comvie Anime (each lives on its own sub-domain). */
@@ -39,17 +40,20 @@ export default function SiteSwitch() {
 
   return (
     <div className="sw" ref={box}>
-      <button className={`sw-btn ${open ? 'open' : ''}`} aria-haspopup="menu" aria-expanded={open} aria-label="Switch between Comvie Cinema and Comvie Anime" onClick={() => setOpen((o) => !o)}>
-        <span>{section}</span>
-        <Icon name="chevronDown" size={14} />
+      <button className={`sw-btn ${open ? 'open' : ''}`} aria-haspopup="menu" aria-expanded={open} aria-label="Comvie: switch between Cinema and Anime" onClick={() => setOpen((o) => !o)}>
+        <Logo size={30} />
+        <Icon name="chevronDown" size={15} />
       </button>
       {open && (
         <ul className="sw-menu" role="menu">
           {ITEMS.map((it) => (
             <li key={it.id} role="none">
-              <button role="menuitem" className={it.id === section ? 'cur' : ''} onClick={() => go(it.id)}>
-                <span className="sw-name">com<span>vie</span></span>
-                <small>{it.label}</small>
+              <button role="menuitem" className={it.id === section ? 'cur' : ''} style={{ ['--c' as any]: it.color }} onClick={() => go(it.id)}>
+                <LogoMark size={30} color={it.color} />
+                <span className="sw-txt">
+                  <b>COMVIE</b>
+                  <small>{it.label}</small>
+                </span>
                 {it.id === section && <Icon name="check" size={15} />}
               </button>
             </li>

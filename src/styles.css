@@ -1070,3 +1070,16 @@ html:not(.anime) .sw-menu button.cur { background: rgba(255, 107, 87, .14); }
 .fab-discord svg { width: 24px; height: 24px; }
 .fab-discord.up { bottom: 82px; }
 @media (max-width: 760px) { .fab-discord { right: 14px; bottom: calc(78px + env(safe-area-inset-bottom)); } .fab-discord.up { bottom: calc(136px + env(safe-area-inset-bottom)); } }
+
+/* Logo as the Cinema / Anime drop-down */
+.sw { margin-right: 10px; }
+.sw-btn { height: auto; padding: 2px 4px 2px 0; gap: 4px; border: 0; background: none; border-radius: 10px; color: var(--cream); }
+.sw-btn:hover, .sw-btn.open { border: 0; background: none; }
+.sw-btn:hover .ic, .sw-btn.open .ic { color: var(--accent); opacity: 1; }
+.sw-menu { min-width: 190px; }
+.sw-menu button { flex-direction: row; align-items: center; gap: 11px; padding: 9px 36px 9px 10px; }
+.sw-menu button.cur, html:not(.anime) .sw-menu button.cur { background: rgba(255, 233, 214, .07); }
+.sw-menu .sw-txt { display: flex; flex-direction: column; line-height: 1.1; }
+.sw-menu .sw-txt b { font-family: var(--display); font-weight: 700; font-size: 16px; letter-spacing: .06em; color: var(--c); }
+.sw-menu .sw-txt small { margin-top: 3px; font-size: 12px; font-weight: 700; color: var(--cream); opacity: .75; text-transform: lowercase; }
+.sw-menu .ic { color: var(--c); }

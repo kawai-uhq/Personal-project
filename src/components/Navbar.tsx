@@ -5,7 +5,6 @@ import { useReminders } from '../lib/reminders';
 import { useNewEpisodes } from '../lib/useNewEpisodes';
 import { useApp } from '../state';
 import Icon from './Icon';
-import Logo from './Logo';
 import SearchBox from './SearchBox';
 import SiteSwitch from './SiteSwitch';
 
@@ -32,9 +31,6 @@ export default function Navbar() {
     <>
       <header className={`nav ${solid || pathname !== '/' ? 'solid' : ''}`}>
         <div className="nav-pill">
-          <Link to={anime ? '/anime' : '/'} className="nav-logo" aria-label="Comvie home">
-            <Logo size={30} />
-          </Link>
           <SiteSwitch />
           {anime ? (
             <nav className="nav-links" aria-label="Anime">
