@@ -15,7 +15,7 @@ export default function AnimeGenres() {
       <div className="container mid">
         <header className="ag-head">
           <h1 className="title">Browse Anime by <span className="accent">Genre</span></h1>
-          <p className="muted">Select a genre to discover top rated anime, fresh seasonal airings, and hidden gems.</p>
+          <p className="muted">Pick a genre to see its most popular and best rated anime.</p>
         </header>
         <div className="ag-grid">
           {GENRES.map((g) => (

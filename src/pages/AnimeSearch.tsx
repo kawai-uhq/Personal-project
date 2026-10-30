@@ -69,7 +69,7 @@ export default function AnimeSearch() {
       <div className="container">
         <div className="s-hero">
           <h1>Search Anime</h1>
-          <p>Find your next favourite anime</p>
+          <p>Search anime by title</p>
           <div className="s-bar">
             <SearchBox wide type="search" autoFocus inputClassName="field big" value={q} onChange={setQ} onSubmit={(t) => { run(t, 1); keepUrl(t); }} />
             <button type="button" className="s-btn" onClick={() => term && run(term, 1)}>SEARCH</button>

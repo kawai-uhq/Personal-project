@@ -90,7 +90,7 @@ function CinemaSearch() {
       <div className="container">
         <div className="s-hero">
           <h1>{anime ? 'Search Anime' : 'Search Comvie'}</h1>
-          <p>{anime ? 'Find your next favourite anime' : 'Find your next favourite movie or series'}</p>
+          <p>{anime ? 'Search anime by title' : 'Search movies and series by title'}</p>
           <div className="s-bar">
             <SearchBox
               wide

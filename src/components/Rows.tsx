@@ -138,7 +138,7 @@ export function Poster({ m, rank, fresh }: { m: Media; rank?: number; fresh?: bo
   useEffect(() => {
     if (phase === 'idle') return;
     const f = () => close();
-    window.addEventListener('scroll', f);
+    window.addEventListener('scroll', f, { passive: true });
     return () => window.removeEventListener('scroll', f);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);

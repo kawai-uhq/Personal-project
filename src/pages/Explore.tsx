@@ -130,7 +130,7 @@ export default function Explore({ kind }: { kind?: MediaType }) {
   const lead = kind === 'movie' ? 'Explore' : 'Discover';
   const sub =
     kind === 'movie'
-      ? 'Discover blockbusters, top rated classics, upcoming releases, and hidden gems.'
+      ? 'Filter by genre, year, rating and language.'
       : kind === 'tv'
         ? 'Binge-worthy shows, critically acclaimed series, and live airing episodes.'
         : 'Explore everything in this list.';
