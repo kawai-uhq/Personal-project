@@ -32,6 +32,35 @@ export interface Progress {
   at: number;
 }
 
+// ---- one sign-in for cinema., anime. and manga.comvie.lol ----
+// Browser storage is separate per sub-domain, but a cookie set on ".comvie.lol" is visible to all of them,
+// so the sign-in lives there. Signing out leaves an "out" marker so the other sub-domains sign out too.
+const COOKIE = 'cv_session';
+const SHARED_DAYS = 60;
+const sharedHost = () => typeof location !== 'undefined' && /(^|\.)comvie\.lol$/.test(location.hostname);
+
+function readShared(): Session | 'out' | null {
+  try {
+    const m = document.cookie.match(/(?:^|; )cv_session=([^;]*)/);
+    if (!m) return null;
+    const v = decodeURIComponent(m[1]);
+    if (v === 'out') return 'out';
+    const s = JSON.parse(v) as Session;
+    return s?.refreshToken && s?.email ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeShared(s: Session | null) {
+  try {
+    const base = `; Domain=.comvie.lol; Path=/; Secure; SameSite=Lax; Max-Age=${SHARED_DAYS * 86400}`;
+    document.cookie = `${COOKIE}=${s ? encodeURIComponent(JSON.stringify(s)) : 'out'}${base}`;
+  } catch {
+    /* cookies blocked: sign-in stays on this sub-domain only */
+  }
+}
+
 export const store = {
   getFavorites: () => read<Media[]>('comvie.favorites', []),
   saveFavorites: (v: Media[]) => write('comvie.favorites', v),
@@ -70,6 +99,21 @@ export const store = {
   saveTvLast: (v: string) => write('comvie.tvlast', v),
   getTvBad: () => read<Record<string, number>>('comvie.tvbad', {}),
   saveTvBad: (v: Record<string, number>) => write('comvie.tvbad', v),
-  getSession: () => read<Session | null>('comvie.session', null),
-  saveSession: (v: Session | null) => write('comvie.session', v)
+  getSession: (): Session | null => {
+    if (!sharedHost()) return read<Session | null>('comvie.session', null);
+    const c = readShared();
+    if (c === 'out') {
+      write('comvie.session', null); // signed out on another part of the site
+      return null;
+    }
+    if (c) return c;
+    // no shared sign-in yet: share this browser's earlier sign-in (from before sign-in was shared)
+    const local = read<Session | null>('comvie.session', null);
+    if (local) writeShared(local);
+    return local;
+  },
+  saveSession: (v: Session | null) => {
+    write('comvie.session', v);
+    if (sharedHost()) writeShared(v);
+  }
 };

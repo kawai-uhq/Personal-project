@@ -80,6 +80,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   /** A valid access token (refreshed when close to expiry), or null when signed out / offline. */
   const getToken = useCallback(async (): Promise<string | null> => {
+    // another part of the site (cinema / anime / manga) may have refreshed or ended the sign-in meanwhile
+    const shared = store.getSession();
+    if (shared?.refreshToken !== sessionRef.current?.refreshToken) {
+      sessionRef.current = shared;
+      setSessionState(shared);
+    }
     const s = sessionRef.current;
     if (!authConfigured || !s) return null;
     if (s.expiresAt - Date.now() > 60_000) return s.accessToken;
@@ -88,9 +94,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
       applySession(r.session);
       return r.session.accessToken;
     }
-    if (r.kind === 'rejected') applySession(null);
+    if (r.kind === 'rejected') {
+      // only sign out if nobody else has a newer sign-in in the meantime
+      const now = store.getSession();
+      if (now && now.refreshToken !== s.refreshToken) {
+        sessionRef.current = now;
+        setSessionState(now);
+        return now.expiresAt - Date.now() > 60_000 ? now.accessToken : null;
+      }
+      applySession(null);
+    }
     return null;
   }, [applySession]);
+
+  // Signing in or out on cinema / anime / manga shows up here when you come back to this tab
+  useEffect(() => {
+    const check = () => {
+      if (document.visibilityState === 'hidden') return;
+      const shared = store.getSession();
+      if ((shared?.refreshToken ?? null) !== (sessionRef.current?.refreshToken ?? null)) {
+        sessionRef.current = shared;
+        setSessionState(shared);
+      }
+    };
+    document.addEventListener('visibilitychange', check);
+    window.addEventListener('focus', check);
+    return () => {
+      document.removeEventListener('visibilitychange', check);
+      window.removeEventListener('focus', check);
+    };
+  }, []);
 
   // On load: if signed in, replace the local lists with the account's lists.
   useEffect(() => {
