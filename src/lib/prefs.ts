@@ -50,7 +50,9 @@ const EVT = 'comvie:prefs';
 
 export function getPrefs(): Prefs {
   try {
-    const raw = sharedGet(KEY) ?? localStorage.getItem(KEY);
+    const shared = sharedGet(KEY);
+    if (shared !== undefined && shared !== localStorage.getItem(KEY)) localStorage.setItem(KEY, shared); // keep this sub-domain's copy in step
+    const raw = shared ?? localStorage.getItem(KEY);
     return { ...DEFAULT_PREFS, ...(JSON.parse(raw || '{}') as Partial<Prefs>) };
   } catch {
     return { ...DEFAULT_PREFS };
@@ -58,12 +60,13 @@ export function getPrefs(): Prefs {
 }
 
 export function setPrefs(next: Partial<Prefs> | null) {
+  // a reset is saved as the defaults (not deleted), so the other sub-domains reset too
   const p = next === null ? { ...DEFAULT_PREFS } : { ...getPrefs(), ...next };
+  const raw = JSON.stringify(p);
   try {
-    if (next === null) localStorage.removeItem(KEY);
-    else localStorage.setItem(KEY, JSON.stringify(p));
+    localStorage.setItem(KEY, raw);
   } catch { /* storage blocked: still applies for this visit */ }
-  sharedSet(KEY, next === null ? null : JSON.stringify(p)); // same look on cinema, anime and manga
+  sharedSet(KEY, raw); // same look on cinema, anime and manga
   applyPrefs(p);
   window.dispatchEvent(new Event(EVT));
 }
