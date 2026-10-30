@@ -1,6 +1,22 @@
 import type { Session } from './types';
 
-const BASE = ((import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? '').replace(/\/$/, '');
+/**
+ * The project address, cleaned up: only "https://<ref>.supabase.co" is kept, so a value pasted with
+ * "/rest/v1/" on the end, or the dashboard link (supabase.com/dashboard/project/<ref>), still works.
+ */
+function projectUrl(raw: string): string {
+  const v = raw.trim();
+  if (!v) return '';
+  const dash = /supabase\.com\/dashboard\/project\/([a-z0-9]+)/i.exec(v);
+  if (dash) return `https://${dash[1]}.supabase.co`;
+  try {
+    const u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`);
+    return u.origin;
+  } catch {
+    return v.replace(/\/+$/, '');
+  }
+}
+const BASE = projectUrl((import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? '');
 const KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? '';
 
 export const authConfigured = BASE.startsWith('http') && KEY.length > 0;
