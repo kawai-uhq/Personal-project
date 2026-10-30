@@ -1130,3 +1130,8 @@ html.manga .htag, html.manga .nav-signin { border-color: rgba(143, 134, 255, .45
 .mch-note { margin: -4px 0 12px; }
 .mch-off { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 999px; background: rgba(143, 134, 255, .16); color: var(--accent); font-weight: 800; font-size: 11px; opacity: 1; }
 .mch.ext span { opacity: .6; }
+
+/* "Take me there" button wears the colour of the section it points to */
+.promo-cinema .promo-go { background: #ff6b57; border-color: #ff6b57; color: #1f0b08; }
+.promo-anime .promo-go { background: #ff9a2e; border-color: #ff9a2e; color: #1f1206; }
+.promo-manga .promo-go { background: #8f86ff; border-color: #8f86ff; color: #0f0b24; }

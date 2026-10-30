@@ -278,3 +278,11 @@ export async function mdPages(chapterId: string): Promise<PageSet> {
 }
 
 export const chapterLabel = (c: Chapter) => (c.num ? `Chapter ${c.num}` : 'Oneshot');
+
+/** Cover pictures of popular manga for the "we also have manga" pop-up (never adult titles). */
+export async function mangaCovers(): Promise<string[]> {
+  const d = await gql(
+    `query{ Page(perPage:30){ media(type:MANGA, format_not:NOVEL, sort:TRENDING_DESC, isAdult:false, genre_not_in:["Hentai","Ecchi"]){ coverImage{ extraLarge large } } } }`
+  );
+  return ((d?.Page?.media ?? []) as any[]).map((m) => m.coverImage?.extraLarge || m.coverImage?.large).filter(Boolean);
+}
