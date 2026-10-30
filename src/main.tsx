@@ -4,8 +4,10 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AppProvider } from './state';
 import { applySmooth } from './lib/perf';
+import { importMigration } from './lib/site';
 import './styles.css';
 
+importMigration();
 applySmooth();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

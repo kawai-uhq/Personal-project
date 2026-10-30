@@ -1021,3 +1021,38 @@ html:not(.anime) .dd-list li.sel { background: rgba(255, 107, 87, .14); }
 .plogo b { text-shadow: none; }
 html.anime .abb-genres { font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+/* ---- Cinema / Anime switch next to the logo ---- */
+.sw { position: relative; margin-right: 6px; }
+.sw-btn { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 9px 0 11px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255, 233, 214, .06); color: var(--cream); font-size: 12px; font-weight: 800; letter-spacing: .01em; cursor: pointer; }
+.sw-btn:hover, .sw-btn.open { border-color: var(--accent); }
+.sw-btn .ic { transition: transform .18s ease; opacity: .8; }
+.sw-btn.open .ic { transform: rotate(180deg); }
+.sw-menu { position: absolute; z-index: 60; left: 0; top: calc(100% + 10px); margin: 0; padding: 6px; list-style: none; min-width: 170px; border-radius: 14px; border: 1px solid var(--line); background: rgba(24, 16, 32, .96); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 18px 50px rgba(0, 0, 0, .55); animation: ddin .14s ease-out; }
+.sw-menu button { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; padding: 9px 36px 9px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--text); text-align: left; cursor: pointer; }
+.sw-menu button:hover { background: rgba(255, 233, 214, .09); }
+.sw-menu button.cur { background: rgba(255, 154, 46, .12); }
+html:not(.anime) .sw-menu button.cur { background: rgba(255, 107, 87, .14); }
+.sw-menu .sw-name { font-family: var(--display); font-weight: 600; font-size: 17px; letter-spacing: -.3px; color: var(--cream); line-height: 1.1; }
+.sw-menu .sw-name span { color: var(--accent); }
+.sw-menu small { font-size: 11px; font-weight: 700; color: var(--muted, #b9a9b0); }
+.sw-menu .ic { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--accent); }
+
+/* ---- Discord button (bottom right) ---- */
+.fab-discord { position: fixed; z-index: 30; right: 18px; bottom: 22px; width: 52px; height: 52px; border-radius: 50%; overflow: hidden; display: block; background: #5865f2; box-shadow: 0 6px 24px rgba(0, 0, 0, .4); transition: bottom .2s ease, transform .15s ease; }
+.fab-discord.up { bottom: 80px; }
+.fab-discord:hover { transform: scale(1.06); }
+.fab-discord img, .fab-discord svg { display: block; width: 100%; height: 100%; border-radius: 0; object-fit: cover; }
+@media (max-width: 760px) { .fab-discord { right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); } .fab-discord.up { bottom: calc(134px + env(safe-area-inset-bottom)); } }
+
+/* ---- "We also have…" pop-up ---- */
+.modal.promo { width: min(400px, 100%); min-height: 420px; padding: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: #120c18; }
+.promo-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.promo-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(18, 12, 24, .15) 0%, rgba(18, 12, 24, .75) 55%, rgba(18, 12, 24, .96) 100%); }
+.promo .modal-close { z-index: 2; background: rgba(18, 12, 24, .6); }
+.promo-body { position: relative; z-index: 1; padding: 24px; }
+.promo-body h2 { margin: 0 0 6px; font-size: 24px; }
+.promo-body p { margin: 0 0 18px; color: var(--cream); opacity: .85; line-height: 1.5; font-size: 14.5px; }
+.promo-go { display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; }
+.promo-never { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; color: var(--cream); opacity: .8; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+.promo-never input { width: 17px; height: 17px; accent-color: var(--accent); }

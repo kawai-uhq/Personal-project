@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect } from 'react';
-import SectionSplash from './components/SectionSplash';
 import { sectionFor } from './lib/section';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { ANIME_ORIGIN, CINEMA_ORIGIN, hostSection, isShared, migrationHash, onProd } from './lib/site';
 import AuthModal from './components/AuthModal';
 import Navbar from './components/Navbar';
 const Detail = lazy(() => import('./pages/Detail'));
@@ -9,7 +9,7 @@ const GenreResults = lazy(() => import('./pages/GenreResults'));
 const Genres = lazy(() => import('./pages/Genres'));
 const Explore = lazy(() => import('./pages/Explore'));
 import Tooltip from './components/Tooltip';
-import DiscordPopup from './components/DiscordPopup';
+import CrossPromo from './components/CrossPromo';
 import Contact from './pages/Contact';
 import Floating from './components/Floating';
 import Footer from './components/Footer';
@@ -32,8 +32,31 @@ const Search = lazy(() => import('./pages/Search'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Watch = lazy(() => import('./pages/Watch'));
 
+/** Keeps each page on its own sub-domain: anime pages on anime.comvie.lol, everything else on cinema.comvie.lol. */
+function useHostRouting() {
+  const { pathname, search, hash } = useLocation();
+  const nav = useNavigate();
+  useEffect(() => {
+    if (!onProd()) return;
+    const rest = pathname + search + hash;
+    const h = location.hostname;
+    if (h === 'comvie.lol' || h === 'www.comvie.lol') {
+      // the bare domain opens Cinema (or Anime for anime links), bringing this browser's saved data along
+      window.location.replace((pathname.startsWith('/anime') ? ANIME_ORIGIN : CINEMA_ORIGIN) + rest + (pathname.startsWith('/anime') ? '' : migrationHash()));
+      return;
+    }
+    if (hostSection() === 'anime') {
+      if (pathname === '/') nav('/anime', { replace: true });
+      else if (!pathname.startsWith('/anime') && !isShared(pathname)) window.location.replace(CINEMA_ORIGIN + rest);
+    } else if (pathname.startsWith('/anime')) {
+      window.location.replace(ANIME_ORIGIN + rest);
+    }
+  }, [pathname, search, hash, nav]);
+}
+
 export default function App() {
   const { pathname } = useLocation();
+  useHostRouting();
   const watching = pathname.startsWith('/watch/');
 
   useEffect(() => {
@@ -51,7 +74,6 @@ export default function App() {
   return (
     <>
       <Navbar />
-      <SectionSplash section={section} />
       <Suspense fallback={<div className="status" style={{ minHeight: '70vh' }}><div className="spinner" aria-label="Loading" /></div>}>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -91,7 +113,7 @@ export default function App() {
       <Footer />
       {!watching && <Floating />}
       <AuthModal />
-      <DiscordPopup />
+      <CrossPromo />
       <Tooltip />
     </>
   );

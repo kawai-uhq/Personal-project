@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { DISCORD_URL } from '../lib/links';
+import DiscordIcon from './DiscordIcon';
 import Icon from './Icon';
 
 interface InstallEvent extends Event {
@@ -40,6 +42,9 @@ export default function Floating() {
           <Icon name="download" size={15} />Install App
         </button>
       )}
+      <a className={`fab-discord ${top ? 'up' : ''}`} href={DISCORD_URL} target="_blank" rel="noopener noreferrer" aria-label="Join our Discord server">
+        <DiscordIcon size={52} />
+      </a>
       {top && (
         <button className="fab-top" aria-label="Back to top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           <Icon name="arrowUp" size={20} />

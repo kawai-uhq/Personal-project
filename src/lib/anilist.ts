@@ -280,3 +280,11 @@ export async function aniSeasons(id: number): Promise<SeasonItem[]> {
   }
   return [...seen.values()].sort((a, b) => a.at - b.at).map(({ at: _at, ...r }) => r);
 }
+
+/** Cover pictures of popular anime for the "we also have anime" pop-up (never adult titles). */
+export async function aniCovers(): Promise<string[]> {
+  const d = await gql(
+    `query{ Page(perPage:30){ media(type:ANIME, sort:TRENDING_DESC, isAdult:false, genre_not_in:["Hentai"]){ coverImage{ extraLarge large } } } }`
+  );
+  return ((d?.Page?.media ?? []) as any[]).map((m) => m.coverImage?.extraLarge || m.coverImage?.large).filter(Boolean);
+}

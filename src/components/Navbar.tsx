@@ -7,6 +7,7 @@ import { useApp } from '../state';
 import Icon from './Icon';
 import Logo from './Logo';
 import SearchBox from './SearchBox';
+import SiteSwitch from './SiteSwitch';
 
 export default function Navbar() {
   const nav = useNavigate();
@@ -34,13 +35,13 @@ export default function Navbar() {
           <Link to={anime ? '/anime' : '/'} className="nav-logo" aria-label="Comvie home">
             <Logo size={30} />
           </Link>
+          <SiteSwitch />
           {anime ? (
             <nav className="nav-links" aria-label="Anime">
               <NavLink to="/anime" end><Icon name="flame" size={18} />Anime Home</NavLink>
               <NavLink to="/anime/explore"><Icon name="compass" size={18} />Explore</NavLink>
               <NavLink to="/anime/genres"><Icon name="grid" size={18} />Genres</NavLink>
               <NavLink to="/anime/library"><Icon name="bookmark" size={18} />Library</NavLink>
-              <NavLink to="/" end><Icon name="film" size={18} />Cinema</NavLink>
             </nav>
           ) : (
             <nav className="nav-links" aria-label="Main">
@@ -49,7 +50,6 @@ export default function Navbar() {
               <NavLink to="/tv"><Icon name="tv" size={18} />TV Shows</NavLink>
               <NavLink to="/live"><Icon name="live" size={18} />Live TV</NavLink>
               <NavLink to="/genres"><Icon name="grid" size={18} />Genres</NavLink>
-              <NavLink to="/anime"><Icon name="flame" size={18} />Anime</NavLink>
               <NavLink to="/list"><Icon name="bookmark" size={18} />My Library{dot > 0 && <span className="nav-dot" aria-label={dotTip} data-tip={dotTip} />}</NavLink>
             </nav>
           )}
@@ -78,12 +78,11 @@ export default function Navbar() {
 
       {anime ? (
         <nav className="tabbar" aria-label="Anime tabs">
-          <NavLink to="/anime" end><Icon name="flame" size={18} /><span>Anime</span></NavLink>
+          <NavLink to="/anime" end><Icon name="flame" size={18} /><span>Home</span></NavLink>
           <NavLink to="/anime/search"><Icon name="search" size={18} /><span>Search</span></NavLink>
           <NavLink to="/anime/explore"><Icon name="compass" size={18} /><span>Explore</span></NavLink>
           <NavLink to="/anime/genres"><Icon name="grid" size={18} /><span>Genres</span></NavLink>
           <NavLink to="/anime/library"><Icon name="bookmark" size={18} /><span>Library</span></NavLink>
-          <NavLink to="/" end><Icon name="film" size={18} /><span>Cinema</span></NavLink>
         </nav>
       ) : (
         <nav className="tabbar" aria-label="Tabs">
@@ -91,7 +90,6 @@ export default function Navbar() {
           <NavLink to="/search"><Icon name="search" size={18} /><span>Search</span></NavLink>
           <NavLink to="/movies"><Icon name="film" size={18} /><span>Movies</span></NavLink>
           <NavLink to="/tv"><Icon name="tv" size={18} /><span>TV</span></NavLink>
-          <NavLink to="/anime"><Icon name="flame" size={18} /><span>Anime</span></NavLink>
           <NavLink to="/live"><Icon name="live" size={18} /><span>Live</span></NavLink>
           <NavLink to="/list"><Icon name="bookmark" size={18} /><span>Library</span>{dot > 0 && <i className="nav-dot" />}</NavLink>
         </nav>
