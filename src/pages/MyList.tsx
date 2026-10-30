@@ -154,7 +154,7 @@ export default function MyList({ anime = false }: { anime?: boolean }) {
         {!session && (
           <p className="muted note">
             {signInComingSoon ? (
-              'Saved on this device only. Accounts are coming soon, within about 2 weeks.'
+              'Saved on this device only. Accounts are coming soon.'
             ) : (
               <>Saved on this device only. <button className="link" onClick={openAuth}>Sign in</button> to keep it if you clear your browser or switch devices.</>
             )}

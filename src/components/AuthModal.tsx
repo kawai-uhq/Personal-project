@@ -109,7 +109,7 @@ export default function AuthModal() {
           <>
             <h2 id="auth-title">Sign-in is coming soon</h2>
             <p className="muted">
-              Accounts will be available within about 2 weeks. Until then, your Watchlist and watch history are saved on this device.
+              This feature is coming soon. Until then, your Watchlist and watch history are saved on this device.
             </p>
             <button className="btn primary wide" onClick={closeAuth}>Got it</button>
           </>

@@ -1135,3 +1135,14 @@ html.manga .htag, html.manga .nav-signin { border-color: rgba(143, 134, 255, .45
 .promo-cinema .promo-go { background: #ff6b57; border-color: #ff6b57; color: #1f0b08; }
 .promo-anime .promo-go { background: #ff9a2e; border-color: #ff9a2e; color: #1f1206; }
 .promo-manga .promo-go { background: #8f86ff; border-color: #8f86ff; color: #0f0b24; }
+
+/* Pop-up slides: arrows, dots, cross-fade */
+.promo .promo-art { opacity: 0; transition: opacity .35s ease; }
+.promo .promo-art.on { opacity: 1; }
+.promo-arrow { position: absolute; z-index: 2; top: 38%; transform: translateY(-50%); width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(255, 233, 214, .25); background: rgba(18, 12, 24, .55); color: #fff; cursor: pointer; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.promo-arrow:hover { background: rgba(18, 12, 24, .8); }
+.promo-arrow.left { left: 12px; }
+.promo-arrow.right { right: 12px; }
+.promo-dots { display: flex; justify-content: center; gap: 7px; margin-top: 14px; }
+.promo-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: rgba(255, 233, 214, .35); cursor: pointer; transition: width .2s ease, background .2s ease; }
+.promo-dots button.on { width: 22px; background: var(--cream); }
