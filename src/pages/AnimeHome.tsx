@@ -6,6 +6,7 @@ import { Row, Status, HomeSkeleton } from '../components/Rows';
 import { aniList, seasonNow } from '../lib/anilist';
 import type { Ani } from '../lib/anilist';
 import { useAnimeStore } from '../lib/animeStore';
+import AniSourceRow from '../components/AniSourceRow';
 
 /** The anime section's home, powered by AniList. */
 export default function AnimeHome() {
@@ -44,6 +45,7 @@ export default function AnimeHome() {
           ))}
         </Row>
       )}
+      <AniSourceRow kind="anime" />
       {list.length > 0 && <Row title="My Anime Watchlist" to="/anime/library">{list.map((a) => <AnimeCard key={a.id} a={a} />)}</Row>}
       {loved.length > 0 && <Row title="My Anime Favorites" to="/anime/library">{loved.map((a) => <AnimeCard key={a.id} a={a} />)}</Row>}
       <AniFeedRow title="Trending Right Now" q={{ sort: 'TRENDING_DESC' }} to="/anime/explore?sort=TRENDING_DESC" />

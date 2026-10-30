@@ -97,12 +97,19 @@ export async function sendCode(email: string): Promise<void> {
   if (r.code < 200 || r.code > 299) throw new AuthError(errorText(r, "Couldn't send the code. Try again."));
 }
 
-export async function verifyCode(email: string, code: string): Promise<Session> {
-  const r = await post('/verify', { type: 'email', email, token: code });
+/** Check an emailed code: 'email' for sign-in codes, 'signup' for the code that confirms a new account. */
+export async function verifyCode(email: string, code: string, type: 'email' | 'signup' = 'email'): Promise<Session> {
+  const r = await post('/verify', { type, email, token: code });
   if (r.code < 200 || r.code > 299) throw new AuthError(errorText(r, "That code didn't work. Try again."));
   const s = toSession(r.body, email);
   if (!s) throw new AuthError('Sign-in failed. Please try again.');
   return s;
+}
+
+/** Send the new-account confirmation code again. */
+export async function resendSignup(email: string): Promise<void> {
+  const r = await post('/resend', { type: 'signup', email });
+  if (r.code < 200 || r.code > 299) throw new AuthError(errorText(r, "Couldn't resend the code. Try again."));
 }
 
 /** Email + password sign-in. */

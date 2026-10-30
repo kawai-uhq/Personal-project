@@ -50,8 +50,8 @@ export default function Home() {
     <main className="page home">
       <Ambient items={heroes} active={active} />
       <Billboard items={heroes} onActive={onActive} />
-      <ProviderRow />
       <ContinueRow items={history} onRemove={removeWatch} />
+      <ProviderRow />
       <PosterRow title="My Watchlist" items={favorites} to="/list" fresh={fresh} />
       <PosterRow title="My Favorites" items={loved} to="/list" fresh={fresh} />
       <PosterRow title="Trending Today" items={trending} to="/explore/trending-day" />

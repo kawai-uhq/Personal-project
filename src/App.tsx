@@ -40,6 +40,7 @@ const AnimeSource = lazy(() => import('./pages/AniProviders').then((m) => ({ def
 const MangaSource = lazy(() => import('./pages/AniProviders').then((m) => ({ default: m.MangaSource })));
 const StudioPage = lazy(() => import('./pages/AniProviders').then((m) => ({ default: m.StudioPage })));
 const CreatorPage = lazy(() => import('./pages/AniProviders').then((m) => ({ default: m.CreatorPageView })));
+const Account = lazy(() => import('./pages/Account'));
 const Search = lazy(() => import('./pages/Search'));
 const Watch = lazy(() => import('./pages/Watch'));
 
@@ -118,11 +119,11 @@ export default function App() {
         <Route path="/manga/explore" element={<MangaBrowse />} />
         <Route path="/manga/search" element={<MangaBrowse />} />
         <Route path="/manga/genres" element={<MangaGenres />} />
-        <Route path="/manga/providers" element={<MangaProviders />} />
-        <Route path="/manga/provider/:id" element={<MangaSource />} />
+        <Route path="/manga/publishers" element={<MangaProviders />} />
+        <Route path="/manga/publisher/:id" element={<MangaSource />} />
         <Route path="/manga/creator/:id" element={<CreatorPage />} />
-        <Route path="/anime/providers" element={<AnimeProviders />} />
-        <Route path="/anime/provider/:id" element={<AnimeSource />} />
+        <Route path="/anime/studios" element={<AnimeProviders />} />
+        <Route path="/anime/streaming/:id" element={<AnimeSource />} />
         <Route path="/anime/studio/:id" element={<StudioPage />} />
         <Route path="/manga/library" element={<MangaLibrary />} />
         <Route path="/manga/title/:id" element={<MangaDetail />} />
@@ -132,6 +133,7 @@ export default function App() {
         <Route path="/live" element={<Live />} />
         <Route path="/list" element={<MyList key="main" />} />
         <Route path="/person/:id" element={<PersonPage />} />
+        <Route path="/account" element={<Account />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
         <Route path="/help" element={<Help />} />

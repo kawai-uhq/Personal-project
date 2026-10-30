@@ -1182,3 +1182,22 @@ textarea:-webkit-autofill, select:-webkit-autofill {
   transition: background-color 600000s 0s, color 600000s 0s;
 }
 input:autofill { background: transparent; filter: none; }
+
+/* ---- Account page ---- */
+.acct { max-width: 760px; }
+.acct-card { padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255, 233, 214, .045); margin-bottom: 22px; }
+.acct-empty { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 34px 22px; }
+.acct-empty .title { margin: 6px 0 0; }
+.acct-top { display: flex; align-items: center; gap: 16px; }
+.acct-avatar { display: grid; place-items: center; width: 56px; height: 56px; flex: none; border-radius: 50%; background: var(--accent); color: var(--accent-ink, #1f0b08); font-weight: 900; font-size: 22px; }
+.acct-avatar.big { width: 72px; height: 72px; font-size: 30px; }
+.acct-name { margin: 0 0 2px; font-size: 24px; word-break: break-all; }
+.acct-top p { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; word-break: break-all; }
+.acct-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: rgba(61, 220, 151, .14); color: var(--good, #3ddc97); font-size: 12px; font-weight: 800; }
+.acct-stats { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); margin-bottom: 8px; }
+.acct-stat { padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 233, 214, .035); }
+.acct-stat strong { display: block; font-size: 24px; color: var(--cream); }
+.acct-stat small { opacity: .7; font-weight: 700; }
+.acct-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 10px; }
+.btn.danger { color: #ff8d7e; border-color: rgba(255, 107, 87, .4); }
+.btn.danger:hover { background: rgba(255, 107, 87, .12); }

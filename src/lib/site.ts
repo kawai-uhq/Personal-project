@@ -23,7 +23,7 @@ export function hostSection(): Section | null {
 export const sectionHome = (s: Section) => (onProd() ? `${ORIGINS[s]}/` : s === 'cinema' ? '/' : `/${s}`);
 
 /** Pages both sub-domains share */
-export const SHARED = ['/contact', '/about', '/help', '/legal', '/terms', '/privacy', '/takedown'];
+export const SHARED = ['/account', '/contact', '/about', '/help', '/legal', '/terms', '/privacy', '/takedown'];
 export const isShared = (p: string) => SHARED.some((s) => p === s || p.startsWith(s + '/'));
 
 // ---- clean addresses: anime.comvie.lol/explore instead of anime.comvie.lol/anime/explore ----

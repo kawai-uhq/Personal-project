@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AuthError, sendCode, signInComingSoon, signInPassword, signUpPassword, verifyCode } from '../lib/auth';
+import { AuthError, resendSignup, sendCode, signInComingSoon, signInPassword, signUpPassword, verifyCode } from '../lib/auth';
 import { useApp } from '../state';
 import Icon from './Icon';
 
@@ -14,6 +14,8 @@ export default function AuthModal() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
+  // which kind of code the code step is waiting for: a sign-in code, or the code that confirms a new account
+  const [codeType, setCodeType] = useState<'email' | 'signup'>('email');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -56,8 +58,13 @@ export default function AuthModal() {
         const s = await signUpPassword(clean, password, username.trim());
         if (s) done(s);
         else {
-          setMode('in');
-          setInfo(`Almost there. We emailed a confirmation link to ${clean}. Open it, then sign in.`);
+          // Supabase wants the email confirmed: ask for the code from the email right here
+          setEmail(clean);
+          setCode('');
+          setCodeType('signup');
+          setStep('code');
+          setCooldown(RESEND_SECONDS);
+          setInfo(`We emailed a verification code to ${clean}. Check spam if you don't see it.`);
         }
       }
     } catch (e) {
@@ -74,7 +81,11 @@ export default function AuthModal() {
     setError(null);
     setInfo(null);
     try {
-      await sendCode(clean);
+      if (step === 'code' && codeType === 'signup') await resendSignup(clean);
+      else {
+        await sendCode(clean);
+        setCodeType('email');
+      }
       setEmail(clean);
       setCode('');
       setStep('code');
@@ -91,7 +102,7 @@ export default function AuthModal() {
     setBusy(true);
     setError(null);
     try {
-      done(await verifyCode(email, code));
+      done(await verifyCode(email, code, codeType));
     } catch (e) {
       setError(e instanceof AuthError ? e.message : 'That code is wrong or has expired.');
     }
@@ -120,7 +131,7 @@ export default function AuthModal() {
               void (step === 'form' ? submitForm() : verify());
             }}
           >
-            <h2 id="auth-title">{step === 'code' ? 'Enter your code' : mode === 'in' ? 'Welcome Back' : 'Create Account'}</h2>
+            <h2 id="auth-title">{step === 'code' ? (codeType === 'signup' ? 'Verify your email' : 'Enter your code') : mode === 'in' ? 'Welcome Back' : 'Create Account'}</h2>
             <p className="muted small">
               {step === 'code'
                 ? `Type the code we sent to ${email}.`
@@ -179,7 +190,7 @@ export default function AuthModal() {
               </>
             ) : (
               <label className="auth-label">
-                One-time code
+                Verification code
                 <span className="auth-input">
                   <Icon name="lock" size={17} />
                   <input
@@ -187,7 +198,7 @@ export default function AuthModal() {
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     autoFocus
-                    placeholder="••••••"
+                    placeholder="Enter code"
                     value={code}
                     disabled={busy}
                     onChange={(e) => { setCode(e.target.value.replace(/\D/g, '').slice(0, 10)); setError(null); }}
@@ -199,7 +210,7 @@ export default function AuthModal() {
             {error ? <p className="error">{error}</p> : info ? <p className="muted small">{info}</p> : null}
 
             <button className="btn primary wide auth-go" type="submit" disabled={busy}>
-              {busy ? 'Please wait…' : step === 'code' ? 'Verify and continue' : mode === 'in' ? <><Icon name="login" size={16} />Sign In</> : <><Icon name="userPlus" size={16} />Create Account</>}
+              {busy ? 'Please wait…' : step === 'code' ? (codeType === 'signup' ? 'Verify and create account' : 'Verify and continue') : mode === 'in' ? <><Icon name="login" size={16} />Sign In</> : <><Icon name="userPlus" size={16} />Create Account</>}
             </button>
 
             {step === 'form' && mode === 'in' && (
@@ -218,7 +229,7 @@ export default function AuthModal() {
                   type="button"
                   className="link"
                   disabled={busy}
-                  onClick={() => { setStep('form'); setCode(''); setError(null); setInfo(null); }}
+                  onClick={() => { setStep('form'); setCode(''); setCodeType('email'); setError(null); setInfo(null); }}
                 >
                   Back
                 </button>

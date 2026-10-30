@@ -12,7 +12,7 @@ import { toPublic as P } from '../lib/site';
 export default function Navbar() {
   const nav = useNavigate();
   const { pathname } = useLocation();
-  const { session, openAuth, signOut } = useApp();
+  const { session, openAuth } = useApp();
   const fresh = useNewEpisodes();
   const { due } = useReminders();
   const sec = useSection();
@@ -40,7 +40,6 @@ export default function Navbar() {
               <NavLink to={P('/manga')} end><Icon name="book" size={18} />Manga Home</NavLink>
               <NavLink to={P('/manga/explore')}><Icon name="compass" size={18} />Explore</NavLink>
               <NavLink to={P('/manga/genres')}><Icon name="grid" size={18} />Genres</NavLink>
-              <NavLink to={P('/manga/providers')}><Icon name="star" size={18} />Publishers</NavLink>
               <NavLink to={P('/manga/library')}><Icon name="bookmark" size={18} />Library</NavLink>
             </nav>
           ) : anime ? (
@@ -48,7 +47,6 @@ export default function Navbar() {
               <NavLink to={P('/anime')} end><Icon name="flame" size={18} />Anime Home</NavLink>
               <NavLink to={P('/anime/explore')}><Icon name="compass" size={18} />Explore</NavLink>
               <NavLink to={P('/anime/genres')}><Icon name="grid" size={18} />Genres</NavLink>
-              <NavLink to={P('/anime/providers')}><Icon name="tv" size={18} />Studios</NavLink>
               <NavLink to={P('/anime/library')}><Icon name="bookmark" size={18} />Library</NavLink>
             </nav>
           ) : (
@@ -72,9 +70,9 @@ export default function Navbar() {
             onPick={() => setQ('')}
           />
           {session ? (
-            <button className="avatar" title={`${session.email} · tap to sign out`} aria-label="Sign out" onClick={() => window.confirm(`Sign out of ${session.email}?`) && signOut()}>
+            <Link to="/account" className="avatar" aria-label="Your account" title={session.email}>
               {session.email.slice(0, 1).toUpperCase()}
-            </button>
+            </Link>
           ) : (
             <button className="nav-signin" onClick={openAuth}>Sign in</button>
           )}

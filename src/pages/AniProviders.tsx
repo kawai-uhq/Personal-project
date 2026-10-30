@@ -9,18 +9,9 @@ import type { Ani, LinkSource, StudioLite } from '../lib/anilist';
 import { creatorWorks, mangaList, topCreators } from '../lib/manga';
 import type { Creator, CreatorPage, Manga } from '../lib/manga';
 import { toPublic as P } from '../lib/site';
+import { SourceLogo } from '../components/AniSourceRow';
 
 type Kind = 'anime' | 'manga';
-
-/** A site's logo on its brand colour (AniList gives small transparent icons). */
-function SourceLogo({ s, size = 44 }: { s: LinkSource; size?: number }) {
-  const [bad, setBad] = useState(false);
-  return (
-    <span className="src-logo" style={{ width: size, height: size, background: s.color || '#2a2133' }}>
-      {s.icon && !bad ? <img src={s.icon} alt="" onError={() => setBad(true)} /> : <b>{s.site.charAt(0)}</b>}
-    </span>
-  );
-}
 
 function useList<T>(load: () => Promise<T[]>, deps: unknown[]) {
   const [list, setList] = useState<T[] | null>(null);
@@ -75,7 +66,7 @@ function ProvidersPage({ kind }: { kind: Kind }) {
         ) : (
           <div className="pgrid">
             {shownSites.map((s) => (
-              <Link key={s.id} to={P(`/${kind}/provider/${s.id}`)} className="ptile">
+              <Link key={s.id} to={P(kind === 'anime' ? `/anime/streaming/${s.id}` : `/manga/publisher/${s.id}`)} className="ptile">
                 <SourceLogo s={s} />
                 <span>{s.site}</span>
               </Link>
@@ -158,7 +149,7 @@ function SourcePage({ kind }: { kind: Kind }) {
   return (
     <main className="page pad-top">
       <div className="container">
-        <p className="crumb"><Link to={P(`/${kind}/providers`)} className="link"><Icon name="chevronLeft" size={14} />{anime ? 'Studios & Streaming' : 'Publishers & Mangaka'}</Link></p>
+        <p className="crumb"><Link to={P(kind === 'anime' ? '/anime/studios' : '/manga/publishers')} className="link"><Icon name="chevronLeft" size={14} />{anime ? 'Studios & Streaming' : 'Publishers & Mangaka'}</Link></p>
         <div className="prov-head">
           {src && <SourceLogo s={src} size={52} />}
           <h1 className="title">{src?.site ?? '…'}</h1>
@@ -185,7 +176,7 @@ export function StudioPage() {
   return (
     <main className="page pad-top">
       <div className="container">
-        <p className="crumb"><Link to={P('/anime/providers')} className="link"><Icon name="chevronLeft" size={14} />Studios &amp; Streaming</Link></p>
+        <p className="crumb"><Link to={P('/anime/studios')} className="link"><Icon name="chevronLeft" size={14} />Studios &amp; Streaming</Link></p>
         <h1 className="title">{name || '…'}</h1>
         <p className="muted" style={{ marginBottom: 16 }}>Anime made by this studio, most popular first.</p>
         <TitleGrid<Ani>
@@ -207,7 +198,7 @@ export function CreatorPageView() {
   return (
     <main className="page pad-top">
       <div className="container">
-        <p className="crumb"><Link to={P('/manga/providers')} className="link"><Icon name="chevronLeft" size={14} />Publishers &amp; Mangaka</Link></p>
+        <p className="crumb"><Link to={P('/manga/publishers')} className="link"><Icon name="chevronLeft" size={14} />Publishers &amp; Mangaka</Link></p>
         <div className="creator-head">
           {info?.image && <img src={info.image} alt="" />}
           <div>

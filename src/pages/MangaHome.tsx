@@ -3,6 +3,7 @@ import Icon from '../components/Icon';
 import { MangaCard, MangaFeedRow } from '../components/MangaCard';
 import { Row } from '../components/Rows';
 import { useMangaStore } from '../lib/mangaStore';
+import AniSourceRow from '../components/AniSourceRow';
 
 /** The manga section's home: manga, manhwa and manhua, powered by AniList. */
 export default function MangaHome() {
@@ -21,7 +22,6 @@ export default function MangaHome() {
           <Link to="/manga/explore?country=CN" className="chip">Manhua</Link>
           <Link to="/manga/explore?format=ONE_SHOT" className="chip">One-shots</Link>
           <Link to="/manga/genres" className="chip">Genres</Link>
-          <Link to="/manga/providers" className="chip">Publishers &amp; Mangaka</Link>
         </div>
       </section>
       {reading.length > 0 && (
@@ -29,6 +29,7 @@ export default function MangaHome() {
           {reading.map((w) => <MangaCard key={w.id} m={w} tag={w.label.replace('Chapter', 'Ch.')} to={`/manga/read/${w.id}?c=${w.chapterId}&l=${w.lang ?? 'en'}`} onRemove={() => store.removeRead(w.id)} />)}
         </Row>
       )}
+      <AniSourceRow kind="manga" />
       {list.length > 0 && <Row title="My Manga Library" to="/manga/library">{list.map((m) => <MangaCard key={m.id} m={m} />)}</Row>}
       <MangaFeedRow title="Trending Right Now" q={{ sort: 'TRENDING_DESC' }} to="/manga/explore?sort=TRENDING_DESC" />
       <MangaFeedRow title="Popular Manhwa" q={{ sort: 'POPULARITY_DESC', country: 'KR' }} to="/manga/explore?country=KR&sort=POPULARITY_DESC" />
