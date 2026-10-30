@@ -94,7 +94,9 @@ export default function SearchBox({
   const [trend, setTrend] = useState<Media[]>([]);
   const [emptyOpen, setEmptyOpen] = useState(false);
 
-  const anime = useSection() === 'anime';
+  const sec = useSection();
+  const anime = sec === 'anime';
+  const manga = sec === 'manga';
   const term = value.trim();
   const showEmpty = focus && emptyOpen && term.length === 0 && (recents.length > 0 || trend.length > 0);
 
@@ -110,7 +112,7 @@ export default function SearchBox({
   };
 
   useEffect(() => {
-    if (!emptyOpen || trend.length) return;
+    if (!emptyOpen || trend.length || manga) return;
     let live = true;
     (anime ? aniList({ sort: 'TRENDING_DESC', perPage: 5 }).then((r) => r.items.map(aniToMedia)) : tmdb.feed('trending-day').then((r) => r.items.slice(0, 5)))
       .then((l) => live && setTrend(l))
@@ -124,7 +126,7 @@ export default function SearchBox({
   const rows = items.length ? items.length + 1 : 0; // titles + the "See all" row
 
   useEffect(() => {
-    if (term.length < MIN_CHARS) {
+    if (term.length < MIN_CHARS || manga) {
       ticket.current++;
       setItems([]);
       setLoaded('');
@@ -149,7 +151,7 @@ export default function SearchBox({
         });
     }, DELAY_MS);
     return () => window.clearTimeout(t);
-  }, [term, anime]);
+  }, [term, anime, manga]);
 
   const close = () => {
     setDismissed(true);

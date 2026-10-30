@@ -81,7 +81,7 @@ async function send(query: string, variables: Record<string, unknown>): Promise<
   });
 }
 
-async function gql<T = any>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
+export async function gql<T = any>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
   const key = hash(query + JSON.stringify(variables));
   const hit = cache.get(key);
   if (hit) return hit;

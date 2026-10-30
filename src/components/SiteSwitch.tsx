@@ -8,7 +8,8 @@ import { onProd, sectionHome } from '../lib/site';
 
 const ITEMS: { id: Section; label: string; color: string }[] = [
   { id: 'cinema', label: 'cinema', color: '#ff6b57' },
-  { id: 'anime', label: 'anime', color: '#ff9a2e' }
+  { id: 'anime', label: 'anime', color: '#ff9a2e' },
+  { id: 'manga', label: 'manga', color: '#8f86ff' }
 ];
 
 /** Drop-down next to the logo: pick Comvie Cinema or Comvie Anime (each lives on its own sub-domain). */

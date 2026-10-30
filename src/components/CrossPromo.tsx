@@ -22,10 +22,11 @@ export default function CrossPromo() {
   const [never, setNever] = useState(false);
   const [done, setDone] = useState(false);
   const toAnime = section === 'cinema';
-  const playing = pathname.startsWith('/watch/') || pathname.startsWith('/anime/watch/');
+  const playing = pathname.startsWith('/watch/') || pathname.startsWith('/anime/watch/') || pathname.startsWith('/manga/read/');
+  const skip = section === 'manga';
 
   useEffect(() => {
-    if (done || playing || store.getPromoHide()) return;
+    if (done || playing || skip || store.getPromoHide()) return;
     try {
       if (sessionStorage.getItem(SEEN)) return;
     } catch {
@@ -61,7 +62,7 @@ export default function CrossPromo() {
       live = false;
       window.clearTimeout(t);
     };
-  }, [done, playing, toAnime]);
+  }, [done, playing, skip, toAnime]);
 
   useEffect(() => {
     if (!open) return;
@@ -70,7 +71,7 @@ export default function CrossPromo() {
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
-  if (!open) return null;
+  if (!open || skip) return null;
   const title = toAnime ? 'We also have anime' : 'We also have movies & TV';
   const text = toAnime
     ? 'Thousands of anime series and films, with sub and dub, on Comvie Anime.'

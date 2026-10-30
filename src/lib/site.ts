@@ -4,6 +4,8 @@ import type { Section } from './section';
 const ROOT = 'comvie.lol';
 export const CINEMA_ORIGIN = `https://cinema.${ROOT}`;
 export const ANIME_ORIGIN = `https://anime.${ROOT}`;
+export const MANGA_ORIGIN = `https://manga.${ROOT}`;
+export const ORIGINS: Record<Section, string> = { cinema: CINEMA_ORIGIN, anime: ANIME_ORIGIN, manga: MANGA_ORIGIN };
 
 const host = () => (typeof location === 'undefined' ? '' : location.hostname);
 
@@ -14,11 +16,11 @@ export const onProd = () => host() === ROOT || host().endsWith('.' + ROOT);
 export function hostSection(): Section | null {
   const h = host();
   if (!onProd()) return null;
-  return h.startsWith('anime.') ? 'anime' : 'cinema';
+  return h.startsWith('anime.') ? 'anime' : h.startsWith('manga.') ? 'manga' : 'cinema';
 }
 
 /** Where a section's home is: its own sub-domain on the real site, a plain path elsewhere. */
-export const sectionHome = (s: Section) => (onProd() ? (s === 'anime' ? `${ANIME_ORIGIN}/anime` : `${CINEMA_ORIGIN}/`) : s === 'anime' ? '/anime' : '/');
+export const sectionHome = (s: Section) => (onProd() ? (s === 'cinema' ? `${CINEMA_ORIGIN}/` : `${ORIGINS[s]}/${s}`) : s === 'cinema' ? '/' : `/${s}`);
 
 /** Pages both sub-domains share */
 export const SHARED = ['/contact', '/about', '/help', '/legal', '/terms', '/privacy', '/takedown'];

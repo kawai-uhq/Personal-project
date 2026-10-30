@@ -14,7 +14,9 @@ export default function Navbar() {
   const { session, openAuth, signOut } = useApp();
   const fresh = useNewEpisodes();
   const { due } = useReminders();
-  const anime = useSection() === 'anime';
+  const sec = useSection();
+  const anime = sec === 'anime';
+  const manga = sec === 'manga';
   const dot = fresh.size + due;
   const dotTip = [fresh.size ? `${fresh.size} new episode${fresh.size > 1 ? 's' : ''}` : '', due ? `${due} release${due > 1 ? 's' : ''} out now` : ''].filter(Boolean).join(' · ');
   const [q, setQ] = useState('');
@@ -32,7 +34,13 @@ export default function Navbar() {
       <header className={`nav ${solid || pathname !== '/' ? 'solid' : ''}`}>
         <div className="nav-pill">
           <SiteSwitch />
-          {anime ? (
+          {manga ? (
+            <nav className="nav-links" aria-label="Manga">
+              <NavLink to="/manga" end><Icon name="book" size={18} />Manga Home</NavLink>
+              <NavLink to="/manga/explore"><Icon name="compass" size={18} />Explore</NavLink>
+              <NavLink to="/manga/library"><Icon name="bookmark" size={18} />Library</NavLink>
+            </nav>
+          ) : anime ? (
             <nav className="nav-links" aria-label="Anime">
               <NavLink to="/anime" end><Icon name="flame" size={18} />Anime Home</NavLink>
               <NavLink to="/anime/explore"><Icon name="compass" size={18} />Explore</NavLink>
@@ -54,7 +62,7 @@ export default function Navbar() {
             value={q}
             onChange={setQ}
             onSubmit={(t) => {
-              nav(`${anime ? '/anime/search' : '/search'}?q=${encodeURIComponent(t)}`);
+              nav(`${manga ? '/manga/search' : anime ? '/anime/search' : '/search'}?q=${encodeURIComponent(t)}`);
               setQ('');
             }}
             onPick={() => setQ('')}
@@ -69,7 +77,14 @@ export default function Navbar() {
         </div>
       </header>
 
-      {anime ? (
+      {manga ? (
+        <nav className="tabbar" aria-label="Manga tabs">
+          <NavLink to="/manga" end><Icon name="book" size={18} /><span>Home</span></NavLink>
+          <NavLink to="/manga/search"><Icon name="search" size={18} /><span>Search</span></NavLink>
+          <NavLink to="/manga/explore"><Icon name="compass" size={18} /><span>Explore</span></NavLink>
+          <NavLink to="/manga/library"><Icon name="bookmark" size={18} /><span>Library</span></NavLink>
+        </nav>
+      ) : anime ? (
         <nav className="tabbar" aria-label="Anime tabs">
           <NavLink to="/anime" end><Icon name="flame" size={18} /><span>Home</span></NavLink>
           <NavLink to="/anime/search"><Icon name="search" size={18} /><span>Search</span></NavLink>
