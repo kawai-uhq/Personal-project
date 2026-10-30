@@ -1,6 +1,8 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon';
 import { askConfirm } from '../components/Confirm';
+import SettingsPanel from '../components/SettingsPanel';
 import { animeStore } from '../lib/animeStore';
 import { mangaStore } from '../lib/mangaStore';
 import { useSection } from '../lib/section';
@@ -12,6 +14,10 @@ export default function Account() {
   const { session, openAuth, signOut, favorites, loved, history } = useApp();
   const section = useSection();
   const nav = useNavigate();
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash === '#settings') window.setTimeout(() => document.getElementById('settings')?.scrollIntoView({ behavior: 'smooth' }), 60);
+  }, [hash]);
   const libraryLink = section === 'anime' ? P('/anime/library') : section === 'manga' ? P('/manga/library') : '/list';
 
   if (!session) {
@@ -24,6 +30,8 @@ export default function Account() {
             <p className="muted">Sign in to back up your watchlist, favorites and progress, and use them on any device.</p>
             <button className="btn primary" onClick={openAuth}><Icon name="login" size={16} />Sign in or create an account</button>
           </div>
+          <h2 className="section" id="settings">Settings</h2>
+          <SettingsPanel />
         </div>
       </main>
     );
@@ -82,6 +90,9 @@ export default function Account() {
             <Icon name="login" size={16} />Sign out
           </button>
         </div>
+
+        <h2 className="section" id="settings">Settings</h2>
+        <SettingsPanel />
       </div>
     </main>
   );

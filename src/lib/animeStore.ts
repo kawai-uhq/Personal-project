@@ -11,6 +11,7 @@ export interface AnimeWatch extends AniLite {
 
 const K = { history: 'comvie.anime.history', list: 'comvie.anime.list', loved: 'comvie.anime.loved', progress: 'comvie.anime.progress', seen: 'comvie.anime.seen' };
 const EVT = 'comvie:anime';
+const remember = () => { try { return localStorage.getItem('comvie.remember') !== 'false'; } catch { return true; } };
 
 function read<T>(k: string, fb: T): T {
   try {
@@ -32,7 +33,7 @@ export const animeStore = {
   list: () => read<AniLite[]>(K.list, []),
   loved: () => read<AniLite[]>(K.loved, []),
   addWatch: (a: AniLite, episode: number, server: number, lang: string) =>
-    write(K.history, [{ ...a, episode, server, lang, at: Date.now() }, ...animeStore.history().filter((w) => w.id !== a.id)].slice(0, 60)),
+    !remember() ? undefined : write(K.history, [{ ...a, episode, server, lang, at: Date.now() }, ...animeStore.history().filter((w) => w.id !== a.id)].slice(0, 60)),
   removeWatch: (id: number) => write(K.history, animeStore.history().filter((w) => w.id !== id)),
   clearHistory: () => write(K.history, []),
   toggle: (which: 'list' | 'loved', a: AniLite) => {

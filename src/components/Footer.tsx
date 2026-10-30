@@ -13,6 +13,7 @@ export default function Footer() {
           <Link to="/legal/privacy">Privacy</Link>
           <Link to="/legal/dmca">DMCA</Link>
           <Link to="/contact">Contact</Link>
+          <Link to="/account#settings">Settings</Link>
         </nav>
         <p>
           Comvie does not host any video. Movie and show information comes from TMDB; this product uses the TMDB API but is not endorsed or certified by TMDB.

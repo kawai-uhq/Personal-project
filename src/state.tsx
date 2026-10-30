@@ -138,6 +138,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const recordWatch = (e: WatchEntry) => {
+    if (!store.getRemember()) return;
     const key = mediaKey(e.media);
     applyHistory([e, ...histRef.current.filter((x) => mediaKey(x.media) !== key)].slice(0, MAX_HISTORY));
     background((t) => sync.upsertHistory(t, [e]));

@@ -11,6 +11,7 @@ export interface MangaRead extends MangaLite {
 
 const K = { history: 'comvie.manga.history', list: 'comvie.manga.list', seen: 'comvie.manga.seen' };
 const EVT = 'comvie:manga';
+const remember = () => { try { return localStorage.getItem('comvie.remember') !== 'false'; } catch { return true; } };
 
 function read<T>(k: string, fb: T): T {
   try {
@@ -33,7 +34,7 @@ export const mangaStore = {
   history: () => read<MangaRead[]>(K.history, []),
   list: () => read<MangaLite[]>(K.list, []),
   addRead: (m: MangaLite, chapterId: string, label: string, lang = 'en') =>
-    write(K.history, [{ ...lite(m), chapterId, label, lang, at: Date.now() }, ...mangaStore.history().filter((w) => w.id !== m.id)].slice(0, 60)),
+    !remember() ? undefined : write(K.history, [{ ...lite(m), chapterId, label, lang, at: Date.now() }, ...mangaStore.history().filter((w) => w.id !== m.id)].slice(0, 60)),
   removeRead: (id: number) => write(K.history, mangaStore.history().filter((w) => w.id !== id)),
   clearHistory: () => write(K.history, []),
   last: (id: number) => mangaStore.history().find((w) => w.id === id) ?? null,

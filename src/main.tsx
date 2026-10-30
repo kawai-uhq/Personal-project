@@ -5,9 +5,11 @@ import App from './App';
 import { AppProvider } from './state';
 import { applySmooth } from './lib/perf';
 import { importMigration } from './lib/site';
+import { applyPrefs } from './lib/prefs';
 import './styles.css';
 
 importMigration();
+applyPrefs();
 applySmooth();
 
 // No "save image" / right-click menu or dragging pictures out (typing fields keep their normal menu)
