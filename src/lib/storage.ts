@@ -1,4 +1,5 @@
 import type { Media, Session, WatchEntry } from './types';
+import { isSharedKey, sharedGet, sharedSet } from './shared';
 
 export interface Reminder {
   media: Media;
@@ -8,7 +9,8 @@ export interface Reminder {
 
 function read<T>(key: string, fallback: T): T {
   try {
-    const raw = localStorage.getItem(key);
+    const shared = isSharedKey(key) ? sharedGet(key) : undefined;
+    const raw = shared !== undefined ? shared : localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {
     return fallback;
@@ -22,6 +24,7 @@ function write(key: string, value: unknown) {
   } catch {
     /* storage unavailable: the site still works for this visit */
   }
+  if (isSharedKey(key)) sharedSet(key, value === null ? null : JSON.stringify(value));
 }
 
 export const MAX_HISTORY = 30;

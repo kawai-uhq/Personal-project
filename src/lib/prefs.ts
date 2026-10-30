@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { sharedGet, sharedSet } from './shared';
 
 /** Look-and-feel settings (Account → Settings). Saved on this device, applied to the whole page. */
 export interface Prefs {
@@ -49,7 +50,8 @@ const EVT = 'comvie:prefs';
 
 export function getPrefs(): Prefs {
   try {
-    return { ...DEFAULT_PREFS, ...(JSON.parse(localStorage.getItem(KEY) || '{}') as Partial<Prefs>) };
+    const raw = sharedGet(KEY) ?? localStorage.getItem(KEY);
+    return { ...DEFAULT_PREFS, ...(JSON.parse(raw || '{}') as Partial<Prefs>) };
   } catch {
     return { ...DEFAULT_PREFS };
   }
@@ -61,6 +63,7 @@ export function setPrefs(next: Partial<Prefs> | null) {
     if (next === null) localStorage.removeItem(KEY);
     else localStorage.setItem(KEY, JSON.stringify(p));
   } catch { /* storage blocked: still applies for this visit */ }
+  sharedSet(KEY, next === null ? null : JSON.stringify(p)); // same look on cinema, anime and manga
   applyPrefs(p);
   window.dispatchEvent(new Event(EVT));
 }
@@ -96,6 +99,21 @@ export function applyPrefs(p: Prefs = getPrefs()) {
   st.setProperty('--glass-blur', `${p.blur}px`);
   st.setProperty('--glass-alpha', String(Math.max(0.05, Math.min(1, p.frost / 100))));
   st.setProperty('--card-radius', `${p.radius}px`);
+}
+
+/** Pick up changes made on another sub-domain when you come back to this tab. */
+export function watchSharedPrefs() {
+  let last = JSON.stringify(getPrefs());
+  const check = () => {
+    if (document.visibilityState === 'hidden') return;
+    const now = JSON.stringify(getPrefs());
+    if (now === last) return;
+    last = now;
+    applyPrefs();
+    window.dispatchEvent(new Event(EVT));
+  };
+  document.addEventListener('visibilitychange', check);
+  window.addEventListener('focus', check);
 }
 
 /** Current settings, re-rendering when they change. */

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { store } from './storage';
 import type { AniLite } from './anilist';
 
 /** The anime section's library, kept on this device (separate from the movie / TV library). */
@@ -11,7 +12,7 @@ export interface AnimeWatch extends AniLite {
 
 const K = { history: 'comvie.anime.history', list: 'comvie.anime.list', loved: 'comvie.anime.loved', progress: 'comvie.anime.progress', seen: 'comvie.anime.seen' };
 const EVT = 'comvie:anime';
-const remember = () => { try { return localStorage.getItem('comvie.remember') !== 'false'; } catch { return true; } };
+const remember = () => store.getRemember();
 
 function read<T>(k: string, fb: T): T {
   try {

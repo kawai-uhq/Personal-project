@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { store } from './storage';
 import type { MangaLite } from './manga';
 
 /** The manga section's library, kept on this device. */
@@ -11,7 +12,7 @@ export interface MangaRead extends MangaLite {
 
 const K = { history: 'comvie.manga.history', list: 'comvie.manga.list', seen: 'comvie.manga.seen' };
 const EVT = 'comvie:manga';
-const remember = () => { try { return localStorage.getItem('comvie.remember') !== 'false'; } catch { return true; } };
+const remember = () => store.getRemember();
 
 function read<T>(k: string, fb: T): T {
   try {

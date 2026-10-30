@@ -5,11 +5,14 @@ import App from './App';
 import { AppProvider } from './state';
 import { applySmooth } from './lib/perf';
 import { importMigration } from './lib/site';
-import { applyPrefs } from './lib/prefs';
+import { applyPrefs, watchSharedPrefs } from './lib/prefs';
+import { seedShared } from './lib/shared';
 import './styles.css';
 
 importMigration();
+seedShared();
 applyPrefs();
+watchSharedPrefs();
 applySmooth();
 
 // No "save image" / right-click menu or dragging pictures out (typing fields keep their normal menu)
