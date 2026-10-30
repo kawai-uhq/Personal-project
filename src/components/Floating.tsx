@@ -43,7 +43,7 @@ export default function Floating() {
         </button>
       )}
       <a className={`fab-discord ${top ? 'up' : ''}`} href={DISCORD_URL} target="_blank" rel="noopener noreferrer" aria-label="Join our Discord server">
-        <DiscordIcon size={52} />
+        <DiscordIcon size={42} />
       </a>
       {top && (
         <button className="fab-top" aria-label="Back to top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>

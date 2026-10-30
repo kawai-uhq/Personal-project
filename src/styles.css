@@ -1056,3 +1056,10 @@ html:not(.anime) .sw-menu button.cur { background: rgba(255, 107, 87, .14); }
 .promo-go { display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; }
 .promo-never { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; color: var(--cream); opacity: .8; font-size: 13.5px; font-weight: 700; cursor: pointer; }
 .promo-never input { width: 17px; height: 17px; accent-color: var(--accent); }
+
+/* Discord button: smaller, bluer */
+.fab-discord { width: 42px; height: 42px; background: #2f6bff; right: 20px; bottom: 24px; }
+.fab-discord.up { bottom: 82px; }
+.fab-discord img { filter: hue-rotate(-16deg) saturate(1.6) brightness(1.05); }
+.fab-discord .dc-fallback rect { fill: #2f6bff; }
+@media (max-width: 760px) { .fab-discord { right: 14px; bottom: calc(78px + env(safe-area-inset-bottom)); } .fab-discord.up { bottom: calc(136px + env(safe-area-inset-bottom)); } }
