@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../components/Icon';
+import type { IconName } from '../components/Icon';
 
 const EMAIL = (import.meta.env.VITE_CONTACT_EMAIL as string | undefined)?.trim() ?? '';
 const UPDATED = 'October 24, 2026';
+const UPDATED_SHORT = 'October 2026';
 
 function Reach() {
   return (
@@ -31,21 +33,33 @@ function Page({ title, updated = true, children }: { title: string; updated?: bo
   );
 }
 
-function Sec({ n, title, children }: { n: number; title: string; children: ReactNode }) {
+type Tone = 'ok' | 'warn' | 'info' | 'accent';
+
+/** Page shell used by the Terms, Privacy and DMCA pages: back link, icon tile, title, subtitle, then cards. */
+function DocPage({ icon, title, sub, children }: { icon: IconName; title: string; sub: string; children: ReactNode }) {
   return (
-    <section className="lsec">
-      <h2><span className="lnum">{n}</span>{title}</h2>
-      {children}
-    </section>
+    <main className="page pad-top">
+      <div className="container doc">
+        <p className="doc-back"><Link to="/"><Icon name="arrowLeft" size={14} />Back to Home</Link></p>
+        <header className="doc-head">
+          <span className="doc-tile" aria-hidden="true"><Icon name={icon} size={22} /></span>
+          <div>
+            <h1>{title}</h1>
+            <p>{sub} <i>•</i> Last updated: {UPDATED_SHORT}</p>
+          </div>
+        </header>
+        {children}
+      </div>
+    </main>
   );
 }
 
-function Notice() {
+function Card({ n, title, icon, tone = 'accent', children }: { n: number; title: string; icon?: IconName; tone?: Tone; children: ReactNode }) {
   return (
-    <p className="lnotice">
-      <Icon name="info" size={16} />
-      <span><b>Comvie does not host, upload, or store any files.</b> Titles are indexed automatically from public sources and third-party services, and Comvie only provides links.</span>
-    </p>
+    <section className="doc-card">
+      <h2>{icon && <span className={`doc-ico ${tone}`}><Icon name={icon} size={18} /></span>}{n}. {title}</h2>
+      {children}
+    </section>
   );
 }
 
@@ -67,79 +81,103 @@ export function About() {
 
 export function Terms() {
   return (
-    <Page title="Terms of Service">
-      <Sec n={1} title="Nature of the Service">
-        <p><b>Comvie is an automated search and indexing tool.</b> It gathers titles, artwork and information from public sources and links to players run by third parties. Comvie does not host or control the videos you play, and it can't check whether content on a third-party server is licensed.</p>
-      </Sec>
-      <Sec n={2} title="Your responsibility">
-        <p>You use third-party content <b>at your own risk</b>, for personal, non-commercial entertainment. You are responsible for following the laws where you live, including copyright law. Comvie isn't liable for infringement, malware, popups or other harm that comes from third-party players or sites.</p>
-      </Sec>
-      <Sec n={3} title="Accounts">
-        <p>Accounts are optional. If you create one, keep your sign-in details safe and don't share them. We may suspend accounts that abuse the service, try to break or overload it, or try to reverse-engineer how it works.</p>
-      </Sec>
-      <Sec n={4} title="Intellectual property">
-        <p>Comvie's design, name, code and original assets belong to Comvie. Posters, backdrops, cast photos and descriptions belong to their owners and come from services such as TMDB. Nothing here gives you rights to them.</p>
-      </Sec>
-      <Sec n={5} title="No warranty">
-        <p>Comvie is provided "as is". We don't promise it will always be available, accurate or error-free, and, as far as the law allows, we aren't liable for losses from using it.</p>
-      </Sec>
-      <Sec n={6} title="Changes to these terms">
+    <DocPage icon="fileText" title="Terms of Service" sub="User guidelines, platform rules & service conditions">
+      <Card n={1} title="Acceptance of Terms" icon="checkCircle" tone="ok">
+        <p>By accessing, browsing, or using <b>Comvie (comvie.lol)</b>, you acknowledge that you have read, understood, and agreed to be bound by these Terms of Service. If you do not agree to these terms, please stop using the service immediately.</p>
+      </Card>
+      <Card n={2} title="Nature of the Platform" icon="shield" tone="info">
+        <p>Comvie works strictly as a media index, directory, and navigation interface for publicly accessible third-party streams and metadata.</p>
+        <ul>
+          <li>Comvie does not upload, host, maintain, or broadcast any video or audio files.</li>
+          <li>All streaming content is delivered directly from independent third-party servers.</li>
+          <li>We make no warranties regarding the availability, uninterrupted uptime, or legality of third-party video hosts in your specific jurisdiction.</li>
+        </ul>
+      </Card>
+      <Card n={3} title="Permitted Use & Prohibited Conduct" icon="alert" tone="warn">
+        <p>When using Comvie, you explicitly agree not to:</p>
+        <ul>
+          <li>Attempt to disrupt, overload, or attack our servers, API endpoints, or rate-limiting systems.</li>
+          <li>Use malicious automated bots, scrapers, or exploits to compromise user accounts or platform stability.</li>
+          <li>Circumvent or tamper with security measures, headers, or client integrity checks.</li>
+          <li>Violate any local, national, or international laws concerning intellectual property or computer security.</li>
+        </ul>
+      </Card>
+      <Card n={4} title="Your Responsibility">
+        <p>You use third-party content <b>at your own risk</b>, for personal, non-commercial entertainment. You are responsible for following the laws where you live, including copyright law. Comvie is not liable for infringement, malware, popups, or other harm that comes from third-party players or sites.</p>
+      </Card>
+      <Card n={5} title="Accounts">
+        <p>Accounts are optional. If you create one, keep your sign-in details safe and do not share them. We may suspend accounts that abuse the service or try to break, overload, or reverse-engineer it.</p>
+      </Card>
+      <Card n={6} title="Disclaimer of Warranties & Limitation of Liability">
+        <p>Comvie is provided on an “AS IS” and “AS AVAILABLE” basis without warranties of any kind, whether express or implied. Under no circumstances shall Comvie or its contributors be held liable for any direct, indirect, incidental, special, or consequential damages resulting from the use or inability to use this platform.</p>
+      </Card>
+      <Card n={7} title="Changes to These Terms">
         <p>We may update these terms at any time. If you keep using Comvie after a change, you accept the new terms.</p>
-      </Sec>
-      <Notice />
-    </Page>
+      </Card>
+      <Card n={8} title="Questions or Inquiries" icon="help" tone="accent">
+        <p>For any questions regarding these Terms of Service, please reach out through <Reach />.</p>
+      </Card>
+    </DocPage>
   );
 }
 
 export function Privacy() {
   return (
-    <Page title="Privacy Policy">
-      <p>Comvie is built to collect as little as possible. There are no ads, and we don't run our own analytics or trackers.</p>
-      <Sec n={1} title="Kept on your device">
-        <p>Your Watchlist, Favorites, watch history, playback positions, watched marks, reminders, recent searches, favorite channels and settings are saved in your browser's local storage on this device. Clearing your browser data removes them.</p>
-      </Sec>
-      <Sec n={2} title="If you create an account (optional)">
-        <p>We store your email address, your sign-in credentials (handled by our authentication provider, Supabase) and your Watchlist, Favorites and watch history, so they follow you between devices. To delete your account and its data, reach us through <Reach />.</p>
-      </Sec>
-      <Sec n={3} title="Outside services you connect to">
-        <ul>
-          <li><b>TMDB</b> provides titles and pictures. Your browser loads images straight from TMDB's servers, so TMDB can see your IP address.</li>
-          <li><b>Third-party players</b> and <b>YouTube</b> (trailers, in privacy-enhanced mode) run their own code and may set cookies or collect data under their own policies.</li>
-          <li><b>Live TV</b> contacts an open public channel directory and each channel's stream host.</li>
-          <li><b>Vercel</b> hosts Comvie and keeps standard server logs.</li>
-        </ul>
-      </Sec>
-      <Sec n={4} title="Your choices">
-        <p>You can use Comvie without an account, clear your local data from your browser at any time, and turn on popup protection in Settings to block popups from players that support it.</p>
-      </Sec>
-      <Sec n={5} title="Contact">
-        <p>Privacy questions: <Reach />.</p>
-      </Sec>
-    </Page>
+    <DocPage icon="lock" title="Privacy Policy" sub="Data protection, cookie practices & privacy standards">
+      <Card n={1} title="Our Privacy Philosophy" icon="shield" tone="accent">
+        <p>At <b>Comvie (comvie.lol)</b>, we believe in user privacy and data minimization. You do not need to register, sign up with identity documents, or provide your real name, physical address, or phone number to use our public catalog and free media browsing.</p>
+      </Card>
+      <Card n={2} title="Information We Collect" icon="database" tone="ok">
+        <p><b>A. Technical & Operational Logs:</b> Like virtually all web services, our hosting and security providers automatically record standard, non-identifying technical data when you connect. This includes your IP address, browser user-agent, operating system, requested page URL, and timestamp. These logs are used for DDoS mitigation, traffic management, rate-limiting, and error diagnostics.</p>
+        <p><b>B. Browser Local Storage:</b> To give you a seamless personalized experience, Comvie uses your browser's local storage to save your watch progress, watchlist, favorites, reminders, recent searches, and settings. This data stays on your device and is not sold or shared with third parties. Clearing your browser data removes it.</p>
+        <p><b>C. Optional Accounts:</b> If you choose to create an account, we store your email address and your watchlist, favorites, and watch history so they follow you between devices. Sign-in is handled by our authentication provider, Supabase. To delete your account and its data, reach us through <Reach />.</p>
+      </Card>
+      <Card n={3} title="Cookies and Advertising" icon="cookie" tone="warn">
+        <p>Comvie shows no ads and does not run its own analytics or cross-site tracking cookies. Third-party video embed providers and hosting services embedded on the site may set cookies or use tracking technologies according to their own privacy policies. We encourage you to read third-party privacy notices or use a content blocker if you want enhanced privacy.</p>
+      </Card>
+      <Card n={4} title="External Links & Third-Party Providers" icon="globe" tone="info">
+        <p>Our site contains embedded players and links to third-party streaming resources. Titles, posters, and descriptions come from TMDB and AniList, trailers from YouTube, and live channels from an open public directory, so your browser contacts those services directly. Comvie is not responsible for the privacy practices, content, or policies of external sites. Once you navigate away or interact with external video players, you are subject to the terms of those platforms.</p>
+      </Card>
+      <Card n={5} title="Contact Us Regarding Privacy" icon="mail" tone="accent">
+        <p>If you have any questions or concerns regarding our privacy practices, please contact us through <Reach />.</p>
+      </Card>
+    </DocPage>
   );
 }
 
 export function Dmca() {
   return (
-    <Page title="DMCA Notice">
-      <p>Comvie is an automated search engine and metadata aggregator. It does not store, stream or upload video or copyrighted files on its own servers.</p>
-      <Sec n={1} title="Automated third-party indexing">
-        <p>Streams shown on Comvie come from unaffiliated third-party players. Comvie works like a directory that links to content already available on the public internet. Because the files live on other servers, Comvie can't delete them from the internet.</p>
-      </Sec>
-      <Sec n={2} title="Copyright infringement and removal">
-        <p>We respect intellectual property rights. If you're a copyright owner, or you act for one, and you believe a Comvie link or embedded player infringes your work, you can ask us to remove it. For valid requests we will disable playback for that title on Comvie.</p>
-        <p>Removing a link doesn't remove the file itself, which stays with whoever hosts it. To have it taken down completely, you also need to contact the hosting provider or server administrator.</p>
-      </Sec>
-      <Sec n={3} title="Submitting a notice">
-        <p>Send your notice through <Reach />. Please include:</p>
+    <DocPage icon="shield" title="DMCA Disclaimer & Copyright Policy" sub="Digital Millennium Copyright Act Compliance">
+      <Card n={1} title="Non-Hosting & Aggregator Disclosure" icon="checkCircle" tone="ok">
+        <p><b>Comvie (comvie.lol)</b> operates strictly as an informational media index, catalog, and search navigation directory. We do <b>not host, store, stream, or upload</b> any media files, video streams, or copyrighted content onto our own servers.</p>
+        <p>All video players, streams, and media embeds accessible on this website are aggregated from and hosted by independent, third-party media hosting services and video sharing websites that are completely unaffiliated with Comvie.</p>
+      </Card>
+      <Card n={2} title="Intellectual Property Rights & DMCA Compliance" icon="alert" tone="warn">
+        <p>Comvie respects the intellectual property rights of creators and copyright holders and complies with the provisions of Title 17, United States Code, Section 512, commonly known as the <i>Digital Millennium Copyright Act (DMCA)</i>.</p>
+        <p>It is our policy to respond promptly to clear, formal notices of alleged copyright infringement. Because we do not control or host external files, the most effective resolution is often contacting the host directly. However, we will disable links and remove indexed references to infringing material upon receipt of a valid DMCA takedown notice.</p>
+      </Card>
+      <Card n={3} title="Filing a Takedown Notice">
+        <p>To request the removal of indexed links or content references, please submit a written communication that includes the following information:</p>
         <ul>
-          <li>The exact Comvie page address where the link or player appears.</li>
-          <li>Details that identify the copyrighted work.</li>
-          <li>Proof that you own the rights or are allowed to act for the owner.</li>
-          <li>Your name and contact details, and a statement that you believe in good faith the use isn't authorised and that your information is accurate.</li>
+          <li>Identification of the copyrighted work claimed to have been infringed, or a representative list of such works.</li>
+          <li>Identification of the material that is claimed to be infringing, including the specific URL(s) on Comvie where it is referenced.</li>
+          <li>Sufficient contact information allowing us to contact the complaining party (name, physical address, telephone number, and electronic mail address).</li>
+          <li>A statement that the complaining party has a good faith belief that use of the material in the manner complained of is not authorized by the copyright owner, its agent, or the law.</li>
+          <li>A statement that the information in the notification is accurate, and under penalty of perjury, that the complaining party is authorized to act on behalf of the owner of an exclusive right that is allegedly infringed.</li>
+          <li>A physical or electronic signature of a person authorized to act on behalf of the owner of the copyright interest.</li>
         </ul>
-      </Sec>
-      <Notice />
-    </Page>
+      </Card>
+      <Card n={4} title="Designated DMCA Agent Contact" icon="mail" tone="accent">
+        <p>Please direct all copyright complaints and formal DMCA notices to our designated contact point:</p>
+        <div className="doc-agent">
+          <div>
+            <strong>DMCA & Legal Compliance Team</strong>
+            <small>We review valid notices promptly</small>
+          </div>
+          <Link to="/contact" className="doc-btn">Contact us</Link>
+        </div>
+        {EMAIL && <p className="doc-mail">Or email <a className="link" href={`mailto:${EMAIL}`}>{EMAIL}</a></p>}
+      </Card>
+    </DocPage>
   );
 }
