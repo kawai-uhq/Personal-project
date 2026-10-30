@@ -1090,3 +1090,9 @@ html:not(.anime) .sw-menu button.cur { background: rgba(255, 107, 87, .14); }
 .sw-btn .ic { color: #fff; opacity: 1; stroke-width: 2.6; filter: drop-shadow(0 0 4px rgba(255, 255, 255, .35)); }
 .sw-btn:hover .ic, .sw-btn.open .ic { color: var(--accent); filter: none; }
 .sw-btn .logo { pointer-events: none; }
+
+/* No long-press save / drag / text selection on posters, logos and titles (typing fields stay normal) */
+img, svg, picture, video:not([controls]), a, button { -webkit-touch-callout: none; -webkit-user-drag: none; user-drag: none; }
+img { user-select: none; -webkit-user-select: none; }
+body { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+input, textarea, select, [contenteditable="true"], .selectable { -webkit-touch-callout: default; user-select: text; -webkit-user-select: text; }
