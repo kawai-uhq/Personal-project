@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimeCard } from '../components/AnimeCard';
 import Icon from '../components/Icon';
+import { askConfirm } from '../components/Confirm';
 import { Status } from '../components/Rows';
 import { useAnimeStore } from '../lib/animeStore';
 import type { AnimeWatch } from '../lib/animeStore';
@@ -53,7 +54,7 @@ export default function AnimeLibrary() {
             <button role="tab" aria-selected={tab === 'loved'} className={`pill ${tab === 'loved' ? 'on' : ''}`} onClick={() => setTab('loved')}><Icon name="heart" size={15} />Favorites ({loved.length})</button>
           </div>
           {tab === 'history' && hist.length > 0 && (
-            <button className="btn small ghost" onClick={() => { if (window.confirm('Clear your anime watch history?')) store.clearHistory(); }}>
+            <button className="btn small ghost" onClick={async () => { if (await askConfirm({ title: 'Clear anime history?', text: 'This removes every anime from your watch history on this device.', ok: 'Clear history', danger: true })) store.clearHistory(); }}>
               <Icon name="trash" size={15} />Clear History
             </button>
           )}

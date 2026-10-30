@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon';
+import { askConfirm } from '../components/Confirm';
 import { animeStore } from '../lib/animeStore';
 import { mangaStore } from '../lib/mangaStore';
 import { useSection } from '../lib/section';
@@ -65,8 +66,15 @@ export default function Account() {
           <Link className="btn ghost" to={libraryLink}><Icon name="bookmark" size={16} />Open my library</Link>
           <button
             className="btn ghost danger"
-            onClick={() => {
-              if (!window.confirm(`Sign out of ${session.email}?`)) return;
+            onClick={async () => {
+              const yes = await askConfirm({
+                title: 'Sign out?',
+                text: `You'll be signed out of ${session.email} on this device. Your lists stay saved to your account.`,
+                ok: 'Sign out',
+                danger: true,
+                icon: 'login'
+              });
+              if (!yes) return;
               signOut();
               nav('/');
             }}

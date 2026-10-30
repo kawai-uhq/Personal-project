@@ -1201,3 +1201,14 @@ input:autofill { background: transparent; filter: none; }
 .acct-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 10px; }
 .btn.danger { color: #ff8d7e; border-color: rgba(255, 107, 87, .4); }
 .btn.danger:hover { background: rgba(255, 107, 87, .12); }
+
+/* ---- Site-styled confirm dialog ---- */
+.modal.confirm { width: min(380px, 100%); text-align: center; padding: 26px 22px 22px; }
+.modal.confirm h2 { margin: 12px 0 6px; font-size: 20px; }
+.modal.confirm p { margin: 0 0 4px; line-height: 1.5; word-break: break-word; }
+.confirm-icon { display: grid; place-items: center; width: 48px; height: 48px; margin: 0 auto; border-radius: 14px; background: rgba(255, 233, 214, .08); border: 1px solid var(--line); color: var(--accent); }
+.confirm-icon.danger { background: rgba(255, 107, 87, .12); border-color: rgba(255, 107, 87, .35); color: #ff8d7e; }
+.confirm-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+.confirm-btns .btn { justify-content: center; }
+.btn.danger-fill { background: #e5533f; border-color: #e5533f; color: #fff; }
+.btn.danger-fill:hover { background: #ff6b57; border-color: #ff6b57; }

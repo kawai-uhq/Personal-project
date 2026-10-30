@@ -3,6 +3,7 @@ import { serverSlug } from '../lib/providers';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Grid, Status } from '../components/Rows';
 import Icon from '../components/Icon';
+import { askConfirm } from '../components/Confirm';
 import { signInComingSoon } from '../lib/auth';
 import { dropReminder, useReminders } from '../lib/reminders';
 import { useNewEpisodes } from '../lib/useNewEpisodes';
@@ -118,8 +119,9 @@ export default function MyList({ anime = false }: { anime?: boolean }) {
           {tab === 'history' && hist.length > 0 && (
             <button
               className="btn small ghost"
-              onClick={() => {
-                if (window.confirm('Clear your whole watch history?')) hist.forEach((w) => removeWatch(mediaKey(w.media)));
+              onClick={async () => {
+                const yes = await askConfirm({ title: 'Clear watch history?', text: 'This removes every movie and show from your watch history.', ok: 'Clear history', danger: true });
+                if (yes) hist.forEach((w) => removeWatch(mediaKey(w.media)));
               }}
             >
               <Icon name="trash" size={15} />Clear History

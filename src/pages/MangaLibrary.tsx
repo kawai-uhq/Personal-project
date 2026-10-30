@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../components/Icon';
+import { askConfirm } from '../components/Confirm';
 import { MangaCard } from '../components/MangaCard';
 import { Status } from '../components/Rows';
 import { kindOf } from '../lib/manga';
@@ -49,7 +50,7 @@ export default function MangaLibrary() {
             <button role="tab" aria-selected={tab === 'list'} className={`pill ${tab === 'list' ? 'on' : ''}`} onClick={() => setTab('list')}><Icon name="bookmark" size={15} />Saved ({list.length})</button>
           </div>
           {tab === 'history' && hist.length > 0 && (
-            <button className="btn small ghost" onClick={() => { if (window.confirm('Clear your reading history?')) store.clearHistory(); }}><Icon name="trash" size={15} />Clear History</button>
+            <button className="btn small ghost" onClick={async () => { if (await askConfirm({ title: 'Clear reading history?', text: 'This removes every title from your manga history on this device.', ok: 'Clear history', danger: true })) store.clearHistory(); }}><Icon name="trash" size={15} />Clear History</button>
           )}
         </div>
         {tab === 'history' ? (

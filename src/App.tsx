@@ -10,6 +10,7 @@ const Genres = lazy(() => import('./pages/Genres'));
 const Explore = lazy(() => import('./pages/Explore'));
 import Tooltip from './components/Tooltip';
 import CrossPromo from './components/CrossPromo';
+import ConfirmHost from './components/Confirm';
 import Contact from './pages/Contact';
 import Floating from './components/Floating';
 import Footer from './components/Footer';
@@ -152,6 +153,7 @@ export default function App() {
       {!watching && <Floating />}
       <AuthModal />
       <CrossPromo />
+      <ConfirmHost />
       <Tooltip />
     </>
   );
