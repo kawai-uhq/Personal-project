@@ -1146,3 +1146,7 @@ html.manga .htag, html.manga .nav-signin { border-color: rgba(143, 134, 255, .45
 .promo-dots { display: flex; justify-content: center; gap: 7px; margin-top: 14px; }
 .promo-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: rgba(255, 233, 214, .35); cursor: pointer; transition: width .2s ease, background .2s ease; }
 .promo-dots button.on { width: 22px; background: var(--cream); }
+
+/* Remove button on Continue Watching / Reading cards (anime, manga) */
+.card-x { position: absolute; top: 8px; right: 8px; z-index: 3; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border-radius: 50%; border: 1px solid rgba(255, 233, 214, .25); background: rgba(18, 12, 24, .78); color: var(--cream); cursor: pointer; }
+.card-x:hover { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }

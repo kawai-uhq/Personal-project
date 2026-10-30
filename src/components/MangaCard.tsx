@@ -6,14 +6,26 @@ import { kindOf, mangaList } from '../lib/manga';
 import type { Manga, MangaLite, MangaQuery } from '../lib/manga';
 
 /** Poster-style card for a manga, manhwa or manhua (same look as the other cards). */
-export function MangaCard({ m, tag, to }: { m: MangaLite; tag?: string; to?: string }) {
+export function MangaCard({ m, tag, to, onRemove }: { m: MangaLite; tag?: string; to?: string; onRemove?: () => void }) {
   const score = m.score / 10;
   return (
     <Link to={to ?? `/manga/title/${m.id}`} className="poster">
       <span className="poster-img">
         {m.cover ? <img src={m.cover} alt={m.title} loading="lazy" decoding="async" /> : <span className="poster-missing">{m.title}</span>}
         <span className="pbadge tv">{tag ?? kindOf(m)}</span>
-        {score > 0 && <span className={`prate ${rateTone(score)}`}><Icon name="star" size={11} fill />{score.toFixed(1)}</span>}
+        {onRemove ? (
+          <button
+            className="card-x"
+            aria-label={`Remove ${m.title}`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onRemove();
+            }}
+          >
+            <Icon name="x" size={14} />
+          </button>
+        ) : score > 0 && <span className={`prate ${rateTone(score)}`}><Icon name="star" size={11} fill />{score.toFixed(1)}</span>}
       </span>
       <span className="ptitle">{m.title}</span>
       <span className="pyear"><Icon name="calendar" size={12} />{[m.year, m.chapters ? `${m.chapters} ch` : ''].filter(Boolean).join(' · ') || 'TBA'}</span>

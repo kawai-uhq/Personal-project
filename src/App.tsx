@@ -33,6 +33,7 @@ const MangaBrowse = lazy(() => import('./pages/MangaBrowse'));
 const MangaDetail = lazy(() => import('./pages/MangaDetail'));
 const MangaRead = lazy(() => import('./pages/MangaRead'));
 const MangaLibrary = lazy(() => import('./pages/MangaLibrary'));
+const MangaGenres = lazy(() => import('./pages/MangaGenres'));
 const Search = lazy(() => import('./pages/Search'));
 const Watch = lazy(() => import('./pages/Watch'));
 
@@ -104,6 +105,7 @@ export default function App() {
         <Route path="/manga" element={<MangaHome />} />
         <Route path="/manga/explore" element={<MangaBrowse />} />
         <Route path="/manga/search" element={<MangaBrowse />} />
+        <Route path="/manga/genres" element={<MangaGenres />} />
         <Route path="/manga/library" element={<MangaLibrary />} />
         <Route path="/manga/title/:id" element={<MangaDetail />} />
         <Route path="/manga/read/:id" element={<MangaRead />} />

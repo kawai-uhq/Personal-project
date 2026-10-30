@@ -20,11 +20,12 @@ export default function MangaHome() {
           <Link to="/manga/explore?country=KR" className="chip">Manhwa</Link>
           <Link to="/manga/explore?country=CN" className="chip">Manhua</Link>
           <Link to="/manga/explore?format=ONE_SHOT" className="chip">One-shots</Link>
+          <Link to="/manga/genres" className="chip">Genres</Link>
         </div>
       </section>
       {reading.length > 0 && (
         <Row title="Continue Reading" to="/manga/library">
-          {reading.map((w) => <MangaCard key={w.id} m={w} tag={w.label.replace('Chapter', 'Ch.')} to={`/manga/read/${w.id}?c=${w.chapterId}&l=${w.lang ?? 'en'}`} />)}
+          {reading.map((w) => <MangaCard key={w.id} m={w} tag={w.label.replace('Chapter', 'Ch.')} to={`/manga/read/${w.id}?c=${w.chapterId}&l=${w.lang ?? 'en'}`} onRemove={() => store.removeRead(w.id)} />)}
         </Row>
       )}
       {list.length > 0 && <Row title="My Manga Library" to="/manga/library">{list.map((m) => <MangaCard key={m.id} m={m} />)}</Row>}

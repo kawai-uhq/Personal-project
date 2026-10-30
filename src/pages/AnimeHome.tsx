@@ -40,7 +40,7 @@ export default function AnimeHome() {
       {watching.length > 0 && (
         <Row title="Continue Watching">
           {watching.map((w) => (
-            <AnimeCard key={w.id} a={w} tag={`EP ${w.episode}`} to={`/anime/watch/${w.id}?e=${w.episode}&p=${w.server}&l=${w.lang}`} />
+            <AnimeCard key={w.id} a={w} tag={`EP ${w.episode}`} to={`/anime/watch/${w.id}?e=${w.episode}&p=${w.server}&l=${w.lang}`} onRemove={() => store.removeWatch(w.id)} />
           ))}
         </Row>
       )}

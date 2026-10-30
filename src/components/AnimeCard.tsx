@@ -6,14 +6,26 @@ import { FORMAT_LABEL, aniList } from '../lib/anilist';
 import type { Ani, AniLite, AniQuery } from '../lib/anilist';
 
 /** Poster-style card for an anime (same look as the movie cards). */
-export function AnimeCard({ a, tag, to }: { a: AniLite; tag?: string; to?: string }) {
+export function AnimeCard({ a, tag, to, onRemove }: { a: AniLite; tag?: string; to?: string; onRemove?: () => void }) {
   const score = a.score / 10;
   return (
     <Link to={to ?? `/anime/title/${a.id}`} className="poster">
       <span className="poster-img">
         {a.cover ? <img src={a.cover} alt={a.title} loading="lazy" decoding="async" /> : <span className="poster-missing">{a.title}</span>}
         <span className="pbadge tv">{tag ?? (a.format ? FORMAT_LABEL[a.format] ?? a.format : 'ANIME')}</span>
-        {score > 0 && <span className={`prate ${rateTone(score)}`}><Icon name="star" size={11} fill />{score.toFixed(1)}</span>}
+        {onRemove ? (
+          <button
+            className="card-x"
+            aria-label={`Remove ${a.title}`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onRemove();
+            }}
+          >
+            <Icon name="x" size={14} />
+          </button>
+        ) : score > 0 && <span className={`prate ${rateTone(score)}`}><Icon name="star" size={11} fill />{score.toFixed(1)}</span>}
       </span>
       <span className="ptitle">{a.title}</span>
       <span className="pyear"><Icon name="calendar" size={12} />{[a.year, a.episodes ? `${a.episodes} eps` : ''].filter(Boolean).join(' · ') || 'TBA'}</span>

@@ -38,6 +38,7 @@ export default function Navbar() {
             <nav className="nav-links" aria-label="Manga">
               <NavLink to="/manga" end><Icon name="book" size={18} />Manga Home</NavLink>
               <NavLink to="/manga/explore"><Icon name="compass" size={18} />Explore</NavLink>
+              <NavLink to="/manga/genres"><Icon name="grid" size={18} />Genres</NavLink>
               <NavLink to="/manga/library"><Icon name="bookmark" size={18} />Library</NavLink>
             </nav>
           ) : anime ? (
@@ -82,6 +83,7 @@ export default function Navbar() {
           <NavLink to="/manga" end><Icon name="book" size={18} /><span>Home</span></NavLink>
           <NavLink to="/manga/search"><Icon name="search" size={18} /><span>Search</span></NavLink>
           <NavLink to="/manga/explore"><Icon name="compass" size={18} /><span>Explore</span></NavLink>
+          <NavLink to="/manga/genres"><Icon name="grid" size={18} /><span>Genres</span></NavLink>
           <NavLink to="/manga/library"><Icon name="bookmark" size={18} /><span>Library</span></NavLink>
         </nav>
       ) : anime ? (
