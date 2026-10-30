@@ -1063,3 +1063,10 @@ html:not(.anime) .sw-menu button.cur { background: rgba(255, 107, 87, .14); }
 .fab-discord img { filter: hue-rotate(-16deg) saturate(1.6) brightness(1.05); }
 .fab-discord .dc-fallback rect { fill: #2f6bff; }
 @media (max-width: 760px) { .fab-discord { right: 14px; bottom: calc(78px + env(safe-area-inset-bottom)); } .fab-discord.up { bottom: calc(136px + env(safe-area-inset-bottom)); } }
+
+/* Discord button: round, Discord blurple, soft glow */
+.fab-discord { display: grid; place-items: center; width: 48px; height: 48px; right: 24px; bottom: 24px; background: #5865f2; border: 0; box-shadow: 0 6px 22px rgba(88, 101, 242, .5), 0 2px 8px rgba(0, 0, 0, .4); }
+.fab-discord:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 10px 28px rgba(88, 101, 242, .6), 0 2px 8px rgba(0, 0, 0, .4); }
+.fab-discord svg { width: 24px; height: 24px; }
+.fab-discord.up { bottom: 82px; }
+@media (max-width: 760px) { .fab-discord { right: 14px; bottom: calc(78px + env(safe-area-inset-bottom)); } .fab-discord.up { bottom: calc(136px + env(safe-area-inset-bottom)); } }
