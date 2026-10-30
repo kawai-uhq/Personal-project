@@ -24,7 +24,7 @@ export default function MangaHome() {
       </section>
       {reading.length > 0 && (
         <Row title="Continue Reading" to="/manga/library">
-          {reading.map((w) => <MangaCard key={w.id} m={w} tag={w.label.replace('Chapter', 'Ch.')} to={`/manga/read/${w.id}?c=${w.chapterId}`} />)}
+          {reading.map((w) => <MangaCard key={w.id} m={w} tag={w.label.replace('Chapter', 'Ch.')} to={`/manga/read/${w.id}?c=${w.chapterId}&l=${w.lang ?? 'en'}`} />)}
         </Row>
       )}
       {list.length > 0 && <Row title="My Manga Library" to="/manga/library">{list.map((m) => <MangaCard key={m.id} m={m} />)}</Row>}

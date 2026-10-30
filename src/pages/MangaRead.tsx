@@ -13,6 +13,7 @@ export default function MangaRead() {
   const mid = Number(id);
   const [sp] = useSearchParams();
   const cid = sp.get('c') ?? '';
+  const lang = sp.get('l') || 'en';
   const nav = useNavigate();
   const [m, setM] = useState<MangaFull | null>(null);
   const [chs, setChs] = useState<Chapter[] | null>(null);
@@ -30,14 +31,15 @@ export default function MangaRead() {
         if (!live) return;
         setM(r);
         const md = await mdFind(r);
-        const list = md ? await mdChapters(md) : [];
-        if (live) setChs(list);
+        const list = md ? await mdChapters(md, lang) : [];
+        // only chapters with pages here; official-site links stay on the title page
+        if (live) setChs(list.filter((c) => !c.ext));
       })
       .catch((e: Error) => live && setError(e.message));
     return () => {
       live = false;
     };
-  }, [mid, tick]);
+  }, [mid, lang, tick]);
 
   const idx = chs ? chs.findIndex((c) => c.id === cid) : -1;
   const cur = idx >= 0 && chs ? chs[idx] : null;
@@ -60,17 +62,17 @@ export default function MangaRead() {
   // remember where you are
   useEffect(() => {
     if (m && cur) {
-      mangaStore.addRead(m, cur.id, chapterLabel(cur));
+      mangaStore.addRead(m, cur.id, chapterLabel(cur), lang);
       mangaStore.markSeen(m.id, cur.id);
     }
-  }, [m, cur]);
+  }, [m, cur, lang]);
 
   // warm up the next chapter's page list
   useEffect(() => {
     if (pages && next) void mdPages(next.id).catch(() => undefined);
   }, [pages, next]);
 
-  const go = (c: Chapter | null) => c && nav(`/manga/read/${mid}?c=${c.id}`);
+  const go = (c: Chapter | null) => c && nav(`/manga/read/${mid}?c=${c.id}&l=${lang}`);
 
   // arrow keys switch chapters
   useEffect(() => {
@@ -100,7 +102,7 @@ export default function MangaRead() {
     <main className="page pad-top mr">
       <div className="mr-top">
         <Link to={back} className="mr-back"><Icon name="chevronLeft" size={18} />{m.title}</Link>
-        <Select className="field select" value={cur.id} onChange={(e) => nav(`/manga/read/${mid}?c=${e.target.value}`)} aria-label="Chapter">
+        <Select className="field select" value={cur.id} onChange={(e) => nav(`/manga/read/${mid}?c=${e.target.value}&l=${lang}`)} aria-label="Chapter">
           {[...chs].reverse().map((c) => <option key={c.id} value={c.id}>{chapterLabel(c)}{c.title ? ` · ${c.title}` : ''}</option>)}
         </Select>
         {bar}

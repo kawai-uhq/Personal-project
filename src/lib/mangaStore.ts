@@ -5,6 +5,7 @@ import type { MangaLite } from './manga';
 export interface MangaRead extends MangaLite {
   chapterId: string;
   label: string; // "Chapter 12"
+  lang?: string;
   at: number;
 }
 
@@ -31,8 +32,8 @@ const lite = (m: MangaLite): MangaLite => ({ id: m.id, title: m.title, cover: m.
 export const mangaStore = {
   history: () => read<MangaRead[]>(K.history, []),
   list: () => read<MangaLite[]>(K.list, []),
-  addRead: (m: MangaLite, chapterId: string, label: string) =>
-    write(K.history, [{ ...lite(m), chapterId, label, at: Date.now() }, ...mangaStore.history().filter((w) => w.id !== m.id)].slice(0, 60)),
+  addRead: (m: MangaLite, chapterId: string, label: string, lang = 'en') =>
+    write(K.history, [{ ...lite(m), chapterId, label, lang, at: Date.now() }, ...mangaStore.history().filter((w) => w.id !== m.id)].slice(0, 60)),
   removeRead: (id: number) => write(K.history, mangaStore.history().filter((w) => w.id !== id)),
   clearHistory: () => write(K.history, []),
   last: (id: number) => mangaStore.history().find((w) => w.id === id) ?? null,

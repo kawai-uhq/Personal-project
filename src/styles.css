@@ -1122,3 +1122,11 @@ html.manga .htag, html.manga .nav-signin { border-color: rgba(143, 134, 255, .45
 .mr-pages img { display: block; width: 100%; height: auto; min-height: 180px; background: #111; }
 .mr-end { max-width: 900px; margin: 18px auto 30px; padding: 0 var(--pad, 16px); display: flex; flex-direction: column; align-items: center; gap: 12px; }
 @media (max-width: 760px) { .mr-top .dd-btn { max-width: 100%; } .mr-back { max-width: 100%; margin-right: 0; flex-basis: 100%; } }
+
+/* Manga: language picker, official-site chapters */
+.mch-head { flex-wrap: wrap; gap: 10px; }
+.mch-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mch-tools .dd-btn { min-width: 170px; }
+.mch-note { margin: -4px 0 12px; }
+.mch-off { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 999px; background: rgba(143, 134, 255, .16); color: var(--accent); font-weight: 800; font-size: 11px; opacity: 1; }
+.mch.ext span { opacity: .6; }

@@ -1,7 +1,7 @@
 // Vercel serverless function: relays read-only MangaDex API calls (browsers can't call it directly) and lets the CDN cache them.
 // Use: /api/md?p=/manga&title=...  (p is the MangaDex path; every other parameter is passed along)
 const ID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
-const ALLOWED = [new RegExp('^/manga$'), new RegExp(`^/manga/${ID}/feed$`), new RegExp(`^/at-home/server/${ID}$`)];
+const ALLOWED = [new RegExp('^/manga$'), new RegExp(`^/manga/${ID}$`), new RegExp(`^/manga/${ID}/feed$`), new RegExp(`^/at-home/server/${ID}$`)];
 
 export default async function handler(req, res) {
   let url;
