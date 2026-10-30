@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Icon from '../components/Icon';
 import { AnimeCard } from '../components/AnimeCard';
 import { MangaCard } from '../components/MangaCard';
 import { GridSkeleton, Status } from '../components/Rows';
-import { aniList, linkSources, studioAnime, topStudios } from '../lib/anilist';
+import { aniList, linkSources, studioAnime, studiosPage } from '../lib/anilist';
 import type { Ani, LinkSource, StudioLite } from '../lib/anilist';
-import { creatorWorks, mangaList, topCreators } from '../lib/manga';
+import { creatorWorks, mangaList, popularCreators, searchCreators, topCreators } from '../lib/manga';
 import type { Creator, CreatorPage, Manga } from '../lib/manga';
 import { toPublic as P } from '../lib/site';
 import { SourceLogo } from '../components/AniSourceRow';
@@ -28,15 +28,93 @@ function useList<T>(load: () => Promise<T[]>, deps: unknown[]) {
   return { list, error, retry: () => setTick((n) => n + 1) };
 }
 
-/** Anime: streaming services and animation studios. Manga: reading platforms / publishers and mangaka. */
+type Person = StudioLite | Creator;
+
+/**
+ * Studios (anime) or mangaka (manga): browse the popular ones page by page, or search all of AniList.
+ */
+function People({ kind, q }: { kind: Kind; q: string }) {
+  const anime = kind === 'anime';
+  const term = q.trim();
+  const [items, setItems] = useState<Person[]>([]);
+  const [page, setPage] = useState(1);
+  const [more, setMore] = useState(false);
+  const [busy, setBusy] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const ticket = useRef(0);
+
+  const fetchPage = async (p: number, t: string): Promise<{ items: Person[]; more: boolean }> => {
+    if (anime) return studiosPage(p, t);
+    if (t) return searchCreators(t, p);
+    if (p === 1) {
+      // the hand-picked famous names first, then AniList's popular creators
+      const [picked, pop] = await Promise.all([topCreators().catch(() => [] as Creator[]), popularCreators(1)]);
+      return { items: [...picked, ...pop.items], more: pop.more };
+    }
+    return popularCreators(p);
+  };
+
+  const run = (p: number, t: string) => {
+    const id = ++ticket.current;
+    setBusy(true);
+    setError(null);
+    fetchPage(p, t)
+      .then((r) => {
+        if (id !== ticket.current) return;
+        setItems((cur) => {
+          const base = p === 1 ? [] : cur;
+          return [...base, ...r.items.filter((x) => !base.some((c) => c.id === x.id))].filter((x, i, a) => a.findIndex((y) => y.id === x.id) === i);
+        });
+        setPage(p);
+        setMore(r.more);
+      })
+      .catch((e: Error) => id === ticket.current && setError(e.message))
+      .finally(() => id === ticket.current && setBusy(false));
+  };
+
+  // a new search (after a short pause in typing) starts again from page 1
+  useEffect(() => {
+    if (term && term.length < 2) return;
+    const t = window.setTimeout(() => run(1, term), term ? 400 : 0);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [term, kind]);
+
+  if (error && !items.length) return <Status kind="error" text={error} retry={() => run(1, term)} />;
+  if (busy && !items.length) return <Status kind="loading" />;
+  if (!items.length) return <Status kind="empty" text={term ? `No ${anime ? 'studios' : 'creators'} match “${term}”.` : 'Nothing to show yet.'} />;
+  return (
+    <>
+      <div className="studio-grid">
+        {items.map((p) => (
+          <Link key={p.id} to={P(anime ? `/anime/studio/${p.id}` : `/manga/creator/${p.id}`)} className={`studio ${anime ? '' : 'person'}`}>
+            {p.art && <img className="studio-art" src={p.art} alt="" loading="lazy" />}
+            <span className="studio-shade" />
+            {'image' in p && p.image && <img className="studio-face" src={p.image} alt="" loading="lazy" />}
+            <strong>{p.name}</strong>
+            <small>
+              {anime ? ('animation' in p && !p.animation ? 'Producer' : 'Studio') : ('role' in p && p.role) || 'Creator'}
+              <Icon name="arrowRight" size={12} />
+            </small>
+          </Link>
+        ))}
+      </div>
+      {more && (
+        <div className="center-row">
+          <button className="btn" disabled={busy} onClick={() => run(page + 1, term)}>{busy ? 'Loading…' : `Load more ${anime ? 'studios' : 'creators'}`}</button>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** Anime: streaming services and studios. Manga: reading platforms / publishers and mangaka. */
 function ProvidersPage({ kind }: { kind: Kind }) {
   const anime = kind === 'anime';
   const [q, setQ] = useState('');
   const sites = useList<LinkSource>(() => linkSources(anime ? 'ANIME' : 'MANGA'), [kind]);
-  const people = useList<StudioLite | Creator>(() => (anime ? topStudios() : topCreators()), [kind]);
   const n = q.trim().toLowerCase();
   const shownSites = useMemo(() => (sites.list ?? []).filter((s) => !n || s.site.toLowerCase().includes(n)), [sites.list, n]);
-  const shownPeople = useMemo(() => (people.list ?? []).filter((s) => !n || s.name.toLowerCase().includes(n)), [people.list, n]);
 
   return (
     <main className="page pad-top">
@@ -46,23 +124,23 @@ function ProvidersPage({ kind }: { kind: Kind }) {
             <h1 className="title">{anime ? <>Studios &amp; <span className="accent">Streaming</span></> : <>Publishers &amp; <span className="accent">Mangaka</span></>}</h1>
             <p className="muted">
               {anime
-                ? 'Browse anime by the service that streams it (Crunchyroll, Netflix, HIDIVE…) or the studio that made it (MAPPA, ufotable…).'
-                : 'Browse manga by the platform or publisher that releases it (MANGA Plus, VIZ, WEBTOON…) or by the mangaka who created it.'}
+                ? 'Browse anime by the service that streams it (Crunchyroll, Netflix, HIDIVE…) or the studio that made it (MAPPA, ufotable…). Search finds any studio on AniList.'
+                : 'Browse manga by the platform or publisher that releases it (MANGA Plus, VIZ, WEBTOON…) or by its creator. Search finds any mangaka on AniList.'}
             </p>
           </div>
         </div>
         <div className="prov-search">
           <Icon name="search" size={16} />
-          <input className="field" type="search" placeholder={anime ? 'Search services and studios…' : 'Search publishers and mangaka…'} value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search" />
+          <input className="field" type="search" placeholder={anime ? 'Search any studio or service…' : 'Search any mangaka or publisher…'} value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search" />
         </div>
 
-        <h2 className="section">{anime ? 'Streaming services' : 'Publishers & reading platforms'}</h2>
+        <h2 className="section">{anime ? 'Streaming services' : 'Publishers & reading platforms'}{sites.list ? <span className="count"> {shownSites.length}</span> : null}</h2>
         {sites.error ? (
           <Status kind="error" text={sites.error} retry={sites.retry} />
         ) : !sites.list ? (
           <Status kind="loading" />
         ) : shownSites.length === 0 ? (
-          <Status kind="empty" text="Nothing matches." />
+          <p className="muted small">No {anime ? 'services' : 'platforms'} match.</p>
         ) : (
           <div className="pgrid">
             {shownSites.map((s) => (
@@ -74,26 +152,8 @@ function ProvidersPage({ kind }: { kind: Kind }) {
           </div>
         )}
 
-        <h2 className="section" style={{ marginTop: 28 }}>{anime ? 'Animation studios' : 'Mangaka'}</h2>
-        {people.error ? (
-          <Status kind="error" text={people.error} retry={people.retry} />
-        ) : !people.list ? (
-          <Status kind="loading" />
-        ) : shownPeople.length === 0 ? (
-          <Status kind="empty" text="Nothing matches." />
-        ) : (
-          <div className="studio-grid">
-            {shownPeople.map((p) => (
-              <Link key={p.id} to={P(anime ? `/anime/studio/${p.id}` : `/manga/creator/${p.id}`)} className={`studio ${anime ? '' : 'person'}`}>
-                {p.art && <img className="studio-art" src={p.art} alt="" loading="lazy" />}
-                <span className="studio-shade" />
-                {'image' in p && p.image && <img className="studio-face" src={p.image} alt="" loading="lazy" />}
-                <strong>{p.name}</strong>
-                <small>{anime ? 'Studio' : 'Mangaka'}<Icon name="arrowRight" size={12} /></small>
-              </Link>
-            ))}
-          </div>
-        )}
+        <h2 className="section" style={{ marginTop: 28 }}>{anime ? (n ? 'Studios matching your search' : 'Animation studios') : n ? 'Creators matching your search' : 'Mangaka & creators'}</h2>
+        <People kind={kind} q={q} />
       </div>
     </main>
   );

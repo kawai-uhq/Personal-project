@@ -323,17 +323,31 @@ export function linkSources(media: 'ANIME' | 'MANGA'): Promise<LinkSource[]> {
   }));
 }
 
-export interface StudioLite { id: number; name: string; art: string | null }
+export interface StudioLite { id: number; name: string; art: string | null; animation: boolean }
 
-/** The best-known animation studios (by AniList favourites), each with a picture from its most popular show. */
-export async function topStudios(): Promise<StudioLite[]> {
+const STUDIO_FIELDS = 'id name isAnimationStudio media(sort:POPULARITY_DESC, isMain:true, perPage:1){ nodes{ bannerImage coverImage{ large } } }';
+const toStudio = (x: any): StudioLite => ({
+  id: x.id,
+  name: x.name,
+  animation: !!x.isAnimationStudio,
+  art: x.media?.nodes?.[0]?.bannerImage || x.media?.nodes?.[0]?.coverImage?.large || null
+});
+
+/**
+ * Studios, a page at a time: the best-known first (by AniList favourites), or those matching a search.
+ * Browsing shows animation studios only; a search also finds producers and licensors.
+ */
+export async function studiosPage(page = 1, search = ''): Promise<{ items: StudioLite[]; more: boolean }> {
   const d = await gql(
-    `query{ Page(perPage:50){ studios(sort:FAVOURITES_DESC){ id name isAnimationStudio media(sort:POPULARITY_DESC, isMain:true, perPage:1){ nodes{ bannerImage coverImage{ large } } } } } }`
+    `query($page:Int,$search:String,$sort:[StudioSort]){ Page(page:$page, perPage:50){ pageInfo{ hasNextPage } studios(search:$search, sort:$sort){ ${STUDIO_FIELDS} } } }`,
+    search ? { page, search, sort: ['SEARCH_MATCH'] } : { page, sort: ['FAVOURITES_DESC'] }
   );
-  return ((d?.Page?.studios ?? []) as any[])
-    .filter((x) => x.isAnimationStudio)
-    .map((x) => ({ id: x.id, name: x.name, art: x.media?.nodes?.[0]?.bannerImage || x.media?.nodes?.[0]?.coverImage?.large || null }));
+  const all = ((d?.Page?.studios ?? []) as any[]).map(toStudio);
+  return { items: search ? all : all.filter((x) => x.animation), more: !!d?.Page?.pageInfo?.hasNextPage };
 }
+
+/** The best-known animation studios (first page). */
+export const topStudios = () => studiosPage(1).then((r) => r.items);
 
 /** A studio's anime, most popular first. */
 export async function studioAnime(id: number, page = 1): Promise<{ name: string; items: Ani[]; more: boolean }> {

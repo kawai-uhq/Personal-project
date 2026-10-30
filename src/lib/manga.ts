@@ -295,7 +295,7 @@ export async function mangaCovers(): Promise<string[]> {
 
 /* ------------------------------ mangaka ------------------------------ */
 
-export interface Creator { id: number; name: string; image: string | null; art: string | null }
+export interface Creator { id: number; name: string; image: string | null; art: string | null; role?: string }
 
 // well-known manga, manhwa and manhua creators (AniList's spelling)
 const MANGAKA = [
@@ -324,6 +324,38 @@ export function topCreators(): Promise<Creator[]> {
   });
   creatorsCache.catch(() => (creatorsCache = null));
   return creatorsCache;
+}
+
+const STAFF_FIELDS = 'id name{ full } image{ large } primaryOccupations staffMedia(type:MANGA, sort:POPULARITY_DESC, perPage:1){ nodes{ bannerImage coverImage{ large } } }';
+const toCreator = (x: any): Creator => {
+  const n = x.staffMedia?.nodes?.[0];
+  return { id: x.id, name: x.name?.full ?? '', image: x.image?.large ?? null, art: n?.bannerImage || n?.coverImage?.large || null, role: (x.primaryOccupations ?? [])[0] };
+};
+const MAKES_COMICS = /mangaka|manga|manhwa|manhua|webtoon|comic|illustrator|artist|author|writer|novelist/i;
+
+/** Search every creator on AniList (people who have worked on manga come first). */
+export async function searchCreators(search: string, page = 1): Promise<{ items: Creator[]; more: boolean }> {
+  const d = await gql(
+    `query($page:Int,$search:String){ Page(page:$page, perPage:40){ pageInfo{ hasNextPage } staff(search:$search, sort:[SEARCH_MATCH]){ ${STAFF_FIELDS} } } }`,
+    { page, search }
+  );
+  const all = ((d?.Page?.staff ?? []) as any[]).map((x) => ({ c: toCreator(x), manga: !!x.staffMedia?.nodes?.length }));
+  return { items: [...all.filter((x) => x.manga), ...all.filter((x) => !x.manga)].map((x) => x.c), more: !!d?.Page?.pageInfo?.hasNextPage };
+}
+
+/**
+ * More popular creators beyond the hand-picked list: AniList's most-favourited people, keeping those who make
+ * manga / manhwa / manhua (two pages of 50 per call, since most of that list is voice actors).
+ */
+export async function popularCreators(page = 1): Promise<{ items: Creator[]; more: boolean }> {
+  const q = (p: number) =>
+    gql(`query($page:Int){ Page(page:$page, perPage:50){ pageInfo{ hasNextPage } staff(sort:[FAVOURITES_DESC]){ ${STAFF_FIELDS} } } }`, { page: p });
+  const [a, b] = await Promise.all([q(page * 2 - 1), q(page * 2)]);
+  const rows = [...((a?.Page?.staff ?? []) as any[]), ...((b?.Page?.staff ?? []) as any[])];
+  return {
+    items: rows.filter((x) => (x.primaryOccupations ?? []).some((o: string) => MAKES_COMICS.test(o)) && x.staffMedia?.nodes?.length).map(toCreator),
+    more: !!b?.Page?.pageInfo?.hasNextPage
+  };
 }
 
 export interface CreatorPage { name: string; native: string; image: string | null; about: string; items: Manga[]; more: boolean }

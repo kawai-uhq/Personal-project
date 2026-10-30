@@ -1212,3 +1212,4 @@ input:autofill { background: transparent; filter: none; }
 .confirm-btns .btn { justify-content: center; }
 .btn.danger-fill { background: #e5533f; border-color: #e5533f; color: #fff; }
 .btn.danger-fill:hover { background: #ff6b57; border-color: #ff6b57; }
+.section .count { font-size: 13px; font-weight: 700; opacity: .55; }
