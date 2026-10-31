@@ -11,6 +11,7 @@ const Explore = lazy(() => import('./pages/Explore'));
 import Tooltip from './components/Tooltip';
 import CrossPromo from './components/CrossPromo';
 import ConfirmHost from './components/Confirm';
+import CookieBanner from './components/CookieBanner';
 import Contact from './pages/Contact';
 import Floating from './components/Floating';
 import Footer from './components/Footer';
@@ -164,6 +165,7 @@ export default function App() {
       <AuthModal />
       <CrossPromo />
       <ConfirmHost />
+      <CookieBanner />
       <Tooltip />
     </>
   );

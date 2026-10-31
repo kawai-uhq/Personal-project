@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import Logo from './Logo';
+import { openConsent } from '../lib/consent';
 
 export default function Footer() {
   return (
@@ -13,6 +14,7 @@ export default function Footer() {
           <Link to="/legal/privacy">Privacy</Link>
           <Link to="/legal/dmca">DMCA</Link>
           <Link to="/contact">Contact</Link>
+          <button type="button" className="footer-link" onClick={openConsent}>Cookie settings</button>
         </nav>
         <p>
           Comvie does not host any video. Movie and show information comes from TMDB; this product uses the TMDB API but is not endorsed or certified by TMDB.

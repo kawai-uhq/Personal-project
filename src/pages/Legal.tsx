@@ -4,7 +4,7 @@ import Icon from '../components/Icon';
 import type { IconName } from '../components/Icon';
 
 const EMAIL = (import.meta.env.VITE_CONTACT_EMAIL as string | undefined)?.trim() ?? '';
-const UPDATED = 'October 24, 2026';
+const UPDATED = 'October 31, 2026';
 const UPDATED_SHORT = 'October 2026';
 
 function Reach() {
@@ -130,10 +130,12 @@ export function Privacy() {
       <Card n={2} title="Information We Collect" icon="database" tone="ok">
         <p><b>A. Technical & Operational Logs:</b> Like virtually all web services, our hosting and security providers automatically record standard, non-identifying technical data when you connect. This includes your IP address, browser user-agent, operating system, requested page URL, and timestamp. These logs are used for DDoS mitigation, traffic management, rate-limiting, and error diagnostics.</p>
         <p><b>B. Browser Local Storage:</b> To give you a seamless personalized experience, Comvie uses your browser's local storage to save your watch progress, watchlist, favorites, reminders, recent searches, and settings. This data stays on your device and is not sold or shared with third parties. Clearing your browser data removes it.</p>
-        <p><b>C. Optional Accounts:</b> If you choose to create an account, we store your email address and your watchlist, favorites, and watch history so they follow you between devices. Sign-in is handled by our authentication provider, Supabase. To delete your account and its data, reach us through <Reach />.</p>
+        <p><b>C. Optional Accounts:</b> If you choose to create an account, we store your email address and your watchlist, favorites, and watch history so they follow you between devices. Sign-in is handled by our authentication provider, Supabase. If you connect AniList, Comvie stores a sign-in token for it in your browser so it can read your lists and, if you allow it, update your progress; disconnecting removes it. To delete your account and its data, reach us through <Reach />.</p>
       </Card>
       <Card n={3} title="Cookies and Advertising" icon="cookie" tone="warn">
-        <p>Comvie shows no ads and does not run its own analytics or cross-site tracking cookies. Third-party video embed providers and hosting services embedded on the site may set cookies or use tracking technologies according to their own privacy policies. We encourage you to read third-party privacy notices or use a content blocker if you want enhanced privacy.</p>
+        <p>Comvie shows no ads and runs no analytics or tracking. The few cookies we set are needed for the site to work, and are shared by cinema.comvie.lol, anime.comvie.lol and manga.comvie.lol:</p>
+        <p><b>cv_session</b>: keeps you signed in (only if you have an account). <b>cv_prefs</b>: your appearance and playback settings. <b>cv_anilist</b>: your AniList connection (only if you connect it). <b>cv_consent</b>: your cookie choice. Your lists, history and progress are kept in your browser's local storage, and in your account if you're signed in.</p>
+        <p><b>Third-party media:</b> video players come from other streaming sites and trailers from YouTube; those sites may set their own cookies under their own policies. If you choose <b>Essential only</b> in the cookie notice, players and trailers wait until you tap to load them. You can change this any time with <b>Cookie settings</b> at the bottom of every page.</p>
       </Card>
       <Card n={4} title="External Links & Third-Party Providers" icon="globe" tone="info">
         <p>Our site contains embedded players and links to third-party streaming resources. Titles, posters, and descriptions come from TMDB and AniList, trailers from YouTube, and live channels from an open public directory, so your browser contacts those services directly. Comvie is not responsible for the privacy practices, content, or policies of external sites. Once you navigate away or interact with external video players, you are subject to the terms of those platforms.</p>

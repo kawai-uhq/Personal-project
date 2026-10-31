@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import ConsentGate from './ConsentGate';
 import { serverSlug } from '../lib/providers';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
@@ -195,6 +196,7 @@ export function Poster({ m, rank, fresh }: { m: Media; rank?: number; fresh?: bo
         {landscape && <img className={`pbd ${wide ? 'on' : ''}`} src={backdrop ?? (m.poster ? posterSrc(m.poster) : '')} alt="" />}
         {wide && key && (
           <>
+            <ConsentGate label="Trailer" className="" compact>
             <iframe
               className={`ptrailer ${ready ? 'on' : ''}`}
               src={`https://www.youtube-nocookie.com/embed/${key}?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&fs=0&cc_load_policy=0&loop=1&playlist=${key}`}
@@ -203,6 +205,7 @@ export function Poster({ m, rank, fresh }: { m: Media; rank?: number; fresh?: bo
               title=""
               onLoad={() => window.setTimeout(() => setReady(true), 900)}
             />
+            </ConsentGate>
             <span className="pshield" aria-hidden="true" />
           </>
         )}

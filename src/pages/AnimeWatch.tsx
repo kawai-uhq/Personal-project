@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import ConsentGate from '../components/ConsentGate';
+import { mediaAllowed, useConsent } from '../lib/consent';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AniRow } from '../components/AnimeCard';
 import Icon from '../components/Icon';
@@ -29,6 +31,9 @@ export default function AnimeWatch() {
   const [range, setRange] = useState(0);
   const [upNext, setUpNext] = useState<number | null>(null);
   const [left, setLeft] = useState(5);
+  const consent = useConsent();
+  const [gateOpen, setGateOpen] = useState(false);
+  const mediaOk = mediaAllowed(consent) || gateOpen; // player actually on the page
   const [loaded, setLoaded] = useState(false);
   const [slow, setSlow] = useState(false);
   const [alive, setAlive] = useState(false);
@@ -150,9 +155,10 @@ export default function AnimeWatch() {
     setLoaded(false);
     setSlow(false);
     setAlive(false);
+    if (!mediaOk) return;
     const h = window.setTimeout(() => setSlow(true), 20000);
     return () => window.clearTimeout(h);
-  }, [src, reload]);
+  }, [src, reload, mediaOk]);
   useEffect(() => {
     tried.current = new Set();
     setSwitched(null);
@@ -197,6 +203,8 @@ export default function AnimeWatch() {
         )}
       </div>
 
+      <ConsentGate label="Load the player" className="wp-frame" onOpen={() => setGateOpen(true)}>
+
       <iframe
         key={`${src}|${reload}`}
         ref={frame}
@@ -207,6 +215,8 @@ export default function AnimeWatch() {
         allowFullScreen
         onLoad={() => setLoaded(true)}
       />
+
+      </ConsentGate>
 
       {switched && (
         <div className="wp-slow" role="status">

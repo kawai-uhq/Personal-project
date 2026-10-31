@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import ConsentGate from '../components/ConsentGate';
+import { mediaAllowed, useConsent } from '../lib/consent';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { PosterRow } from '../components/Rows';
 import Icon from '../components/Icon';
@@ -45,6 +47,9 @@ export default function Watch() {
   const [alive, setAlive] = useState(false);
   const [slow, setSlow] = useState(false);
   const [autonext] = useState(store.getAutoplay());
+  const consent = useConsent();
+  const [gateOpen, setGateOpen] = useState(false);
+  const mediaOk = mediaAllowed(consent) || gateOpen; // player actually on the page
   const [autoSwitch] = useState(store.getAutoSwitch());
   const [loaded, setLoaded] = useState(false);
   const [switched, setSwitched] = useState<string | null>(null);
@@ -165,9 +170,10 @@ export default function Watch() {
     setAlive(false);
     setSlow(false);
     setLoaded(false);
+    if (!mediaOk) return;
     const h = window.setTimeout(() => setSlow(true), 20000);
     return () => window.clearTimeout(h);
-  }, [url, reload, sandboxed]);
+  }, [url, reload, sandboxed, mediaOk]);
 
   // A new title / episode starts a fresh round of servers
   useEffect(() => {
@@ -247,6 +253,8 @@ export default function Watch() {
         )}
       </div>
 
+      <ConsentGate label="Load the player" className="wp-frame" onOpen={() => setGateOpen(true)}>
+
       <iframe
         key={`${src}|${reload}|${sandboxed}`}
         className="wp-frame"
@@ -257,6 +265,8 @@ export default function Watch() {
         sandbox={sandbox}
         onLoad={() => setLoaded(true)}
       />
+
+      </ConsentGate>
 
       {switched && (
         <div className="wp-slow" role="status">

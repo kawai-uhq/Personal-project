@@ -7,6 +7,7 @@ import { useSection } from '../lib/section';
 import type { Section } from '../lib/section';
 import { sectionHome, toLogical } from '../lib/site';
 import { store } from '../lib/storage';
+import { getConsent } from '../lib/consent';
 import { posterSrc, tmdb } from '../lib/tmdb';
 
 const SEEN = 'comvie.promoseen';
@@ -60,7 +61,7 @@ export default function CrossPromo() {
   const busy = pathname.startsWith('/watch/') || pathname.startsWith('/anime/watch/') || pathname.startsWith('/manga/read/');
 
   useEffect(() => {
-    if (done || busy || store.getPromoHide()) return;
+    if (done || busy || store.getPromoHide() || !getConsent()) return; // not on top of the cookie notice
     try {
       if (sessionStorage.getItem(SEEN)) return;
     } catch {
