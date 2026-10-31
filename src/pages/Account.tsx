@@ -28,13 +28,10 @@ export default function Account() {
           <div className="acct-card acct-empty">
             <span className="acct-avatar"><Icon name="user" size={26} /></span>
             <h1 className="title">Your <span className="accent">Account</span></h1>
-            <p className="muted">Sign in to back up your watchlist, favorites and progress, and use them on any device.</p>
+            <p className="muted">Sign in to back up your lists and progress, use them on any device, connect AniList and change the site's settings.</p>
             <button className="btn primary" onClick={openAuth}><Icon name="login" size={16} />Sign in or create an account</button>
           </div>
-          <h2 className="section">Connected services</h2>
-          <AniListCard />
-          <h2 className="section" id="settings">Settings</h2>
-          <SettingsPanel />
+
         </div>
       </main>
     );
