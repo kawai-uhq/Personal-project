@@ -75,7 +75,7 @@ export function SurpriseButton() {
   const [busy, setBusy] = useState(false);
   return (
     <button
-      className={`gear surprise ${busy ? 'busy' : ''}`}
+      className={`nav-dice ${busy ? 'busy' : ''}`}
       aria-label="Surprise me: open a random title"
       title="Surprise me"
       disabled={busy}
@@ -88,7 +88,8 @@ export function SurpriseButton() {
         setBusy(false);
       }}
     >
-      <Icon name="shuffle" size={18} />
+      <Icon name="dice" size={18} />
+      <span className="nav-dice-tip" aria-hidden="true">Surprise me</span>
     </button>
   );
 }

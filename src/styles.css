@@ -1372,3 +1372,17 @@ html.light .set-switch { background: rgba(40, 20, 30, .14); }
   .td-side { grid-template-columns: 96px 1fr; }
   .tstats { grid-template-columns: 1fr; }
 }
+
+/* "Surprise me" dice in the top bar: a round glass chip like the rest of the bar */
+.nav-dice { position: relative; flex: none; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: rgba(255, 233, 214, .06); color: var(--cream); cursor: pointer; transition: border-color .15s ease, background .15s ease, color .15s ease; }
+.nav-dice:hover, .nav-dice:focus-visible { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.nav-dice .ic { transition: transform .35s cubic-bezier(.3, 1.5, .5, 1); }
+.nav-dice:hover .ic { transform: rotate(-18deg) scale(1.06); }
+.nav-dice.busy .ic { animation: dice-roll .6s cubic-bezier(.4, 0, .2, 1) infinite; }
+@keyframes dice-roll { 0% { transform: rotate(0) scale(1); } 50% { transform: rotate(180deg) scale(.86); } 100% { transform: rotate(360deg) scale(1); } }
+.nav-dice-tip { position: absolute; top: calc(100% + 10px); left: 50%; transform: translate(-50%, -4px); padding: 5px 10px; border-radius: 8px; border: 1px solid var(--line); background: rgba(24, 16, 32, .96); color: var(--cream); font-size: 12px; font-weight: 800; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s ease, transform .15s ease; }
+.nav-dice:hover .nav-dice-tip { opacity: 1; transform: translate(-50%, 0); }
+@media (hover: none) { .nav-dice-tip { display: none; } }
+html.light .nav-dice { background: rgba(40, 20, 30, .05); }
+html.light .nav-dice-tip { background: #fff; }
+@media (max-width: 760px) { .nav-dice { width: 34px; height: 34px; } }
