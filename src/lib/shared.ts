@@ -7,7 +7,7 @@ const COOKIE = 'cv_prefs';
 const DAYS = 400;
 
 /** Keys kept in the shared cookie (appearance and playback settings). */
-export const SHARED_KEYS = ['comvie.prefs', 'comvie.remember', 'comvie.autoplay2', 'comvie.autoskip2', 'comvie.protect2'];
+export const SHARED_KEYS = ['comvie.prefs', 'comvie.remember', 'comvie.autoplay2', 'comvie.autoskip2', 'comvie.protect2', 'comvie.autoswitch', 'comvie.nextdelay'];
 
 export const onSharedHost = () => typeof location !== 'undefined' && /(^|\.)comvie\.lol$/.test(location.hostname);
 export const isSharedKey = (k: string) => SHARED_KEYS.includes(k);

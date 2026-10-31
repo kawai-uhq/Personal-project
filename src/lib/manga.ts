@@ -92,6 +92,8 @@ export interface MangaQuery {
   format?: string; // MANGA, ONE_SHOT
   status?: string;
   popularityGreater?: number;
+  /** an AniList tag, e.g. "Iyashikei" */
+  tag?: string;
   /** only titles on this reading site (an AniList link-source id) */
   licensedById?: number;
   page?: number;
@@ -99,9 +101,9 @@ export interface MangaQuery {
 }
 
 export async function mangaList(q: MangaQuery): Promise<{ items: Manga[]; more: boolean; last: number }> {
-  const query = `query($page:Int,$perPage:Int,$sort:[MediaSort],$search:String,$genre:String,$country:CountryCode,$format:MediaFormat,$status:MediaStatus,$pg:Int,$lic:Int)
+  const query = `query($page:Int,$perPage:Int,$sort:[MediaSort],$search:String,$genre:String,$country:CountryCode,$format:MediaFormat,$status:MediaStatus,$pg:Int,$lic:Int,$tag:String)
 { Page(page:$page, perPage:$perPage){ pageInfo{ hasNextPage lastPage }
-  media(type:MANGA, format_not:NOVEL, sort:$sort, search:$search, genre:$genre, countryOfOrigin:$country, format:$format, status:$status, popularity_greater:$pg, licensedById:$lic){ ${MEDIA} } } }`;
+  media(type:MANGA, format_not:NOVEL, sort:$sort, search:$search, genre:$genre, countryOfOrigin:$country, format:$format, status:$status, popularity_greater:$pg, licensedById:$lic, tag:$tag){ ${MEDIA} } } }`;
   const { sort, popularityGreater, licensedById, ...rest } = q;
   const vars: Record<string, unknown> = { page: 1, perPage: 24, ...rest, pg: popularityGreater, lic: licensedById };
   if (sort && !q.search) vars.sort = [sort];

@@ -8,7 +8,7 @@ import type { Ani } from '../lib/anilist';
 import Select from '../components/Select';
 
 const YEARS = Array.from({ length: 40 }, (_, i) => String(new Date().getFullYear() + 1 - i));
-const SORTS: [string, string][] = [['TRENDING_DESC', 'Trending'], ['POPULARITY_DESC', 'Most Popular'], ['SCORE_DESC', 'Top Rated'], ['START_DATE_DESC', 'Newest'], ['FAVOURITES_DESC', 'Most Favourited']];
+const SORTS: [string, string][] = [['TRENDING_DESC', 'Trending'], ['POPULARITY_DESC', 'Most Popular'], ['SCORE_DESC', 'Top Rated'], ['START_DATE_DESC', 'Newest'], ['FAVOURITES_DESC', 'Most Favourited'], ['TRENDING_DESC', 'Trending'], ['EPISODES_DESC', 'Most Episodes'], ['START_DATE', 'Oldest'], ['TITLE_ENGLISH', 'Title A–Z'], ['UPDATED_AT_DESC', 'Recently Updated']].filter((x, i, a) => a.findIndex((y) => y[0] === x[0]) === i) as [string, string][];
 const SEASONS = ['WINTER', 'SPRING', 'SUMMER', 'FALL'];
 const FORMATS = ['TV', 'MOVIE', 'OVA', 'ONA', 'SPECIAL'];
 const STATUSES = ['RELEASING', 'FINISHED', 'NOT_YET_RELEASED'];

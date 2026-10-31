@@ -6,6 +6,7 @@ import { Status } from '../components/Rows';
 import { chapterLabel, mangaFull, mdChapters, mdFind, mdPages } from '../lib/manga';
 import type { Chapter, MangaFull, PageSet } from '../lib/manga';
 import { mangaStore } from '../lib/mangaStore';
+import { reportProgress } from '../lib/anilistAccount';
 
 /** The reader: pages of one chapter in a long vertical strip, with next / previous chapter. */
 export default function MangaRead() {
@@ -64,6 +65,8 @@ export default function MangaRead() {
     if (m && cur) {
       mangaStore.addRead(m, cur.id, chapterLabel(cur), lang);
       mangaStore.markSeen(m.id, cur.id);
+      const n = Math.floor(parseFloat(cur.num));
+      if (n > 0) void reportProgress(m.id, n, m.chapters);
     }
   }, [m, cur, lang]);
 

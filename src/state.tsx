@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { ReactNode } from 'react';
 import { authConfigured, refreshSession, signOutRemote } from './lib/auth';
 import * as sync from './lib/sync';
+import { setTokenProvider, syncLibrary } from './lib/cloudData';
 import { MAX_HISTORY, store } from './lib/storage';
 import { mediaKey } from './lib/types';
 import type { Media, Session, WatchEntry } from './lib/types';
@@ -106,6 +107,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     return null;
   }, [applySession]);
+
+  // Anime & manga libraries follow the account: sync on load, on sign-in and whenever you come back to the tab
+  useEffect(() => {
+    if (!session) {
+      setTokenProvider(null);
+      return;
+    }
+    setTokenProvider(getToken);
+    void syncLibrary();
+    const again = () => document.visibilityState === 'visible' && void syncLibrary();
+    document.addEventListener('visibilitychange', again);
+    return () => document.removeEventListener('visibilitychange', again);
+  }, [session?.email, getToken]);
 
   // Signing in or out on cinema / anime / manga shows up here when you come back to this tab
   useEffect(() => {

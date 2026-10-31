@@ -58,6 +58,8 @@ export default function SettingsPanel() {
   const [autoplay, setAutoplay] = useState(store.getAutoplay());
   const [skip, setSkip] = useState(store.getAutoskip());
   const [shield, setShield] = useState(store.getProtect());
+  const [autoSwitch, setAutoSwitch] = useState(store.getAutoSwitch());
+  const [delay, setDelay] = useState(String(store.getNextDelay()));
   const [note, setNote] = useState('');
   const file = useRef<HTMLInputElement>(null);
   const flash = (t: string) => {
@@ -110,6 +112,28 @@ export default function SettingsPanel() {
   return (
     <div className="settings">
       <section className="set-card">
+        <h3>General</h3>
+        <Row title="Switch servers automatically" hint="If a server doesn't load, the player moves to the next one, and remembers which server worked for each title">
+          <Switch label="Switch servers automatically" on={autoSwitch} onChange={(v) => { setAutoSwitch(v); store.saveAutoSwitch(v); }} />
+        </Row>
+        <Row title="Autoplay next episode" hint="When an episode ends, the next one starts after a short countdown (on servers that report when a video ends)">
+          <Switch label="Autoplay next episode" on={autoplay} onChange={(v) => { setAutoplay(v); store.saveAutoplay(v); }} />
+        </Row>
+        {autoplay && (
+          <Row title="Countdown before the next episode" stack>
+            <Seg label="Countdown" value={delay} onChange={(v) => { setDelay(v); store.saveNextDelay(Number(v)); }} options={[['3', '3 s'], ['5', '5 s'], ['10', '10 s'], ['15', '15 s']]} />
+          </Row>
+        )}
+        <Row title="Skip intros" hint="On servers that know where the intro is"><Switch label="Skip intros" on={skip} onChange={(v) => { setSkip(v); store.saveAutoskip(v); }} /></Row>
+        <Row title="Remember what I watch" hint="Powers Continue Watching and Continue Reading">
+          <Switch label="Remember what I watch" on={remember} onChange={(v) => { setRemember(v); store.saveRemember(v); }} />
+        </Row>
+        <Row title="Pop-up protection" hint="Blocks pop-ups and redirects from the movie & TV player where the server allows it">
+          <Switch label="Pop-up protection" on={shield} onChange={(v) => { setShield(v); store.saveProtect(v); }} />
+        </Row>
+      </section>
+
+      <section className="set-card">
         <h3>Appearance</h3>
         <Row title="Theme" stack>
           <Seg label="Theme" value={p.theme} onChange={(v) => set({ theme: v })} options={[['dark', 'Dark'], ['light', 'Light (beta)']]} />
@@ -145,18 +169,6 @@ export default function SettingsPanel() {
         <Row title="Show ratings"><Switch label="Show ratings" on={p.ratings} onChange={(v) => set({ ratings: v })} /></Row>
         <Row title="Show titles under posters"><Switch label="Show titles under posters" on={p.titles} onChange={(v) => set({ titles: v })} /></Row>
         <Row title="Animations" hint="Background drift and transitions"><Switch label="Animations" on={p.motion} onChange={(v) => set({ motion: v })} /></Row>
-      </section>
-
-      <section className="set-card">
-        <h3>Playback</h3>
-        <Row title="Remember what I watch" hint="Powers Continue Watching and Continue Reading">
-          <Switch label="Remember what I watch" on={remember} onChange={(v) => { setRemember(v); store.saveRemember(v); }} />
-        </Row>
-        <Row title="Autoplay next episode"><Switch label="Autoplay next episode" on={autoplay} onChange={(v) => { setAutoplay(v); store.saveAutoplay(v); }} /></Row>
-        <Row title="Skip intros" hint="On servers that know where the intro is"><Switch label="Skip intros" on={skip} onChange={(v) => { setSkip(v); store.saveAutoskip(v); }} /></Row>
-        <Row title="Pop-up protection" hint="Blocks pop-ups and redirects from the movie & TV player where the server allows it">
-          <Switch label="Pop-up protection" on={shield} onChange={(v) => { setShield(v); store.saveProtect(v); }} />
-        </Row>
       </section>
 
       <section className="set-card">

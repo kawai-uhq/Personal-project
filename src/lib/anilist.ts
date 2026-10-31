@@ -168,6 +168,8 @@ export interface AniQuery {
   format?: string;
   status?: string;
   popularityGreater?: number;
+  /** an AniList tag, e.g. "Iyashikei" */
+  tag?: string;
   /** only titles on this streaming / reading site (an AniList link-source id) */
   licensedById?: number;
   page?: number;
@@ -176,10 +178,10 @@ export interface AniQuery {
 
 /** A page of anime (all titles, including those AniList marks as adult). */
 export async function aniList(q: AniQuery): Promise<{ items: Ani[]; more: boolean; last: number }> {
-  const query = `query($page:Int,$perPage:Int,$sort:[MediaSort],$search:String,$genre:String,$season:MediaSeason,$seasonYear:Int,$format:MediaFormat,$status:MediaStatus,$pg:Int,$lic:Int)
+  const query = `query($page:Int,$perPage:Int,$sort:[MediaSort],$search:String,$genre:String,$season:MediaSeason,$seasonYear:Int,$format:MediaFormat,$status:MediaStatus,$pg:Int,$lic:Int,$tag:String)
 {
     Page(page:$page, perPage:$perPage){ pageInfo{ hasNextPage lastPage }
-      media(type:ANIME, sort:$sort, search:$search, genre:$genre, season:$season, seasonYear:$seasonYear, format:$format, status:$status, popularity_greater:$pg, licensedById:$lic){ ${MEDIA} } } }`;
+      media(type:ANIME, sort:$sort, search:$search, genre:$genre, season:$season, seasonYear:$seasonYear, format:$format, status:$status, popularity_greater:$pg, licensedById:$lic, tag:$tag){ ${MEDIA} } } }`;
   const { sort, popularityGreater, licensedById, ...rest } = q;
   const vars: Record<string, unknown> = { page: 1, perPage: 24, ...rest, pg: popularityGreater, lic: licensedById };
   if (sort && !q.search) vars.sort = [sort];

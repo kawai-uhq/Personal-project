@@ -4,6 +4,7 @@ import Billboard from '../components/Billboard';
 import ProviderRow from '../components/ProviderRow';
 import FeedRow from '../components/FeedRow';
 import { ContinueRow, HomeSkeleton, PosterRow, Status } from '../components/Rows';
+import { CollectionsRow, MoodRow } from '../components/Discover';
 import { tmdb } from '../lib/tmdb';
 import type { Media } from '../lib/types';
 import { useNewEpisodes } from '../lib/useNewEpisodes';
@@ -52,9 +53,11 @@ export default function Home() {
       <Billboard items={heroes} onActive={onActive} />
       <ContinueRow items={history} onRemove={removeWatch} />
       <ProviderRow />
+      <MoodRow section="cinema" />
       <PosterRow title="My Watchlist" items={favorites} to="/list" fresh={fresh} />
       <PosterRow title="My Favorites" items={loved} to="/list" fresh={fresh} />
       <PosterRow title="Trending Today" items={trending} to="/explore/trending-day" />
+      <CollectionsRow />
       {FEED_ORDER.map((f) => (
         <FeedRow key={f} feed={f} />
       ))}

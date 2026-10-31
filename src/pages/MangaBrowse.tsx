@@ -8,7 +8,7 @@ import Select from '../components/Select';
 import { MANGA_GENRES, MANGA_STATUS, mangaList } from '../lib/manga';
 import type { Manga } from '../lib/manga';
 
-const SORTS: [string, string][] = [['TRENDING_DESC', 'Trending'], ['POPULARITY_DESC', 'Most Popular'], ['SCORE_DESC', 'Top Rated'], ['START_DATE_DESC', 'Newest'], ['FAVOURITES_DESC', 'Most Favourited']];
+const SORTS: [string, string][] = [['TRENDING_DESC', 'Trending'], ['POPULARITY_DESC', 'Most Popular'], ['SCORE_DESC', 'Top Rated'], ['START_DATE_DESC', 'Newest'], ['FAVOURITES_DESC', 'Most Favourited'], ['CHAPTERS_DESC', 'Most Chapters'], ['START_DATE', 'Oldest'], ['TITLE_ENGLISH', 'Title A–Z'], ['UPDATED_AT_DESC', 'Recently Updated']];
 const COUNTRIES: [string, string][] = [['JP', 'Manga (Japan)'], ['KR', 'Manhwa (Korea)'], ['CN', 'Manhua (China)']];
 const STATUSES = ['RELEASING', 'FINISHED', 'HIATUS', 'NOT_YET_RELEASED'];
 

@@ -188,6 +188,12 @@ export const tmdb = {
       pages: Math.min((j?.total_pages as number) || 1, 500)
     }));
   },
+  /** A film series (TMDB "collection"): its name, artwork and films in release order. */
+  collection: async (id: number): Promise<{ id: number; name: string; poster: string | null; backdrop: string | null; overview: string; items: Media[] }> => {
+    const j = await get(`/collection/${id}?language=en-US`);
+    const items = list({ results: j?.parts ?? [] }, 'movie').sort((a, b) => (a.year || '9999').localeCompare(b.year || '9999'));
+    return { id, name: j?.name ?? '', poster: j?.poster_path ?? null, backdrop: j?.backdrop_path ?? null, overview: j?.overview ?? '', items };
+  },
   feed: (key: string, page = 1) => {
     const f = FEEDS[key];
     if (!f) return Promise.resolve({ items: [] as Media[], pages: 1 });

@@ -26,7 +26,7 @@ const TABS: Record<MediaType, { feed: string; label: string }[]> = {
   ]
 };
 
-type Sort = 'pop' | 'rated' | 'new';
+type Sort = 'pop' | 'rated' | 'new' | 'votes' | 'old' | 'az';
 const today = () => new Date().toISOString().slice(0, 10);
 
 const LANGS: [string, string][] = [
@@ -74,7 +74,16 @@ export default function Explore({ kind }: { kind?: MediaType }) {
       const q: string[] = [];
       const range = yearRange(year);
       const voteFloor = sort === 'rated' || minRating ? 300 : sort === 'new' ? (k === 'movie' ? 20 : 10) : 0;
-      q.push(`sort_by=${sort === 'rated' ? 'vote_average.desc' : sort === 'new' ? `${dateKey}.desc` : 'popularity.desc'}`);
+      const by: Record<Sort, string> = {
+        pop: 'popularity.desc',
+        rated: 'vote_average.desc',
+        new: `${dateKey}.desc`,
+        votes: 'vote_count.desc',
+        old: `${dateKey}.asc`,
+        az: k === 'movie' ? 'title.asc' : 'name.asc'
+      };
+      q.push(`sort_by=${by[sort]}`);
+      if (sort === 'old' || sort === 'az') q.push('vote_count.gte=100');
       if (genre) q.push(`with_genres=${genre}`);
       if (range) q.push(`${dateKey}.gte=${range[0]}`, `${dateKey}.lte=${sort === 'new' && range[1] > today() ? today() : range[1]}`);
       else if (sort === 'new') q.push(`${dateKey}.lte=${today()}`);
@@ -162,6 +171,9 @@ export default function Explore({ kind }: { kind?: MediaType }) {
                 <option value="pop">Most Popular</option>
                 <option value="rated">Top Rated</option>
                 <option value="new">Newest</option>
+                <option value="votes">Most Voted</option>
+                <option value="old">Oldest</option>
+                <option value="az">Title A–Z</option>
               </Select>
               <Select className="field select dd" value={year} onChange={(e) => setYear(e.target.value)} aria-label="Year">
                 <option value="">Any Year</option>

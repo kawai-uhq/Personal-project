@@ -7,9 +7,11 @@ import { applySmooth } from './lib/perf';
 import { importMigration } from './lib/site';
 import { applyPrefs, watchSharedPrefs } from './lib/prefs';
 import { seedShared } from './lib/shared';
+import { captureAniListReturn } from './lib/anilistAccount';
 import './styles.css';
 
 importMigration();
+void captureAniListReturn();
 seedShared();
 applyPrefs();
 watchSharedPrefs();

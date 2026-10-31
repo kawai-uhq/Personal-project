@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon';
 import { askConfirm } from '../components/Confirm';
 import SettingsPanel from '../components/SettingsPanel';
+import AniListCard from '../components/AniListCard';
 import { animeStore } from '../lib/animeStore';
 import { mangaStore } from '../lib/mangaStore';
 import { useSection } from '../lib/section';
@@ -30,6 +31,8 @@ export default function Account() {
             <p className="muted">Sign in to back up your watchlist, favorites and progress, and use them on any device.</p>
             <button className="btn primary" onClick={openAuth}><Icon name="login" size={16} />Sign in or create an account</button>
           </div>
+          <h2 className="section">Connected services</h2>
+          <AniListCard />
           <h2 className="section" id="settings">Settings</h2>
           <SettingsPanel />
         </div>
@@ -57,7 +60,7 @@ export default function Account() {
             <div>
               <h1 className="acct-name">{name}</h1>
               <p className="muted"><Icon name="mail" size={14} /> {session.email}</p>
-              <span className="acct-badge"><Icon name="check" size={13} />Signed in · cinema list synced to your account</span>
+              <span className="acct-badge"><Icon name="check" size={13} />Signed in · lists synced to your account</span>
             </div>
           </div>
         </div>
@@ -68,7 +71,7 @@ export default function Account() {
             <div key={label} className="acct-stat"><strong>{n}</strong><small>{label}</small></div>
           ))}
         </div>
-        <p className="muted small">Anime and manga lists are kept on this device for now.</p>
+        <p className="muted small">Your cinema, anime and manga lists are saved to your account, so they follow you to other devices.</p>
 
         <div className="acct-actions">
           <Link className="btn ghost" to={libraryLink}><Icon name="bookmark" size={16} />Open my library</Link>
@@ -90,6 +93,9 @@ export default function Account() {
             <Icon name="login" size={16} />Sign out
           </button>
         </div>
+
+        <h2 className="section">Connected services</h2>
+        <AniListCard />
 
         <h2 className="section" id="settings">Settings</h2>
         <SettingsPanel />

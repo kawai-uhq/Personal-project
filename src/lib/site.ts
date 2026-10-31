@@ -54,8 +54,8 @@ export function toLogical(path: string): string {
 /** Cinema-only addresses (they always open on cinema.comvie.lol). */
 export function isCinemaPath(p: string): boolean {
   return (
-    ['/movies', '/tv', '/live', '/list', '/providers'].includes(p) ||
-    /^\/(person|provider|explore|genres)\//.test(p) ||
+    ['/movies', '/tv', '/live', '/list', '/providers', '/collections'].includes(p) ||
+    /^\/(person|provider|explore|genres|collection)\//.test(p) ||
     /^\/(title|watch)\/(movie|tv)\//.test(p)
   );
 }

@@ -1293,3 +1293,82 @@ html.light .studio-shade { background: linear-gradient(180deg, rgba(255, 255, 25
 html.light .field, html.light input, html.light textarea { color: var(--text); }
 html.light .footer-mark { background: linear-gradient(rgba(40, 20, 30, .08), transparent 90%); -webkit-background-clip: text; background-clip: text; }
 html.light .set-switch { background: rgba(40, 20, 30, .14); }
+
+/* AniList card */
+.al-card { margin-bottom: 22px; }
+.al-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+.al-head h3 { margin: 0 0 2px; }
+.al-logo { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 10px; background: #1e2630; color: #3db4f2; font-weight: 900; font-size: 15px; }
+.al-user { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.al-user img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+.al-user div { display: flex; flex-direction: column; }
+
+/* ---- Discovery: moods, collections, surprise ---- */
+.mood { flex: none; scroll-snap-align: start; position: relative; display: flex; flex-direction: column; gap: 4px; width: 180px; min-height: 120px; padding: 14px; border-radius: var(--card-radius, 14px); overflow: hidden; color: var(--cream);
+  background: linear-gradient(140deg, hsl(var(--h) 70% 45% / .55), hsl(calc(var(--h) + 40) 70% 30% / .35)), var(--surface); border: 1px solid hsl(var(--h) 70% 60% / .35); }
+.mood:hover { border-color: hsl(var(--h) 80% 65% / .8); transform: translateY(-2px); }
+.mood { transition: transform .15s ease, border-color .15s ease; }
+.mood-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: rgba(255, 255, 255, .16); margin-bottom: auto; }
+.mood-icon.big { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(140deg, hsl(var(--h) 70% 50%), hsl(calc(var(--h) + 40) 70% 35%)); color: #fff; flex: none; }
+.mood strong { font-size: 16px; margin-top: 10px; }
+.mood small { font-size: 12.5px; opacity: .8; }
+.mood-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); margin-bottom: 24px; }
+.mood-grid .mood { width: auto; }
+.mood-head { display: flex; align-items: center; gap: 16px; margin: 6px 0 20px; }
+.mood-head .title { margin: 0; }
+.mood-head p { margin: 2px 0 0; }
+.coll-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); margin-bottom: 24px; }
+.coll { position: relative; display: flex; flex-direction: column; justify-content: flex-end; aspect-ratio: 16 / 9; padding: 14px; border-radius: var(--card-radius, 14px); overflow: hidden; border: 1px solid var(--line); background: var(--surface); color: var(--cream); }
+.coll img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
+.coll:hover img { transform: scale(1.04); }
+.coll strong, .coll small { position: relative; }
+.coll strong { font-size: 18px; }
+.coll small { opacity: .8; font-weight: 700; }
+.coll-head { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 20px; }
+.coll-head img { width: 130px; border-radius: var(--card-radius, 14px); flex: none; }
+.coll-head .title { margin: 0 0 8px; }
+.surprise.busy .ic { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- Mobile polish: player, title pages, reader ---- */
+@media (max-width: 760px) {
+  /* player goes edge to edge, controls scroll sideways instead of wrapping into a wall */
+  .wp { padding: 8px 0 28px; }
+  .wp-top { padding: 0 12px; }
+  .wp-frame { border-radius: 0; }
+  .wp-servers { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 10px 0; border-radius: 0; padding: 10px 12px; -webkit-overflow-scrolling: touch; }
+  .wp-servers::-webkit-scrollbar { display: none; }
+  .wp-servers > * { flex: none; }
+  .wp-servers .wp-ep { margin-left: 0; }
+  .wp-main { grid-template-columns: 1fr; gap: 18px; padding: 0 14px; }
+  .wp-upnext, .wp-slow { margin: 10px 12px 0; flex-wrap: wrap; }
+  .wp-tools .btn { flex: 1; justify-content: center; }
+  .pill { min-height: 38px; }
+  /* title pages: compact poster beside the buttons, full-width actions */
+  .td-in { grid-template-columns: 1fr; gap: 18px; padding: 76px 0 20px; }
+  .td-side { display: grid; grid-template-columns: 120px 1fr; gap: 14px; align-items: end; max-width: none; margin: 0; }
+  .td-poster { border-radius: 12px; }
+  .td-btns { margin-top: 0; }
+  .td-row2 { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .td-info h1 { font-size: clamp(28px, 8vw, 38px); }
+  .tstats { grid-template-columns: 1fr 1fr; gap: 12px; padding: 14px; }
+  .tstats strong { font-size: 16px; word-break: break-word; }
+  .aep-grid { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+  .mch-list { grid-template-columns: 1fr; }
+  .season-head { flex-wrap: wrap; gap: 10px; }
+  /* reader: full-width pages, sticky slim bar */
+  .mr-top { position: sticky; top: 0; z-index: 15; padding: 8px 12px; background: rgba(18, 12, 24, .92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  html.light .mr-top { background: rgba(255, 255, 255, .94); }
+  .mr-pages { max-width: none; }
+  /* discovery */
+  .mood { width: 150px; min-height: 108px; }
+  .coll-grid { grid-template-columns: 1fr; }
+  .coll-head img { width: 96px; }
+  .studio-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .set-grid { grid-template-columns: 1fr; }
+  .acct-stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 420px) {
+  .td-side { grid-template-columns: 96px 1fr; }
+  .tstats { grid-template-columns: 1fr; }
+}

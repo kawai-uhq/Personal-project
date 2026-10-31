@@ -72,6 +72,22 @@ export const store = {
   getRecentSearches: () => read<string[]>('comvie.recentsearch', []),
   saveRecentSearches: (v: string[]) => write('comvie.recentsearch', v),
   /** "Remember what I watch": off = nothing new is added to history / Continue Watching */
+  /** Switch to the next server on its own when one doesn't load */
+  getAutoSwitch: () => read<boolean>('comvie.autoswitch', true),
+  saveAutoSwitch: (v: boolean) => write('comvie.autoswitch', v),
+  /** Seconds before the next episode starts */
+  getNextDelay: () => read<number>('comvie.nextdelay', 10),
+  saveNextDelay: (v: number) => write('comvie.nextdelay', v),
+  /** The server that last worked for each title ("movie:603", "anime:16498") */
+  getGoodServer: (key: string) => read<Record<string, string>>('comvie.goodserver', {})[key] ?? null,
+  saveGoodServer: (key: string, server: string) => {
+    const all = read<Record<string, string>>('comvie.goodserver', {});
+    if (all[key] === server) return;
+    all[key] = server;
+    const keys = Object.keys(all);
+    if (keys.length > 300) keys.slice(0, keys.length - 300).forEach((k) => delete all[k]);
+    write('comvie.goodserver', all);
+  },
   getRemember: () => read<boolean>('comvie.remember', true),
   saveRemember: (v: boolean) => write('comvie.remember', v),
   getHistory: () => read<WatchEntry[]>('comvie.history', []),

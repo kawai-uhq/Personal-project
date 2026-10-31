@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { store } from './storage';
+import { markChanged } from './cloudData';
 import type { AniLite } from './anilist';
 
 /** The anime section's library, kept on this device (separate from the movie / TV library). */
@@ -26,6 +27,7 @@ function write(k: string, v: unknown) {
   try {
     localStorage.setItem(k, JSON.stringify(v));
   } catch { /* storage blocked */ }
+  markChanged(k); // account sync
   window.dispatchEvent(new Event(EVT));
 }
 
@@ -50,6 +52,15 @@ export const animeStore = {
   },
   seen: (id: number) => read<Record<string, number[]>>(K.seen, {})[id] ?? [],
   markSeen: (id: number, ep: number) => animeStore.setSeen(id, ep, true),
+  /** Mark episodes 1…n watched in one go (AniList import). */
+  seenUpTo: (id: number, n: number) => {
+    if (!(n > 0)) return;
+    const all = read<Record<string, number[]>>(K.seen, {});
+    const cur = new Set(all[id] ?? []);
+    for (let e = 1; e <= Math.min(n, 2000); e++) cur.add(e);
+    all[id] = [...cur].sort((a, b) => a - b);
+    write(K.seen, all);
+  },
   setSeen: (id: number, ep: number, on: boolean) => {
     const all = read<Record<string, number[]>>(K.seen, {});
     const cur = all[id] ?? [];

@@ -7,6 +7,7 @@ import { useApp } from '../state';
 import Icon from './Icon';
 import SearchBox from './SearchBox';
 import SiteSwitch from './SiteSwitch';
+import { SurpriseButton } from './Discover';
 import { toPublic as P } from '../lib/site';
 
 export default function Navbar() {
@@ -69,6 +70,7 @@ export default function Navbar() {
             }}
             onPick={() => setQ('')}
           />
+          <SurpriseButton />
           {session ? (
             <Link to="/account" className="avatar" aria-label="Your account" title={session.email}>
               {session.email.slice(0, 1).toUpperCase()}

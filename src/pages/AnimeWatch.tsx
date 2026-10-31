@@ -10,6 +10,7 @@ import { animeServers, serverAt, serverNo } from '../lib/animeProviders';
 import type { Lang } from '../lib/animeProviders';
 import { animeStore, resumeFrom, useAnimeStore } from '../lib/animeStore';
 import { store as settings } from '../lib/storage';
+import { reportProgress } from '../lib/anilistAccount';
 import Select from '../components/Select';
 
 const CHUNK = 100;
@@ -28,12 +29,20 @@ export default function AnimeWatch() {
   const [range, setRange] = useState(0);
   const [upNext, setUpNext] = useState<number | null>(null);
   const [left, setLeft] = useState(5);
+  const [loaded, setLoaded] = useState(false);
+  const [slow, setSlow] = useState(false);
+  const [alive, setAlive] = useState(false);
+  const [switched, setSwitched] = useState<string | null>(null);
+  const tried = useRef<Set<number>>(new Set());
+  const autoSwitch = settings.getAutoSwitch();
   const frame = useRef<HTMLIFrameElement>(null);
   const latest = useRef<{ t: number; d: number } | null>(null);
   const lastSave = useRef(0);
 
   const ep = Math.max(1, Number(sp.get('e')) || 1);
-  const server = serverAt(sp.get('p'));
+  const goodKey = `anime:${aid}`;
+  // no server in the address: the one that last worked for this anime, else Server 1
+  const server = serverAt(sp.get('p') ?? settings.getGoodServer(goodKey));
   const wanted = sp.get('l') as Lang | null;
   const lang: Lang = wanted && server.langs.includes(wanted) ? wanted : 'sub';
   const autoplay = settings.getAutoplay();
@@ -92,15 +101,20 @@ export default function AnimeWatch() {
       if (!frame.current || ev.source !== frame.current.contentWindow) return;
       const r = server.parse(ev);
       if (!r) return;
+      setAlive(true);
       if (r.ended) {
         animeStore.markSeen(aid, ep);
+        void reportProgress(aid, ep, a?.episodes ?? null);
         animeStore.savePos(aid, ep, 0, 0);
         latest.current = null;
         if (autoplay && hasNext) setUpNext(ep + 1);
         return;
       }
       latest.current = r;
-      if (r.d > 0 && r.t / r.d > 0.9) animeStore.markSeen(aid, ep);
+      if (r.d > 0 && r.t / r.d > 0.9) {
+        animeStore.markSeen(aid, ep);
+        void reportProgress(aid, ep, a?.episodes ?? null);
+      }
       const now = Date.now();
       if (now - lastSave.current > 5000) {
         lastSave.current = now;
@@ -118,7 +132,7 @@ export default function AnimeWatch() {
   // "Up next" countdown
   useEffect(() => {
     if (upNext == null) return;
-    setLeft(5);
+    setLeft(settings.getNextDelay());
     const t = window.setInterval(() => setLeft((n) => n - 1), 1000);
     return () => window.clearInterval(t);
   }, [upNext]);
@@ -130,6 +144,36 @@ export default function AnimeWatch() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [left, upNext]);
+
+  // Source reliability: watch whether the server's page loads at all
+  useEffect(() => {
+    setLoaded(false);
+    setSlow(false);
+    setAlive(false);
+    const h = window.setTimeout(() => setSlow(true), 20000);
+    return () => window.clearTimeout(h);
+  }, [src, reload]);
+  useEffect(() => {
+    tried.current = new Set();
+    setSwitched(null);
+  }, [aid, ep]);
+  // the player is talking to us, so this server works: remember it for this anime
+  useEffect(() => {
+    if (alive) settings.saveGoodServer(goodKey, String(serverNo(server)));
+  }, [alive, goodKey, server]);
+  // a server that never loads is swapped for the next untried one
+  useEffect(() => {
+    if (!slow || loaded || alive || !autoSwitch) return;
+    const cur = serverNo(server);
+    tried.current.add(cur);
+    const order = animeServers.map((_, i) => ((cur + i) % animeServers.length) + 1);
+    const fresh = order.find((n) => !tried.current.has(n));
+    if (!fresh) return;
+    setSwitched(`${server.name} didn't load, so we switched to ${animeServers[fresh - 1].name}.`);
+    const l = animeServers[fresh - 1].langs.includes(lang) ? lang : 'sub';
+    setSp({ e: String(ep), p: String(fresh), l }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slow, loaded, alive, autoSwitch]);
 
   const inList = !!a && lib.list().some((x) => x.id === a.id);
   const loved = !!a && lib.loved().some((x) => x.id === a.id);
@@ -161,7 +205,22 @@ export default function AnimeWatch() {
         title={a?.title ?? 'Player'}
         allow="autoplay *; fullscreen *; picture-in-picture; encrypted-media *"
         allowFullScreen
+        onLoad={() => setLoaded(true)}
       />
+
+      {switched && (
+        <div className="wp-slow" role="status">
+          <span><Icon name="refresh" size={14} /> {switched}</span>
+          <button className="pill" onClick={() => setSwitched(null)}>OK</button>
+        </div>
+      )}
+      {slow && !loaded && !switched && (
+        <div className="wp-slow" role="status">
+          <span>{server.name} is taking a while to load.</span>
+          <button className="pill warn" onClick={() => setSp({ e: String(ep), p: String(serverNo(nextServer)), l: nextServer.langs.includes(lang) ? lang : 'sub' }, { replace: true })}>Try {nextServer.name}</button>
+          <button className="pill" onClick={() => setReload((n) => n + 1)}><Icon name="refresh" size={14} />Reload</button>
+        </div>
+      )}
 
       {upNext != null && (
         <div className="wp-upnext" role="status">

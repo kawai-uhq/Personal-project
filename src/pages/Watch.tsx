@@ -22,7 +22,9 @@ export default function Watch() {
 
   const season = Math.max(1, Number(sp.get('s')) || 1);
   const episode = Math.max(1, Number(sp.get('e')) || 1);
-  const pid = providerFromParam(sp.get('p') ?? serverSlug(defaultProvider)).id;
+  const goodKey = `${t}:${mid}`;
+  // no server in the address: the one that last worked for this title, else the default
+  const pid = providerFromParam(sp.get('p') ?? store.getGoodServer(goodKey) ?? serverSlug(defaultProvider)).id;
   const provider = providerById(pid);
   useEffect(() => {
     const raw = sp.get('p');
@@ -43,6 +45,10 @@ export default function Watch() {
   const [alive, setAlive] = useState(false);
   const [slow, setSlow] = useState(false);
   const [autonext] = useState(store.getAutoplay());
+  const [autoSwitch] = useState(store.getAutoSwitch());
+  const [loaded, setLoaded] = useState(false);
+  const [switched, setSwitched] = useState<string | null>(null);
+  const tried = useRef<Set<string>>(new Set());
   const [autoskip] = useState(store.getAutoskip());
   const [upNext, setUpNext] = useState<{ s: number; e: number; left: number } | null>(null);
   const [wv, setWv] = useState(0); // bumps when "watched" marks change
@@ -134,7 +140,7 @@ export default function Watch() {
         if (t === 'tv') setWatched(t, mid, season, episode, true);
         else setWatched('movie', mid, 1, 1, true);
         setWv((n) => n + 1);
-        if (autonext && !provider.handlesNext && nextRef.current) setUpNext({ ...nextRef.current, left: 10 });
+        if (autonext && !provider.handlesNext && nextRef.current) setUpNext({ ...nextRef.current, left: store.getNextDelay() });
         return;
       }
       if (r.t <= 0) return;
@@ -158,9 +164,33 @@ export default function Watch() {
   useEffect(() => {
     setAlive(false);
     setSlow(false);
+    setLoaded(false);
     const h = window.setTimeout(() => setSlow(true), 20000);
     return () => window.clearTimeout(h);
   }, [url, reload, sandboxed]);
+
+  // A new title / episode starts a fresh round of servers
+  useEffect(() => {
+    tried.current = new Set();
+    setSwitched(null);
+  }, [t, mid, season, episode]);
+
+  // The player is talking to us, so this server works: remember it for this title
+  useEffect(() => {
+    if (alive) store.saveGoodServer(goodKey, serverSlug(pid));
+  }, [alive, goodKey, pid]);
+
+  // Source reliability: a server whose page never even loads is swapped for the next untried one
+  useEffect(() => {
+    if (!slow || loaded || alive || !autoSwitch) return;
+    tried.current.add(pid);
+    const order = providers.map((_, i) => providers[(providers.findIndex((x) => x.id === pid) + 1 + i) % providers.length]);
+    const fresh = order.find((p) => !tried.current.has(p.id));
+    if (!fresh) return; // every server tried: leave the "taking a while" note up
+    setSwitched(`${provider.name} didn't load, so we switched to ${fresh.name}.`);
+    setServer(fresh.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slow, loaded, alive, autoSwitch]);
 
   const seasonInfo = d?.seasons.find((s) => s.number === season);
   const next = useMemo(() => {
@@ -225,7 +255,15 @@ export default function Watch() {
         allow="autoplay *; fullscreen *; picture-in-picture; encrypted-media *"
         allowFullScreen
         sandbox={sandbox}
+        onLoad={() => setLoaded(true)}
       />
+
+      {switched && (
+        <div className="wp-slow" role="status">
+          <span><Icon name="refresh" size={14} /> {switched}</span>
+          <button className="pill" onClick={() => setSwitched(null)}>OK</button>
+        </div>
+      )}
 
       {upNext && (
         <div className="wp-upnext" role="status">

@@ -42,6 +42,11 @@ const MangaSource = lazy(() => import('./pages/AniProviders').then((m) => ({ def
 const StudioPage = lazy(() => import('./pages/AniProviders').then((m) => ({ default: m.StudioPage })));
 const CreatorPage = lazy(() => import('./pages/AniProviders').then((m) => ({ default: m.CreatorPageView })));
 const Account = lazy(() => import('./pages/Account'));
+const CinemaMood = lazy(() => import('./pages/DiscoverPages').then((m) => ({ default: m.CinemaMood })));
+const AnimeMood = lazy(() => import('./pages/DiscoverPages').then((m) => ({ default: m.AnimeMood })));
+const MangaMood = lazy(() => import('./pages/DiscoverPages').then((m) => ({ default: m.MangaMood })));
+const CollectionsPage = lazy(() => import('./pages/DiscoverPages').then((m) => ({ default: m.CollectionsPage })));
+const CollectionPage = lazy(() => import('./pages/DiscoverPages').then((m) => ({ default: m.CollectionPage })));
 const Search = lazy(() => import('./pages/Search'));
 const Watch = lazy(() => import('./pages/Watch'));
 
@@ -135,6 +140,11 @@ export default function App() {
         <Route path="/list" element={<MyList key="main" />} />
         <Route path="/person/:id" element={<PersonPage />} />
         <Route path="/account" element={<Account />} />
+        <Route path="/mood/:id" element={<CinemaMood />} />
+        <Route path="/anime/mood/:id" element={<AnimeMood />} />
+        <Route path="/manga/mood/:id" element={<MangaMood />} />
+        <Route path="/collections" element={<CollectionsPage />} />
+        <Route path="/collection/:id" element={<CollectionPage />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
         <Route path="/help" element={<Help />} />

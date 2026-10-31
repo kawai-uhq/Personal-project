@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { store } from './storage';
+import { markChanged } from './cloudData';
 import type { MangaLite } from './manga';
 
 /** The manga section's library, kept on this device. */
@@ -26,6 +27,7 @@ function write(k: string, v: unknown) {
   try {
     localStorage.setItem(k, JSON.stringify(v));
   } catch { /* storage blocked */ }
+  markChanged(k); // account sync
   window.dispatchEvent(new Event(EVT));
 }
 
