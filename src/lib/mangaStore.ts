@@ -7,6 +7,8 @@ import type { MangaLite } from './manga';
 export interface MangaRead extends MangaLite {
   chapterId: string;
   label: string; // "Chapter 12"
+  /** chapters read so far, when the entry came from AniList (no chapter picked on Comvie yet) */
+  progress?: number;
   lang?: string;
   at: number;
 }
@@ -38,6 +40,21 @@ export const mangaStore = {
   list: () => read<MangaLite[]>(K.list, []),
   addRead: (m: MangaLite, chapterId: string, label: string, lang = 'en') =>
     !remember() ? undefined : write(K.history, [{ ...lite(m), chapterId, label, lang, at: Date.now() }, ...mangaStore.history().filter((w) => w.id !== m.id)].slice(0, 60)),
+  mergeHistory: (items: MangaRead[]) => {
+    const byId = new Map<number, MangaRead>();
+    for (const w of [...mangaStore.history(), ...items]) {
+      const cur = byId.get(w.id);
+      if (!cur || w.at > cur.at) byId.set(w.id, w);
+    }
+    write(K.history, [...byId.values()].sort((a, b) => b.at - a.at).slice(0, 150));
+  },
+  addMany: (items: MangaLite[]) => {
+    const cur = mangaStore.list();
+    const have = new Set(cur.map((x) => x.id));
+    const fresh = items.filter((x) => !have.has(x.id) && (have.add(x.id), true)).map(lite);
+    if (fresh.length) write(K.list, [...cur, ...fresh]);
+    return fresh.length;
+  },
   removeRead: (id: number) => write(K.history, mangaStore.history().filter((w) => w.id !== id)),
   clearHistory: () => write(K.history, []),
   last: (id: number) => mangaStore.history().find((w) => w.id === id) ?? null,

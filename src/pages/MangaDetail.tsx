@@ -93,7 +93,15 @@ export default function MangaDetail() {
 
   const inList = store.list().some((x) => x.id === m.id);
   const readTo = (c: Chapter) => `/manga/read/${m.id}?c=${c.id}&l=${lang}`;
-  const resume = last && (last.lang ?? 'en') === lang && chs?.some((c) => c.id === last.chapterId) ? last : null;
+  // AniList import: "read up to N" becomes "continue at chapter N+1" once the chapter list is known
+  const fromAniList = last && !last.chapterId && last.progress && chs
+    ? chs.find((c) => !c.ext && parseFloat(c.num) === last.progress! + 1) ?? chs.find((c) => !c.ext && parseFloat(c.num) === last.progress)
+    : null;
+  const resume = last && (last.lang ?? 'en') === lang && chs?.some((c) => c.id === last.chapterId)
+    ? last
+    : fromAniList
+      ? { ...last!, chapterId: fromAniList.id, label: chapterLabel(fromAniList) }
+      : null;
   const firstReadable = readable[0];
   const firstOfficial = official[0];
   const looking = mdId === undefined || (mdId && chs === null && !chError);

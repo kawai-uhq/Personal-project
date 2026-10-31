@@ -12,7 +12,7 @@ type Tab = 'history' | 'list';
 const when = (t: number) => new Date(t).toLocaleString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 function Row({ w, onRemove }: { w: MangaRead; onRemove: () => void }) {
-  const to = `/manga/read/${w.id}?c=${w.chapterId}&l=${w.lang ?? 'en'}`;
+  const to = w.chapterId ? `/manga/read/${w.id}?c=${w.chapterId}&l=${w.lang ?? 'en'}` : `/manga/title/${w.id}`;
   return (
     <div className="hrow">
       <Link to={to} className="hthumb" aria-label={`Continue ${w.title}`}>

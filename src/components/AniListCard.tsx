@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Icon from './Icon';
 import { askConfirm } from './Confirm';
-import { anilistReady, connectUrl, disconnectAniList, importAniList, setAniListSync, useAniLink } from '../lib/anilistAccount';
+import { anilistReady, connectUrl, disconnectAniList, importEverywhere, setAniListSync, useAniLink } from '../lib/anilistAccount';
 
 /** Account page: connect AniList, import its lists, keep its progress up to date. */
 export default function AniListCard() {
@@ -13,8 +13,8 @@ export default function AniListCard() {
     setBusy(true);
     setNote('');
     try {
-      const r = await importAniList();
-      setNote(`Imported ${r.anime} anime and ${r.manga} manga. Watched episodes were marked too.`);
+      const r = await importEverywhere();
+      setNote(`Done: ${r.history} titles added to your history${r.anime || r.manga ? `, ${r.anime + r.manga} to your lists` : ''}. The anime and manga sites update the next time you open them.`);
     } catch (e) {
       setNote(e instanceof Error ? e.message : "Couldn't import from AniList.");
     }
@@ -51,7 +51,7 @@ export default function AniListCard() {
             <button type="button" role="switch" aria-checked={link.sync} aria-label="Update my AniList" className={`set-switch ${link.sync ? 'on' : ''}`} onClick={() => setAniListSync(!link.sync)}><i /></button>
           </div>
           <div className="set-grid">
-            <button className="btn ghost" disabled={busy} onClick={() => void doImport()}><Icon name="download" size={15} />{busy ? 'Importing…' : 'Import my lists'}</button>
+            <button className="btn ghost" disabled={busy} onClick={() => void doImport()}><Icon name="download" size={15} />{busy ? 'Importing…' : 'Import from AniList'}</button>
             <button
               className="btn ghost danger"
               onClick={async () => {
@@ -62,7 +62,7 @@ export default function AniListCard() {
             </button>
           </div>
           {note && <p className="set-note" role="status">{note}</p>}
-          <p className="muted small">Import adds your Watching / Reading and Planning titles to your Comvie lists, on the anime and manga sites.</p>
+          <p className="muted small">Brings over your history (Continue Watching / Reading), watched episodes, Watching / Planning lists and favourites. It also runs on its own the first time you open the anime and manga sites after connecting.</p>
         </>
       )}
     </section>

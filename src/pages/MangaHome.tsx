@@ -27,7 +27,7 @@ export default function MangaHome() {
       </section>
       {reading.length > 0 && (
         <Row title="Continue Reading" to="/manga/library">
-          {reading.map((w) => <MangaCard key={w.id} m={w} tag={w.label.replace('Chapter', 'Ch.')} to={`/manga/read/${w.id}?c=${w.chapterId}&l=${w.lang ?? 'en'}`} onRemove={() => store.removeRead(w.id)} />)}
+          {reading.map((w) => <MangaCard key={w.id} m={w} tag={w.label.replace('Chapter', 'Ch.')} to={w.chapterId ? `/manga/read/${w.id}?c=${w.chapterId}&l=${w.lang ?? 'en'}` : `/manga/title/${w.id}`} onRemove={() => store.removeRead(w.id)} />)}
         </Row>
       )}
       <AniSourceRow kind="manga" />

@@ -37,6 +37,23 @@ export const animeStore = {
   loved: () => read<AniLite[]>(K.loved, []),
   addWatch: (a: AniLite, episode: number, server: number, lang: string) =>
     !remember() ? undefined : write(K.history, [{ ...a, episode, server, lang, at: Date.now() }, ...animeStore.history().filter((w) => w.id !== a.id)].slice(0, 60)),
+  /** Add many history entries at once (AniList import): newest per anime wins, newest first. */
+  mergeHistory: (items: AnimeWatch[]) => {
+    const byId = new Map<number, AnimeWatch>();
+    for (const w of [...animeStore.history(), ...items]) {
+      const cur = byId.get(w.id);
+      if (!cur || w.at > cur.at) byId.set(w.id, w);
+    }
+    write(K.history, [...byId.values()].sort((a, b) => b.at - a.at).slice(0, 150));
+  },
+  /** Add many titles to the watchlist or favorites at once (skips ones already there). */
+  addMany: (which: 'list' | 'loved', items: AniLite[]) => {
+    const cur = animeStore[which]();
+    const have = new Set(cur.map((x) => x.id));
+    const fresh = items.filter((x) => !have.has(x.id) && (have.add(x.id), true)).map(lite);
+    if (fresh.length) write(K[which], [...cur, ...fresh]);
+    return fresh.length;
+  },
   removeWatch: (id: number) => write(K.history, animeStore.history().filter((w) => w.id !== id)),
   clearHistory: () => write(K.history, []),
   toggle: (which: 'list' | 'loved', a: AniLite) => {
