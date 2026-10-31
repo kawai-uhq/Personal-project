@@ -24,6 +24,8 @@ export interface Ani extends AniLite {
   next: { episode: number; at: number } | null;
   /** ids of the entries this one continues (its prequels) */
   pre: number[];
+  /** YouTube id of the trailer, when AniList has one */
+  trailer: string | null;
 }
 
 export interface AniFull extends Ani {
@@ -128,7 +130,7 @@ export async function gql<T = any>(query: string, variables: Record<string, unkn
 
 const MEDIA = `id idMal title { romaji english } coverImage { extraLarge large color } bannerImage description(asHtml: false)
   averageScore format status episodes duration seasonYear startDate { year } genres nextAiringEpisode { episode airingAt }
-  relations{ edges{ relationType node{ id type } } }`;
+  relations{ edges{ relationType node{ id type } } } trailer{ id site }`;
 
 const clean = (s: string | null | undefined) =>
   (s ?? '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/\n{3,}/g, '\n\n').trim();
@@ -151,6 +153,7 @@ export function mapAni(o: any): Ani {
     year: o.seasonYear ?? o.startDate?.year ?? null,
     genres: o.genres ?? [],
     pre: ((o.relations?.edges ?? []) as any[]).filter((e) => e.relationType === 'PREQUEL' && e.node?.type === 'ANIME').map((e) => e.node.id),
+    trailer: o.trailer?.site === 'youtube' && o.trailer?.id ? String(o.trailer.id) : null,
     next: o.nextAiringEpisode ? { episode: o.nextAiringEpisode.episode, at: o.nextAiringEpisode.airingAt } : null
   };
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { usePageTitle } from '../lib/title';
 import { Link, useParams } from 'react-router-dom';
 import Icon from '../components/Icon';
 import { MangaCard, MangaRow } from '../components/MangaCard';
@@ -20,6 +21,7 @@ export default function MangaDetail() {
   const mid = Number(id);
   const store = useMangaStore();
   const [m, setM] = useState<MangaFull | null>(null);
+  usePageTitle(m?.title);
   const [error, setError] = useState<string | null>(null);
   const [mdId, setMdId] = useState<string | null | undefined>(undefined); // undefined = still looking
   const [langs, setLangs] = useState<string[]>([]);

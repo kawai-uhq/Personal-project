@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy, useEffect, useLayoutEffect } from 'react';
 import { sectionFor } from './lib/section';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { CINEMA_ORIGIN, ORIGINS, hostSection, isCinemaPath, isShared, migrationHash, onProd, stripSection, toLogical } from './lib/site';
@@ -12,6 +12,8 @@ import Tooltip from './components/Tooltip';
 import CrossPromo from './components/CrossPromo';
 import ConfirmHost from './components/Confirm';
 import CookieBanner from './components/CookieBanner';
+import ErrorBoundary from './components/ErrorBoundary';
+import { defaultTitle } from './lib/title';
 import Contact from './pages/Contact';
 import Floating from './components/Floating';
 import Footer from './components/Footer';
@@ -49,6 +51,7 @@ const MangaMood = lazy(() => import('./pages/DiscoverPages').then((m) => ({ defa
 const CollectionsPage = lazy(() => import('./pages/DiscoverPages').then((m) => ({ default: m.CollectionsPage })));
 const CollectionPage = lazy(() => import('./pages/DiscoverPages').then((m) => ({ default: m.CollectionPage })));
 const Search = lazy(() => import('./pages/Search'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 const Watch = lazy(() => import('./pages/Watch'));
 
 const pathSection = (p: string) => (p.startsWith('/anime') ? 'anime' : p.startsWith('/manga') ? 'manga' : null);
@@ -86,6 +89,10 @@ export default function App() {
   const pathname = toLogical(location.pathname);
   const logical = pathname === location.pathname ? location : { ...location, pathname };
   useHostRouting();
+  // default tab title (layout effect: runs before pages set their own, e.g. a movie's name)
+  useLayoutEffect(() => {
+    document.title = defaultTitle(pathname);
+  }, [pathname]);
   const watching = pathname.startsWith('/watch/');
 
   useEffect(() => {
@@ -104,6 +111,7 @@ export default function App() {
   return (
     <>
       <Navbar />
+      <ErrorBoundary resetKey={pathname}>
       <Suspense fallback={<div className="status" style={{ minHeight: '70vh' }}><div className="spinner" aria-label="Loading" /></div>}>
       <Routes location={logical}>
         <Route path="/" element={<Home />} />
@@ -135,8 +143,8 @@ export default function App() {
         <Route path="/manga/library" element={<MangaLibrary />} />
         <Route path="/manga/title/:id" element={<MangaDetail />} />
         <Route path="/manga/read/:id" element={<MangaRead />} />
-        <Route path="/manga/*" element={<MangaHome />} />
-        <Route path="/anime/*" element={<AnimeHome />} />
+        <Route path="/manga/*" element={<NotFound />} />
+        <Route path="/anime/*" element={<NotFound />} />
         <Route path="/live" element={<Live />} />
         <Route path="/list" element={<MyList key="main" />} />
         <Route path="/person/:id" element={<PersonPage />} />
@@ -157,9 +165,10 @@ export default function App() {
         <Route path="/takedown" element={<Navigate to="/legal/dmca" replace />} />
         <Route path="/title/:type/:id" element={<Detail />} />
         <Route path="/watch/:type/:id" element={<Watch />} />
-        <Route path="*" element={<Home />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
       </Suspense>
+      </ErrorBoundary>
       <Footer />
       {!watching && <Floating />}
       <AuthModal />

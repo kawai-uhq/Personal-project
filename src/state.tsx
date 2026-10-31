@@ -22,6 +22,8 @@ interface AppState {
   session: Session | null;
   onSignedIn: (s: Session) => void;
   signOut: () => void;
+  /** A fresh sign-in token (refreshed if needed), or null when signed out */
+  getToken: () => Promise<string | null>;
   authOpen: boolean;
   openAuth: () => void;
   closeAuth: () => void;
@@ -256,6 +258,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       session,
       onSignedIn,
       signOut,
+      getToken,
       authOpen,
       openAuth: () => setAuthOpen(true),
       closeAuth: () => setAuthOpen(false)

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { usePageTitle } from '../lib/title';
 import { Link, useParams } from 'react-router-dom';
 import Icon from '../components/Icon';
 import { votesShort } from '../lib/format';
@@ -25,6 +26,7 @@ export default function DetailPage() {
   const rem = useReminders();
   const [wv, setWv] = useState(0);
   const [d, setD] = useState<Details | null>(null);
+  usePageTitle(d?.media.title);
   const [error, setError] = useState<string | null>(null);
   const [season, setSeason] = useState(1);
   const [eps, setEps] = useState<Episode[]>([]);

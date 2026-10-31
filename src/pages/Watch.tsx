@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { usePageTitle } from '../lib/title';
 import ConsentGate from '../components/ConsentGate';
 import { mediaAllowed, useConsent } from '../lib/consent';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -39,6 +40,7 @@ export default function Watch() {
   }, [pid]);
 
   const [d, setD] = useState<Details | null>(null);
+  usePageTitle(d ? (t === 'tv' ? `${d.media.title} S${season}E${episode}` : d.media.title) : null);
   const [eps, setEps] = useState<Episode[]>([]);
   const [more, setMore] = useState<Media[]>([]);
   const [viewSeason, setViewSeason] = useState(season);

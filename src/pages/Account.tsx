@@ -12,7 +12,7 @@ import { useApp } from '../state';
 
 /** Your account: who you're signed in as, what's saved, and signing out. */
 export default function Account() {
-  const { session, openAuth, signOut, favorites, loved, history } = useApp();
+  const { session, openAuth, signOut, getToken, favorites, loved, history } = useApp();
   const section = useSection();
   const nav = useNavigate();
   const { hash } = useLocation();
@@ -38,6 +38,29 @@ export default function Account() {
   }
 
   const name = session.email.split('@')[0];
+
+  const deleteAccount = async () => {
+    const yes = await askConfirm({
+      title: 'Delete your account?',
+      text: `This permanently deletes ${session.email} and everything saved to it (lists, history, progress). Lists already on this device stay here. This can't be undone.`,
+      ok: 'Delete forever',
+      danger: true
+    });
+    if (!yes) return;
+    try {
+      const token = await getToken();
+      const r = await fetch('/api/delete-account', { method: 'POST', headers: { Authorization: `Bearer ${token ?? ''}` } });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        await askConfirm({ title: "Couldn't delete the account", text: j.error || 'Try again in a moment.', ok: 'OK', cancel: 'Close', icon: 'x' });
+        return;
+      }
+      signOut();
+      nav('/');
+    } catch {
+      await askConfirm({ title: "Couldn't delete the account", text: 'Check your connection and try again.', ok: 'OK', cancel: 'Close', icon: 'x' });
+    }
+  };
   const stats: [string, number][] = [
     ['Cinema watchlist', favorites.length],
     ['Cinema favorites', loved.length],
@@ -88,6 +111,9 @@ export default function Account() {
             }}
           >
             <Icon name="login" size={16} />Sign out
+          </button>
+          <button className="btn ghost danger" onClick={() => void deleteAccount()}>
+            <Icon name="trash" size={16} />Delete account
           </button>
         </div>
 

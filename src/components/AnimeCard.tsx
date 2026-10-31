@@ -1,16 +1,47 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from './Icon';
+import ConsentGate from './ConsentGate';
 import { Row, rateTone } from './Rows';
 import { FORMAT_LABEL, aniList } from '../lib/anilist';
 import type { Ani, AniLite, AniQuery } from '../lib/anilist';
 
 /** Poster-style card for an anime (same look as the movie cards). */
+const canHover = () => typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
 export function AnimeCard({ a, tag, to, onRemove }: { a: AniLite; tag?: string; to?: string; onRemove?: () => void }) {
   const score = a.score / 10;
+  // trailer preview: hold the pointer on a cover for a moment (computers only, when AniList has a trailer)
+  const trailer = 'trailer' in a ? (a as Ani).trailer : null;
+  const [play, setPlay] = useState(false);
+  const [ready, setReady] = useState(false);
+  const timer = useRef<number>();
+  const enter = () => {
+    if (!trailer || !canHover() || document.documentElement.classList.contains('no-motion')) return;
+    timer.current = window.setTimeout(() => setPlay(true), 750);
+  };
+  const leave = () => {
+    window.clearTimeout(timer.current);
+    setPlay(false);
+    setReady(false);
+  };
+  useEffect(() => () => window.clearTimeout(timer.current), []);
   return (
-    <Link to={to ?? `/anime/title/${a.id}`} className="poster">
+    <Link to={to ?? `/anime/title/${a.id}`} className={`poster ${play ? 'previewing' : ''}`} onMouseEnter={enter} onMouseLeave={leave}>
       <span className="poster-img">
+        {play && trailer && (
+          <ConsentGate label="Trailer" compact>
+            <span className={`acard-trailer ${ready ? 'on' : ''}`} aria-hidden="true">
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${trailer}?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&fs=0&loop=1&playlist=${trailer}`}
+                allow="autoplay; encrypted-media"
+                tabIndex={-1}
+                title=""
+                onLoad={() => window.setTimeout(() => setReady(true), 900)}
+              />
+            </span>
+          </ConsentGate>
+        )}
         {a.cover ? <img src={a.cover} alt={a.title} loading="lazy" decoding="async" /> : <span className="poster-missing">{a.title}</span>}
         <span className="pbadge tv">{tag ?? (a.format ? FORMAT_LABEL[a.format] ?? a.format : 'ANIME')}</span>
         {onRemove ? (

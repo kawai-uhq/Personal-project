@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { usePageTitle } from '../lib/title';
 import ConsentGate from '../components/ConsentGate';
 import { mediaAllowed, useConsent } from '../lib/consent';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -45,6 +46,7 @@ export default function AnimeWatch() {
   const lastSave = useRef(0);
 
   const ep = Math.max(1, Number(sp.get('e')) || 1);
+  usePageTitle(a ? `${a.title} Episode ${ep}` : null);
   const goodKey = `anime:${aid}`;
   // no server in the address: the one that last worked for this anime, else Server 1
   const server = serverAt(sp.get('p') ?? settings.getGoodServer(goodKey));

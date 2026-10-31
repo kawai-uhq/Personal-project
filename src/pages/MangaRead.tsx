@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { usePageTitle } from '../lib/title';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Icon from '../components/Icon';
 import Select from '../components/Select';
@@ -17,6 +18,7 @@ export default function MangaRead() {
   const lang = sp.get('l') || 'en';
   const nav = useNavigate();
   const [m, setM] = useState<MangaFull | null>(null);
+  usePageTitle(m ? `${m.title}` : null);
   const [chs, setChs] = useState<Chapter[] | null>(null);
   const [pages, setPages] = useState<PageSet | null>(null);
   const [error, setError] = useState<string | null>(null);

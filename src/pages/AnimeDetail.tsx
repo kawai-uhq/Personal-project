@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { usePageTitle } from '../lib/title';
 import { Link, useParams } from 'react-router-dom';
 import { AniRow, AnimeCard } from '../components/AnimeCard';
 import Icon from '../components/Icon';
+import TrailerModal from '../components/TrailerModal';
 import AnimeSeasons from '../components/AnimeSeasons';
 import { DetailSkeleton, Row, Status } from '../components/Rows';
 import WatchedTick from '../components/WatchedTick';
@@ -27,9 +29,11 @@ export default function AnimeDetail() {
   const aid = Number(id);
   const store = useAnimeStore();
   const [a, setA] = useState<AniFull | null>(null);
+  usePageTitle(a?.title);
   const [error, setError] = useState<string | null>(null);
   const [range, setRange] = useState(0);
   const [toast, setToast] = useState('');
+  const [showTrailer, setShowTrailer] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -87,6 +91,7 @@ export default function AnimeDetail() {
                 <button className="btn ghost" onClick={() => store.toggle('list', a)}><Icon name={inList ? 'check' : 'bookmark'} size={16} />Watchlist</button>
                 <button className="btn ghost" aria-pressed={loved} onClick={() => store.toggle('loved', a)}><Icon name="heart" size={16} fill={loved} />{loved ? 'Favorite' : 'Add Favorite'}</button>
               </div>
+              {a.trailer && <button className="btn ghost" onClick={() => setShowTrailer(true)}><Icon name="play" size={16} />Trailer</button>}
               <button className="btn ghost" onClick={() => void share()}><Icon name="share" size={16} />Share</button>
               {toast && <p className="muted small" role="status">{toast}</p>}
             </div>
@@ -151,6 +156,7 @@ export default function AnimeDetail() {
         )}
         <AniRow title="You might also like" items={a.recs} />
       </div>
+      {showTrailer && a.trailer && <TrailerModal videoKey={a.trailer} title={a.title} onClose={() => setShowTrailer(false)} />}
     </main>
   );
 }
