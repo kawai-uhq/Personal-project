@@ -1459,10 +1459,30 @@ html.light .cookie { background: rgba(255, 255, 255, .97); }
 .acard-trailer iframe { position: absolute; top: 50%; left: 50%; height: 100%; aspect-ratio: 16 / 9; width: auto; transform: translate(-50%, -50%) scale(1.25); border: 0; }
 .poster.previewing .pbadge, .poster.previewing .prate { z-index: 3; }
 
-/* ---- Player: server panel on the right, episodes on the left ---- */
-.wp-main { grid-template-columns: minmax(0, 1fr) 380px; }
-.wp-side { position: sticky; top: calc(var(--nav-h) + 16px); align-self: start; }
-.wp-left .wp-eps { margin-top: 26px; }
+/* ---- Player stage: [anime episodes] | player | servers ---- */
+.wp.wide { max-width: 1680px; }
+.wp-stage { display: grid; grid-template-columns: minmax(0, 1fr) 340px; grid-template-areas: "player sv"; gap: 16px; align-items: stretch; }
+.wp-stage.anime { grid-template-columns: 250px minmax(0, 1fr) 320px; grid-template-areas: "eps player sv"; }
+.wp-player { grid-area: player; min-width: 0; }
+.wp-col-sv { grid-area: sv; }
+.wp-col-eps { grid-area: eps; }
+/* side columns are exactly as tall as the player; their lists scroll inside */
+.wp-col { position: relative; min-width: 0; min-height: 0; }
+.wp-fill { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.wp-col-sv .sv { flex: 1; min-height: 0; }
+.wp-col-sv .sv-grid { flex: 1; min-height: 0; max-height: none; align-content: start; }
+.wp-col-eps .wp-fill { gap: 12px; padding: 14px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+.wp-col-eps .aseasons { display: flex; margin: 0; max-width: 100%; }
+.wp-col-eps .aseasons .select { min-height: 42px; font-size: 13px; }
+.wp-eps-side { display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0 !important; }
+.wp-eps-side .season-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+.wp-eps-side .season-head .section { margin: 0; font-size: 17px; }
+.wp-eps-side .season-head .select { min-height: 36px; width: auto; font-size: 13px; padding: 0 30px 0 12px; }
+.wp-eps-side .aep-grid { flex: 1; min-height: 0; margin: 0; overflow-y: auto; overscroll-behavior: contain; align-content: start; grid-template-columns: repeat(auto-fill, minmax(66px, 1fr)); gap: 6px; scrollbar-width: thin; }
+.wp-eps-side .aep-grid .aep { min-height: 40px; padding: 10px 8px; }
+.wp-eps-side .aep b { font-size: 13px; }
+.wp-main.solo { grid-template-columns: minmax(0, 1fr); }
+.wp-main.solo .wp-eps { margin-top: 26px; }
 .sv { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .sv-head { display: flex; align-items: flex-start; gap: 10px; }
 .sv-head > div { flex: 1; min-width: 0; }
@@ -1474,8 +1494,8 @@ html.light .cookie { background: rgba(255, 255, 255, .97); }
 .sv-lang { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .sv-lang > span { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .sv-lang .seg button { min-height: 32px; padding: 0 14px; font-size: 13px; }
-.sv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-height: min(62vh, 560px); overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; scrollbar-width: thin; }
-.sv-item { position: relative; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 7px 10px; border-radius: 10px; border: 1px solid transparent; background: rgba(255, 233, 214, .04); color: var(--text); text-align: left; }
+.sv-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; max-height: min(62vh, 560px); overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; scrollbar-width: thin; }
+.sv-item { position: relative; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 7px 10px; border-radius: 10px; border: 1px solid transparent; background: rgba(255, 233, 214, .04); color: var(--text); text-align: left; }
 .sv-item:hover { background: rgba(255, 233, 214, .09); }
 .sv-item.on { border-color: var(--accent); background: rgba(255, 107, 87, .14); }
 .sv-item.on b { color: var(--accent); }
@@ -1493,8 +1513,17 @@ html.light .cookie { background: rgba(255, 255, 255, .97); }
 .sv-foot .pill { padding: 7px 14px; font-size: 13px; display: inline-flex; align-items: center; }
 .sv-foot .pill.on { background: var(--accent); border-color: var(--accent); color: #1a0d0a; }
 html.light .sv-item { background: rgba(40, 20, 30, .04); }
+/* narrower screens: anime episodes drop under the player, then everything stacks */
+@media (max-width: 1200px) {
+  .wp-stage.anime { grid-template-columns: minmax(0, 1fr) 300px; grid-template-areas: "player sv" "eps eps"; }
+  .wp-stage.anime .wp-col-eps .wp-fill { position: static; }
+  .wp-col-eps .aep-grid { max-height: 240px; }
+}
 @media (max-width: 900px) {
-  .wp-main { grid-template-columns: 1fr; }
-  .wp-side { position: static; order: -1; max-width: none; }
-  .sv-grid { max-height: 300px; }
+  .wp-stage, .wp-stage.anime { grid-template-columns: minmax(0, 1fr); grid-template-areas: "player" "sv" "eps"; }
+  .wp-col .wp-fill { position: static; }
+  .wp-col-sv .sv-grid { max-height: 300px; }
+}
+@media (max-width: 760px) {
+  .wp-col { padding: 0 12px; }
 }

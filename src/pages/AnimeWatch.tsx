@@ -52,6 +52,7 @@ export default function AnimeWatch() {
   const [quietLeft, setQuietLeft] = useState<number | null>(null);
   const [poke, setPoke] = useState(0);
   const frame = useRef<HTMLIFrameElement>(null);
+  const epGrid = useRef<HTMLDivElement>(null);
   const latest = useRef<{ t: number; d: number } | null>(null);
   const lastSave = useRef(0);
 
@@ -265,8 +266,17 @@ export default function AnimeWatch() {
   const shown = nums.slice(rangeNow * CHUNK, rangeNow * CHUNK + CHUNK);
   const nextServer = animeServers[(pickNext(new Set(tried)) ?? (serverNo(server) % animeServers.length) + 1) - 1];
 
+  // keep the playing episode in view inside the episode column (without moving the page)
+  useEffect(() => {
+    const g = epGrid.current;
+    const now = g?.querySelector<HTMLElement>('.aep.now');
+    if (!g || !now) return;
+    const top = now.offsetTop - g.offsetTop;
+    if (top < g.scrollTop || top + now.offsetHeight > g.scrollTop + g.clientHeight) g.scrollTop = top - g.clientHeight / 2 + now.offsetHeight / 2;
+  }, [ep, last, rangeNow]);
+
   return (
-    <div className="wp">
+    <div className="wp wide">
       <div className="wp-top">
         <button className="btn small ghost" onClick={() => (window.history.length > 1 ? nav(-1) : nav(`/anime/title/${aid}`))}><Icon name="arrowLeft" size={15} />Back</button>
         {a && (
@@ -278,75 +288,133 @@ export default function AnimeWatch() {
         )}
       </div>
 
-      <ConsentGate label="Load the player" className="wp-frame" onOpen={() => setGateOpen(true)}>
+      <div className="wp-stage anime">
+        <aside className="wp-col wp-col-eps">
+          <div className="wp-fill">
+            <AnimeSeasons id={aid} to="/anime/watch/" />
+            <section className="wp-eps wp-eps-side">
+              <div className="season-head">
+                <h2 className="section">Episodes</h2>
+                {ranges > 1 && (
+                  <Select className="field select dd" value={rangeNow} onChange={(e) => setRange(Number(e.target.value))} aria-label="Episode range">
+                    {Array.from({ length: ranges }, (_, i) => (
+                      <option key={i} value={i}>{i * CHUNK + 1} – {Math.min((i + 1) * CHUNK, nums.length)}</option>
+                    ))}
+                  </Select>
+                )}
+              </div>
+              <div className="aep-grid compact" ref={epGrid}>
+                {shown.map((n) => {
+                  const done = seen.has(n);
+                  return (
+                    <button key={n} className={`aep ${done ? 'seen' : ''} ${n === ep ? 'now' : ''}`} onClick={() => go(n)}>
+                      <WatchedTick on={done} onToggle={() => animeStore.setSeen(aid, n, !done)} />
+                      <b>EP {n}</b>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          </div>
+        </aside>
+        <div className="wp-player">
+          <ConsentGate label="Load the player" className="wp-frame" onOpen={() => setGateOpen(true)}>
 
-      {src ? (
-      <iframe
-        key={`${src}|${reload}`}
-        ref={frame}
-        className="wp-frame"
-        src={src}
-        title={a?.title ?? 'Player'}
-        allow="autoplay *; fullscreen *; picture-in-picture; encrypted-media *"
-        allowFullScreen
-        onLoad={(e) => {
-          setLoaded(true);
-          // players that resume by message (Server 5) get the saved spot now
-          const r = server.onFrameLoad?.(start);
-          if (r) e.currentTarget.contentWindow?.postMessage(r.msg, r.origin);
-        }}
-      />
-      ) : (
-        <div className="gate wp-frame" role="status">
-          <Icon name={missing ? 'play' : 'refresh'} size={28} />
-          <strong>{missing ? `${server.name} doesn't have this anime` : 'Loading the player…'}</strong>
-          {missing && (
-            <button className="btn primary" onClick={() => setSp({ e: String(ep), p: String(serverNo(nextServer)), l: nextServer.langs.includes(lang) ? lang : 'sub' }, { replace: true })}>
-              Try {nextServer.name}
-            </button>
+          {src ? (
+          <iframe
+            key={`${src}|${reload}`}
+            ref={frame}
+            className="wp-frame"
+            src={src}
+            title={a?.title ?? 'Player'}
+            allow="autoplay *; fullscreen *; picture-in-picture; encrypted-media *"
+            allowFullScreen
+            onLoad={(e) => {
+              setLoaded(true);
+              // players that resume by message (Server 5) get the saved spot now
+              const r = server.onFrameLoad?.(start);
+              if (r) e.currentTarget.contentWindow?.postMessage(r.msg, r.origin);
+            }}
+          />
+          ) : (
+            <div className="gate wp-frame" role="status">
+              <Icon name={missing ? 'play' : 'refresh'} size={28} />
+              <strong>{missing ? `${server.name} doesn't have this anime` : 'Loading the player…'}</strong>
+              {missing && (
+                <button className="btn primary" onClick={() => setSp({ e: String(ep), p: String(serverNo(nextServer)), l: nextServer.langs.includes(lang) ? lang : 'sub' }, { replace: true })}>
+                  Try {nextServer.name}
+                </button>
+              )}
+            </div>
+          )}
+
+          </ConsentGate>
+
+          {switched && (
+            <div className="wp-slow" role="status">
+              <span><Icon name="refresh" size={14} /> {switched}</span>
+              <button className="pill" onClick={() => setSwitched(null)}>OK</button>
+            </div>
+          )}
+          {slow && !loaded && !switched && !!src && (
+            <div className="wp-slow" role="status">
+              <span>{server.name} is taking a while to load.</span>
+              <button className="pill warn" onClick={() => setSp({ e: String(ep), p: String(serverNo(nextServer)), l: nextServer.langs.includes(lang) ? lang : 'sub' }, { replace: true })}>Try {nextServer.name}</button>
+              <button className="pill" onClick={() => setReload((n) => n + 1)}><Icon name="refresh" size={14} />Reload</button>
+            </div>
+          )}
+
+          {quiet && !alive && (
+            <div className="wp-slow" role="status">
+              <span>
+                {quietLeft != null
+                  ? <>No video from {server.name} yet. Switching to {nextServer.name} in {Math.max(quietLeft, 0)}s</>
+                  : <>{server.name} hasn't started a video.</>}
+              </span>
+              <button className="pill warn" onClick={() => { setQuiet(false); switchAway('never started the video'); }}>
+                {quietLeft != null ? 'Switch now' : `Try ${nextServer.name}`}
+              </button>
+              <button className="pill" onClick={() => { setQuiet(false); setStay(true); }}>Stay here</button>
+            </div>
+          )}
+
+          {upNext != null && (
+            <div className="wp-upnext" role="status">
+              <span><Icon name="play" size={13} fill /> Up next: <b>Episode {upNext}</b> in {Math.max(left, 0)}s</span>
+              <button className="pill on" onClick={() => { setUpNext(null); go(upNext); }}>Play now</button>
+              <button className="pill" onClick={() => setUpNext(null)}>Cancel</button>
+            </div>
           )}
         </div>
-      )}
+        <aside className="wp-col wp-col-sv">
+          <div className="wp-fill">
+              <ServerPanel
+                items={animeServers.map((x) => ({ key: String(serverNo(x)), name: x.name, note: x.note }))}
+                current={String(serverNo(server))}
+                onPick={(k) => { setSwitched(null); pickServer(Number(k)); }}
+                onReload={() => setReload((n) => n + 1)}
+                worked={worked}
+                failed={new Set(tried.map(String))}
+                hidden={hidden}
+                onHidden={(v) => { setHidden(v); settings.saveHiddenServers('anime', v); }}
+                autoSwitch={autoSwitch}
+                onAutoSwitch={(v) => { setAutoSwitch(v); settings.saveAutoSwitch(v); }}
+              >
+                <div className="sv-lang">
+                  <span>Audio</span>
+                  <div className="seg" role="radiogroup" aria-label="Audio">
+                    {server.langs.map((l) => (
+                      <button key={l} type="button" role="radio" aria-checked={l === lang} className={l === lang ? 'on' : ''} onClick={() => setSp({ e: String(ep), p: String(serverNo(server)), l }, { replace: true })}>{LANG_NAME[l]}</button>
+                    ))}
+                  </div>
+                </div>
+                <p className="sv-now">Playing <b>Episode {ep}</b></p>
+              </ServerPanel>
+          </div>
+        </aside>
+      </div>
 
-      </ConsentGate>
-
-      {switched && (
-        <div className="wp-slow" role="status">
-          <span><Icon name="refresh" size={14} /> {switched}</span>
-          <button className="pill" onClick={() => setSwitched(null)}>OK</button>
-        </div>
-      )}
-      {slow && !loaded && !switched && !!src && (
-        <div className="wp-slow" role="status">
-          <span>{server.name} is taking a while to load.</span>
-          <button className="pill warn" onClick={() => setSp({ e: String(ep), p: String(serverNo(nextServer)), l: nextServer.langs.includes(lang) ? lang : 'sub' }, { replace: true })}>Try {nextServer.name}</button>
-          <button className="pill" onClick={() => setReload((n) => n + 1)}><Icon name="refresh" size={14} />Reload</button>
-        </div>
-      )}
-
-      {quiet && !alive && (
-        <div className="wp-slow" role="status">
-          <span>
-            {quietLeft != null
-              ? <>No video from {server.name} yet. Switching to {nextServer.name} in {Math.max(quietLeft, 0)}s</>
-              : <>{server.name} hasn't started a video.</>}
-          </span>
-          <button className="pill warn" onClick={() => { setQuiet(false); switchAway('never started the video'); }}>
-            {quietLeft != null ? 'Switch now' : `Try ${nextServer.name}`}
-          </button>
-          <button className="pill" onClick={() => { setQuiet(false); setStay(true); }}>Stay here</button>
-        </div>
-      )}
-
-      {upNext != null && (
-        <div className="wp-upnext" role="status">
-          <span><Icon name="play" size={13} fill /> Up next: <b>Episode {upNext}</b> in {Math.max(left, 0)}s</span>
-          <button className="pill on" onClick={() => { setUpNext(null); go(upNext); }}>Play now</button>
-          <button className="pill" onClick={() => setUpNext(null)}>Cancel</button>
-        </div>
-      )}
-
-      <div className="wp-main">
+      <div className="wp-main solo">
         <div className="wp-left">
           <div className="td-chips">
             {a && a.score > 0 && <span className="chip rate"><Icon name="star" size={14} fill />{(a.score / 10).toFixed(1)}</span>}
@@ -355,7 +423,6 @@ export default function AnimeWatch() {
             {a?.status && <span className={`chip stat ${a.status === 'FINISHED' || a.status === 'RELEASING' ? 'ok' : ''}`}>{STATUS_LABEL[a.status] ?? a.status}</span>}
           </div>
           <h1>{a?.title ?? 'Loading…'}</h1>
-          <AnimeSeasons id={aid} to="/anime/watch/" />
           {a && a.genres.length > 0 && <div className="td-chips">{a.genres.map((g) => <span key={g} className="chip">{g}</span>)}</div>}
           <h3 className="wp-h">Overview</h3>
           <p className="wp-overview">{a?.desc || 'No description available.'}</p>
@@ -364,55 +431,8 @@ export default function AnimeWatch() {
             {hasNext && <button className="btn small ghost" onClick={() => go(ep + 1)}>Next<Icon name="chevronRight" size={15} /></button>}
             <Link to={`/anime/title/${aid}`} className="btn small ghost">Details</Link>
           </div>
-          <section className="wp-eps">
-            <div className="season-head">
-              <h2 className="section">Episodes</h2>
-              {ranges > 1 && (
-                <Select className="field select dd" value={rangeNow} onChange={(e) => setRange(Number(e.target.value))} aria-label="Episode range">
-                  {Array.from({ length: ranges }, (_, i) => (
-                    <option key={i} value={i}>{i * CHUNK + 1} – {Math.min((i + 1) * CHUNK, nums.length)}</option>
-                  ))}
-                </Select>
-              )}
-            </div>
-            <div className="aep-grid compact">
-              {shown.map((n) => {
-                const done = seen.has(n);
-                return (
-                  <button key={n} className={`aep ${done ? 'seen' : ''} ${n === ep ? 'now' : ''}`} onClick={() => go(n)}>
-                    <WatchedTick on={done} onToggle={() => animeStore.setSeen(aid, n, !done)} />
-                    <b>EP {n}</b>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
         </div>
 
-        <aside className="wp-side">
-          <ServerPanel
-            items={animeServers.map((x) => ({ key: String(serverNo(x)), name: x.name, note: x.note }))}
-            current={String(serverNo(server))}
-            onPick={(k) => { setSwitched(null); pickServer(Number(k)); }}
-            onReload={() => setReload((n) => n + 1)}
-            worked={worked}
-            failed={new Set(tried.map(String))}
-            hidden={hidden}
-            onHidden={(v) => { setHidden(v); settings.saveHiddenServers('anime', v); }}
-            autoSwitch={autoSwitch}
-            onAutoSwitch={(v) => { setAutoSwitch(v); settings.saveAutoSwitch(v); }}
-          >
-            <div className="sv-lang">
-              <span>Audio</span>
-              <div className="seg" role="radiogroup" aria-label="Audio">
-                {server.langs.map((l) => (
-                  <button key={l} type="button" role="radio" aria-checked={l === lang} className={l === lang ? 'on' : ''} onClick={() => setSp({ e: String(ep), p: String(serverNo(server)), l }, { replace: true })}>{LANG_NAME[l]}</button>
-                ))}
-              </div>
-            </div>
-            <p className="sv-now">Playing <b>Episode {ep}</b></p>
-          </ServerPanel>
-        </aside>
       </div>
 
       {a && <AniRow title="You might also like" items={a.recs} />}

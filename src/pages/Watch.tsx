@@ -319,7 +319,7 @@ export default function Watch() {
   const epName = viewSeason === season ? eps.find((x) => x.number === episode)?.name : undefined;
 
   return (
-    <div className="wp">
+    <div className="wp wide">
       <div className="wp-top">
         <button className="btn small ghost" onClick={() => (window.history.length > 1 ? nav(-1) : nav(`/title/${t}/${mid}`))}><Icon name="arrowLeft" size={15} />Back</button>
         <span className="sp" />
@@ -331,67 +331,89 @@ export default function Watch() {
         )}
       </div>
 
-      <ConsentGate label="Load the player" className="wp-frame" onOpen={() => setGateOpen(true)}>
+      <div className="wp-stage">
+        <div className="wp-player">
+          <ConsentGate label="Load the player" className="wp-frame" onOpen={() => setGateOpen(true)}>
 
-      <iframe
-        key={`${src}|${reload}|${sandboxed}`}
-        ref={frame}
-        className="wp-frame"
-        src={src}
-        title={m?.title ?? 'Player'}
-        allow="autoplay *; fullscreen *; picture-in-picture; encrypted-media *"
-        allowFullScreen
-        sandbox={sandbox}
-        onLoad={(e) => {
-          setLoaded(true);
-          // some servers want a message once loaded: the saved spot (Server 11) or a hello (Server 16)
-          const r = provider.onFrameLoad?.(start);
-          if (r) e.currentTarget.contentWindow?.postMessage(r.msg, r.origin);
-        }}
-      />
+          <iframe
+            key={`${src}|${reload}|${sandboxed}`}
+            ref={frame}
+            className="wp-frame"
+            src={src}
+            title={m?.title ?? 'Player'}
+            allow="autoplay *; fullscreen *; picture-in-picture; encrypted-media *"
+            allowFullScreen
+            sandbox={sandbox}
+            onLoad={(e) => {
+              setLoaded(true);
+              // some servers want a message once loaded: the saved spot (Server 11) or a hello (Server 16)
+              const r = provider.onFrameLoad?.(start);
+              if (r) e.currentTarget.contentWindow?.postMessage(r.msg, r.origin);
+            }}
+          />
 
-      </ConsentGate>
+          </ConsentGate>
 
-      {switched && (
-        <div className="wp-slow" role="status">
-          <span><Icon name="refresh" size={14} /> {switched}</span>
-          <button className="pill" onClick={() => setSwitched(null)}>OK</button>
+          {switched && (
+            <div className="wp-slow" role="status">
+              <span><Icon name="refresh" size={14} /> {switched}</span>
+              <button className="pill" onClick={() => setSwitched(null)}>OK</button>
+            </div>
+          )}
+
+          {upNext && (
+            <div className="wp-upnext" role="status">
+              <span>
+                <Icon name="play" size={13} fill /> Up next: <b>S{upNext.s} · E{upNext.e}</b> in {upNext.left}s
+              </span>
+              <button className="pill on" onClick={() => go(upNext.s, upNext.e)}>Play now</button>
+              <button className="pill" onClick={() => setUpNext(null)}>Cancel</button>
+            </div>
+          )}
+
+          {((slow && !alive) || failed) && !quiet && (
+            <div className="wp-slow" role="status">
+              <span>{failed ? `${provider.name} doesn't have this one.` : `${provider.name} is taking a while to load.`}</span>
+              <button className="pill warn" onClick={() => setServer(nextServer.id)}>Try {nextServer.name}</button>
+              <button className="pill" onClick={() => setReload((n) => n + 1)}><Icon name="refresh" size={14} />Reload</button>
+            </div>
+          )}
+
+          {quiet && !alive && (
+            <div className="wp-slow" role="status">
+              <span>
+                {left != null
+                  ? <>No video from {provider.name} yet. Switching to {nextServer.name} in {Math.max(left, 0)}s</>
+                  : <>{provider.name} hasn't started a video.</>}
+              </span>
+              <button className="pill warn" onClick={() => { setQuiet(false); switchAway('never started the video'); }}>
+                {left != null ? 'Switch now' : `Try ${nextServer.name}`}
+              </button>
+              <button className="pill" onClick={() => { setQuiet(false); setStay(true); }}>Stay here</button>
+            </div>
+          )}
         </div>
-      )}
+        <aside className="wp-col wp-col-sv">
+          <div className="wp-fill">
+              <ServerPanel
+                items={providers.map((p) => ({ key: p.id, name: p.name, note: p.quality }))}
+                current={pid}
+                onPick={(k) => { setSwitched(null); setServer(k); }}
+                onReload={() => setReload((n) => n + 1)}
+                worked={worked}
+                failed={new Set(tried)}
+                hidden={hidden}
+                onHidden={(v) => { setHidden(v); store.saveHiddenServers('movie', v); }}
+                autoSwitch={autoSwitch}
+                onAutoSwitch={(v) => { setAutoSwitch(v); store.saveAutoSwitch(v); }}
+              >
+                {t === 'tv' && <p className="sv-now">Playing <b>Season {season} · Episode {episode}</b></p>}
+              </ServerPanel>
+          </div>
+        </aside>
+      </div>
 
-      {upNext && (
-        <div className="wp-upnext" role="status">
-          <span>
-            <Icon name="play" size={13} fill /> Up next: <b>S{upNext.s} · E{upNext.e}</b> in {upNext.left}s
-          </span>
-          <button className="pill on" onClick={() => go(upNext.s, upNext.e)}>Play now</button>
-          <button className="pill" onClick={() => setUpNext(null)}>Cancel</button>
-        </div>
-      )}
-
-      {((slow && !alive) || failed) && !quiet && (
-        <div className="wp-slow" role="status">
-          <span>{failed ? `${provider.name} doesn't have this one.` : `${provider.name} is taking a while to load.`}</span>
-          <button className="pill warn" onClick={() => setServer(nextServer.id)}>Try {nextServer.name}</button>
-          <button className="pill" onClick={() => setReload((n) => n + 1)}><Icon name="refresh" size={14} />Reload</button>
-        </div>
-      )}
-
-      {quiet && !alive && (
-        <div className="wp-slow" role="status">
-          <span>
-            {left != null
-              ? <>No video from {provider.name} yet. Switching to {nextServer.name} in {Math.max(left, 0)}s</>
-              : <>{provider.name} hasn't started a video.</>}
-          </span>
-          <button className="pill warn" onClick={() => { setQuiet(false); switchAway('never started the video'); }}>
-            {left != null ? 'Switch now' : `Try ${nextServer.name}`}
-          </button>
-          <button className="pill" onClick={() => { setQuiet(false); setStay(true); }}>Stay here</button>
-        </div>
-      )}
-
-      <div className="wp-main">
+      <div className="wp-main solo">
         <div className="wp-left">
           <div className="td-chips">
             {m && m.rating > 0 && (
@@ -509,22 +531,6 @@ export default function Watch() {
           )}
         </div>
 
-        <aside className="wp-side">
-          <ServerPanel
-            items={providers.map((p) => ({ key: p.id, name: p.name, note: p.quality }))}
-            current={pid}
-            onPick={(k) => { setSwitched(null); setServer(k); }}
-            onReload={() => setReload((n) => n + 1)}
-            worked={worked}
-            failed={new Set(tried)}
-            hidden={hidden}
-            onHidden={(v) => { setHidden(v); store.saveHiddenServers('movie', v); }}
-            autoSwitch={autoSwitch}
-            onAutoSwitch={(v) => { setAutoSwitch(v); store.saveAutoSwitch(v); }}
-          >
-            {t === 'tv' && <p className="sv-now">Playing <b>Season {season} · Episode {episode}</b></p>}
-          </ServerPanel>
-        </aside>
       </div>
 
       <PosterRow title="Recommended Next" items={more} />
