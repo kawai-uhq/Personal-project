@@ -446,7 +446,13 @@ h1, h2, h3 { font-family: var(--display); margin: 0; }
 .nav-signin { height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 900; font-size: 13px; }
 .nav .avatar { width: 34px; height: 34px; }
 @media (max-width: 1180px) { .nav-search { width: 130px; } .nav-links a { padding: 8px 10px; } }
-@media (max-width: 980px) { .nav-links a { font-size: 0; gap: 0; padding: 9px 11px; } .nav-links svg { width: 18px; height: 18px; } }
+@media (max-width: 1100px) { .nav-links a { font-size: 0; gap: 0; padding: 9px 11px; } .nav-links svg { width: 18px; height: 18px; } }
+/* the menu never squeezes the search box, shuffle and profile buttons; link labels stay on one line */
+.nav-pill > * { flex-shrink: 0; }
+.nav-pill > .nav-links { flex-shrink: 1; min-width: 0; }
+.nav-pill > .nav-search { flex-shrink: 1; min-width: 110px; }
+.nav-links a { white-space: nowrap; }
+.nav .avatar, .nav .gear, .nav-signin { flex: none; }
 
 /* Billboard */
 .billboard { height: min(88vh, 840px); }
@@ -1583,3 +1589,5 @@ html.light .sv-item { background: rgba(40, 20, 30, .04); }
   .cast-row { min-height: 68px; }
   .cast-side img, .cast-ph { width: 50px; height: 68px; }
 }
+.cast-note { margin: -4px 0 10px; }
+.cast-grid.loading { opacity: .55; transition: opacity .15s ease; }

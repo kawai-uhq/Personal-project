@@ -38,27 +38,27 @@ export default function Navbar() {
           <SiteSwitch />
           {manga ? (
             <nav className="nav-links" aria-label="Manga">
-              <NavLink to={P('/manga')} end><Icon name="book" size={18} />Manga Home</NavLink>
-              <NavLink to={P('/manga/explore')}><Icon name="compass" size={18} />Explore</NavLink>
-              <NavLink to={P('/manga/genres')}><Icon name="grid" size={18} />Genres</NavLink>
-              <NavLink to={P('/manga/library')}><Icon name="bookmark" size={18} />Library</NavLink>
+              <NavLink title="Manga Home" to={P('/manga')} end><Icon name="book" size={18} />Manga Home</NavLink>
+              <NavLink title="Explore" to={P('/manga/explore')}><Icon name="compass" size={18} />Explore</NavLink>
+              <NavLink title="Genres" to={P('/manga/genres')}><Icon name="grid" size={18} />Genres</NavLink>
+              <NavLink title="Library" to={P('/manga/library')}><Icon name="bookmark" size={18} />Library</NavLink>
             </nav>
           ) : anime ? (
             <nav className="nav-links" aria-label="Anime">
-              <NavLink to={P('/anime')} end><Icon name="flame" size={18} />Anime Home</NavLink>
-              <NavLink to={P('/anime/explore')}><Icon name="compass" size={18} />Explore</NavLink>
-              <NavLink to={P('/anime/genres')}><Icon name="grid" size={18} />Genres</NavLink>
-              <NavLink to={P('/anime/library')}><Icon name="bookmark" size={18} />Library</NavLink>
+              <NavLink title="Anime Home" to={P('/anime')} end><Icon name="flame" size={18} />Anime Home</NavLink>
+              <NavLink title="Explore" to={P('/anime/explore')}><Icon name="compass" size={18} />Explore</NavLink>
+              <NavLink title="Genres" to={P('/anime/genres')}><Icon name="grid" size={18} />Genres</NavLink>
+              <NavLink title="Library" to={P('/anime/library')}><Icon name="bookmark" size={18} />Library</NavLink>
             </nav>
           ) : (
             <nav className="nav-links" aria-label="Main">
-              <NavLink to="/" end><Icon name="home" size={18} />Home</NavLink>
-              <NavLink to="/movies"><Icon name="film" size={18} />Movies</NavLink>
-              <NavLink to="/tv"><Icon name="tv" size={18} />TV Shows</NavLink>
-              <NavLink to="/live"><Icon name="live" size={18} />Live TV</NavLink>
-              <NavLink to="/sports"><Icon name="trophy" size={18} />Sports</NavLink>
-              <NavLink to="/genres"><Icon name="grid" size={18} />Genres</NavLink>
-              <NavLink to="/list"><Icon name="bookmark" size={18} />My Library{dot > 0 && <span className="nav-dot" aria-label={dotTip} data-tip={dotTip} />}</NavLink>
+              <NavLink title="Home" to="/" end><Icon name="home" size={18} />Home</NavLink>
+              <NavLink title="Movies" to="/movies"><Icon name="film" size={18} />Movies</NavLink>
+              <NavLink title="TV Shows" to="/tv"><Icon name="tv" size={18} />TV Shows</NavLink>
+              <NavLink title="Live TV" to="/live"><Icon name="live" size={18} />Live TV</NavLink>
+              <NavLink title="Sports" to="/sports"><Icon name="trophy" size={18} />Sports</NavLink>
+              <NavLink title="Genres" to="/genres"><Icon name="grid" size={18} />Genres</NavLink>
+              <NavLink title="My Library" to="/list"><Icon name="bookmark" size={18} />My Library{dot > 0 && <span className="nav-dot" aria-label={dotTip} data-tip={dotTip} />}</NavLink>
             </nav>
           )}
           <SearchBox

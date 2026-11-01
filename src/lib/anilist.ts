@@ -379,10 +379,10 @@ export interface CastPerson {
 export interface CastEntry {
   role: 'MAIN' | 'SUPPORTING' | 'BACKGROUND' | string;
   character: CastPerson;
-  /** voice actors by language */
-  jp: CastPerson[];
-  en: CastPerson[];
+  /** voice actors in the requested language */
+  vas: CastPerson[];
 }
+export type CastLang = 'JAPANESE' | 'ENGLISH';
 
 const person = (p: any): CastPerson => ({
   id: p.id,
@@ -391,22 +391,27 @@ const person = (p: any): CastPerson => ({
   image: p.image?.medium && !/default\.jpg$/.test(p.image.medium) ? p.image.medium : null
 });
 
-/** One page of an anime's characters with their Japanese and English voice actors (main characters first). */
-export async function aniCast(id: number, page = 1): Promise<{ items: CastEntry[]; more: boolean }> {
-  const va = `id name { full native } image { medium }`;
+/** One page of an anime's characters with their voice actors in one language (main characters first).
+ *  One language per request: asking AniList for two languages in one query returned the same actors for both. */
+export async function aniCast(id: number, page = 1, lang: CastLang = 'JAPANESE'): Promise<{ items: CastEntry[]; more: boolean }> {
   const d = await gql(
-    `query($id:Int,$page:Int){ Media(id:$id, type:ANIME){ characters(page:$page, perPage:12, sort:[ROLE, RELEVANCE, ID]){
+    `query($id:Int,$page:Int,$lang:StaffLanguage){ Media(id:$id, type:ANIME){ characters(page:$page, perPage:12, sort:[ROLE, RELEVANCE, ID]){
       pageInfo{ hasNextPage }
       edges{ role node{ id name{ full native } image{ medium } }
-        jp: voiceActors(language: JAPANESE, sort:[RELEVANCE, ID]){ ${va} }
-        en: voiceActors(language: ENGLISH, sort:[RELEVANCE, ID]){ ${va} } } } } }`,
-    { id, page }
+        voiceActors(language:$lang, sort:[RELEVANCE, ID]){ id name{ full native } image{ medium } languageV2 } } } } }`,
+    { id, page, lang }
   );
   const c = d?.Media?.characters;
+  const want = lang === 'ENGLISH' ? 'english' : 'japanese';
   return {
     items: ((c?.edges ?? []) as any[])
       .filter((e) => e?.node)
-      .map((e) => ({ role: e.role, character: person(e.node), jp: (e.jp ?? []).map(person), en: (e.en ?? []).map(person) })),
+      .map((e) => ({
+        role: e.role,
+        character: person(e.node),
+        // double-check the language, in case AniList ignores the filter
+        vas: ((e.voiceActors ?? []) as any[]).filter((v) => !v.languageV2 || String(v.languageV2).toLowerCase() === want).map(person)
+      })),
     more: !!c?.pageInfo?.hasNextPage
   };
 }
