@@ -161,6 +161,14 @@ export const animeServers: AnimeServer[] = [
     resumes: true,
     url: ({ id, ep, start }) => `https://vidy.st/anime/${id}/${ep}?color=ff6b57&autoplay=true${start > 0 ? `&progress=${start}` : ''}`,
     parse: (ev) => playerEvent(ev, (h) => h === 'vidy.st' || h.endsWith('.vidy.st'))
+  },
+  {
+    name: 'Server 8',
+    note: 'Sub / Dub',
+    langs: ['sub', 'dub'],
+    resumes: false,
+    url: ({ id, ep, lang }) => `https://player.cinezo.live/embed/anime/${id}/${ep}?dub=${lang === 'dub'}&autoplay=true`,
+    parse: (ev) => playerEvent(ev, (h) => h === 'cinezo.live' || h.endsWith('.cinezo.live'))
   }
 ];
 

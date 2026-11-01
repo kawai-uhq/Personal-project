@@ -305,6 +305,16 @@ export const providers: Provider[] = [
     // the player only shares progress after the page says hello
     onFrameLoad: () => ({ msg: { type: 'VELARIUM_EMBED_INIT' }, origin: VELARIUM }),
     parse: (ev) => (ev.origin === VELARIUM ? playerEvent(ev, () => true) : null)
+  },
+  {
+    id: 'cinezo',
+    name: 'Server 17',
+    quality: 'HD',
+    sandboxOk: false,
+    // Cinezo documents no start-time option; its progress messages are assumed to be the common PLAYER_EVENT kind
+    movie: (id) => `https://player.cinezo.live/embed/movie/${id}?autoplay=true`,
+    tv: (id, s, e) => `https://player.cinezo.live/embed/tv/${id}/${s}/${e}?autoplay=true`,
+    parse: (ev) => playerEvent(ev, (h) => h === 'cinezo.live' || h.endsWith('.cinezo.live'))
   }
 ];
 
