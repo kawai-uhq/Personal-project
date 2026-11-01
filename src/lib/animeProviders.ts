@@ -10,6 +10,8 @@ export interface AnimeServer {
   /** true when the player can start from a given second */
   resumes: boolean;
   url: (o: { id: number; ep: number; lang: Lang; start: number; autoskip: boolean }) => string;
+  /** For players that resume by message instead of a URL option: what to post once the player loads */
+  resume?: (start: number) => { msg: unknown; origin: string };
   /** Read a message from the player. The caller has already checked it came from this server's frame. */
   parse: (ev: MessageEvent) => AnimeTick | null;
 }
@@ -22,6 +24,8 @@ const obj = (ev: MessageEvent): any => {
   return d && typeof d === 'object' ? d : null;
 };
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : Number.isFinite(Number(v)) && v !== '' && v != null ? Number(v) : NaN);
+
+const VIDRIFT = 'https://embed.vidrift.net';
 
 // Server numbers (not names) go in the address bar, same as on the rest of the site
 export const animeServers: AnimeServer[] = [
@@ -77,6 +81,43 @@ export const animeServers: AnimeServer[] = [
         const x = m.data ?? m;
         const t = num(x.currentTime);
         const d = num(x.duration);
+        return Number.isFinite(t) ? { t, d: Number.isFinite(d) ? d : 0 } : null;
+      }
+      return null;
+    }
+  },
+  {
+    name: 'Server 4',
+    note: 'Sub / Dub',
+    langs: ['sub', 'dub'],
+    resumes: false,
+    url: ({ id, ep, lang }) => `https://vidnest.fun/anime/${id}/${ep}/${lang}`,
+    parse: (ev) => {
+      const m = obj(ev);
+      if (!m || m.type !== 'PLAYER_EVENT') return null;
+      const x = m.data ?? m;
+      const t = num(x.currentTime);
+      const d = num(x.duration);
+      if (x.event === 'ended') return { t: Number.isFinite(d) ? d : 0, d: Number.isFinite(d) ? d : 0, ended: true };
+      return Number.isFinite(t) ? { t, d: Number.isFinite(d) ? d : 0 } : null;
+    }
+  },
+  {
+    name: 'Server 5',
+    note: 'Sub / Dub · resumes',
+    langs: ['sub', 'dub'],
+    resumes: true,
+    // our page runs its own up-next countdown, so the player's Next button is hidden
+    url: ({ id, ep, lang }) => `${VIDRIFT}/embed/anilist/${id}/${ep}?brandColor=ff6b57&hide=next${lang === 'dub' ? '&dub=1' : ''}`,
+    resume: (start) => ({ msg: { type: 'vidrift:resume', currentTime: start }, origin: VIDRIFT }),
+    parse: (ev) => {
+      if (ev.origin !== VIDRIFT) return null;
+      const m = obj(ev);
+      if (!m) return null;
+      if (m.type === 'vidrift:ended') return { t: 0, d: 0, ended: true };
+      if (m.type === 'vidrift:progress') {
+        const t = num(m.currentTime);
+        const d = num(m.duration);
         return Number.isFinite(t) ? { t, d: Number.isFinite(d) ? d : 0 } : null;
       }
       return null;

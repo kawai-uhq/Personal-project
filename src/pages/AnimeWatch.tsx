@@ -215,7 +215,12 @@ export default function AnimeWatch() {
         title={a?.title ?? 'Player'}
         allow="autoplay *; fullscreen *; picture-in-picture; encrypted-media *"
         allowFullScreen
-        onLoad={() => setLoaded(true)}
+        onLoad={(e) => {
+          setLoaded(true);
+          // players that resume by message (Server 5) get the saved spot now
+          const r = start > 0 ? server.resume?.(start) : undefined;
+          if (r) e.currentTarget.contentWindow?.postMessage(r.msg, r.origin);
+        }}
       />
 
       </ConsentGate>
