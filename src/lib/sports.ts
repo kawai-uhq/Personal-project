@@ -15,6 +15,8 @@ export interface SportEvent {
   alwaysLive: boolean;
   /** The player address to put in the frame */
   embed: string;
+  /** The event's own page on ppv.st (in case the player won't load here) */
+  page: string;
   viewers: number;
 }
 
@@ -59,6 +61,7 @@ function toEvent(x: any, category: string): SportEvent | null {
     end: time(x.ends_at ?? x.end ?? x.end_time),
     alwaysLive: x.always_live === 1 || x.always_live === true || x.always_live === '1',
     embed,
+    page: uri ? `${SITE}/live/${uri.replace(/^\/+/, '')}` : SITE,
     viewers: Number(x.viewers) || 0
   };
 }
@@ -83,8 +86,9 @@ export function parseSports(j: any): SportEvent[] {
   return out.filter((e) => (seen.has(e.id) ? false : (seen.add(e.id), true)));
 }
 
-// ppv.st has moved domains before; the relay and the browser fallback try each in turn
-const DIRECT = ['https://ppv.st/api/streams', 'https://ppv.to/api/streams'];
+// ppv.st's public API (https://ppv.st/api). It allows other sites to call it from the browser, so it's the fallback
+// when our relay fails; ppv.to is a known mirror.
+const DIRECT = ['https://api.ppv.st/api/streams', 'https://api.ppv.to/api/streams'];
 
 async function tryJson(url: string): Promise<{ ok: true; j: any } | { ok: false; why: string }> {
   try {
