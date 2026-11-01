@@ -325,6 +325,16 @@ export const providers: Provider[] = [
     movie: (id) => `https://www.2embed.cc/embed/${id}`,
     tv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
     parse: () => null
+  },
+  {
+    id: 'embedapi',
+    name: 'Server 19',
+    quality: 'HD',
+    sandboxOk: false,
+    // Embed-API documents no options or progress messages: it starts from the beginning
+    movie: (id) => `https://watch.embed-api.stream/embed/movie/${id}`,
+    tv: (id, s, e) => `https://watch.embed-api.stream/embed/tv/${id}/${s}/${e}`,
+    parse: () => null
   }
 ];
 
