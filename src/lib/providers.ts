@@ -250,6 +250,17 @@ export const providers: Provider[] = [
       if (m.type === 'vidrift:progress') return { t: num(m.currentTime), d: num(m.duration) };
       return null;
     }
+  },
+  {
+    id: 'cinemaos',
+    name: 'Server 12',
+    quality: 'HD',
+    sandboxOk: false,
+    // our page runs its own up-next countdown, so the player's next-episode countdown is off
+    movie: (id, start = 0) => `https://cinemaos.tech/player/${id}?theme=ff6b57&autoPlay=true${start > 0 ? `&startTime=${start}` : ''}`,
+    tv: (id, s, e, start = 0) =>
+      `https://cinemaos.tech/player/${id}/${s}/${e}?theme=ff6b57&autoPlay=true&autoNext=false&nextButton=false${start > 0 ? `&startTime=${start}` : ''}`,
+    parse: (ev) => playerEvent(ev, (h) => h === 'cinemaos.tech' || h.endsWith('.cinemaos.tech'))
   }
 ];
 
