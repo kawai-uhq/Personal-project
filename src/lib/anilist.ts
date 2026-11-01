@@ -368,3 +368,45 @@ export async function studioAnime(id: number, page = 1): Promise<{ name: string;
     more: !!st.media?.pageInfo?.hasNextPage
   };
 }
+
+// ---- characters & voice actors (loaded on their own, so the details page isn't slowed down) ----
+export interface CastPerson {
+  id: number;
+  name: string;
+  native: string | null;
+  image: string | null;
+}
+export interface CastEntry {
+  role: 'MAIN' | 'SUPPORTING' | 'BACKGROUND' | string;
+  character: CastPerson;
+  /** voice actors by language */
+  jp: CastPerson[];
+  en: CastPerson[];
+}
+
+const person = (p: any): CastPerson => ({
+  id: p.id,
+  name: p.name?.full || p.name?.native || 'Unknown',
+  native: p.name?.native ?? null,
+  image: p.image?.medium && !/default\.jpg$/.test(p.image.medium) ? p.image.medium : null
+});
+
+/** One page of an anime's characters with their Japanese and English voice actors (main characters first). */
+export async function aniCast(id: number, page = 1): Promise<{ items: CastEntry[]; more: boolean }> {
+  const va = `id name { full native } image { medium }`;
+  const d = await gql(
+    `query($id:Int,$page:Int){ Media(id:$id, type:ANIME){ characters(page:$page, perPage:12, sort:[ROLE, RELEVANCE, ID]){
+      pageInfo{ hasNextPage }
+      edges{ role node{ id name{ full native } image{ medium } }
+        jp: voiceActors(language: JAPANESE, sort:[RELEVANCE, ID]){ ${va} }
+        en: voiceActors(language: ENGLISH, sort:[RELEVANCE, ID]){ ${va} } } } } }`,
+    { id, page }
+  );
+  const c = d?.Media?.characters;
+  return {
+    items: ((c?.edges ?? []) as any[])
+      .filter((e) => e?.node)
+      .map((e) => ({ role: e.role, character: person(e.node), jp: (e.jp ?? []).map(person), en: (e.en ?? []).map(person) })),
+    more: !!c?.pageInfo?.hasNextPage
+  };
+}

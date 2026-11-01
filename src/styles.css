@@ -1559,3 +1559,27 @@ html.light .sv-item { background: rgba(40, 20, 30, .04); }
 .sp-body strong { font-size: 14px; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .sp-body .channel-meta small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; margin-right: 6px; }
 .sp-body .channel-meta em { flex: none; }
+
+/* ---- Anime: characters & voice actors ---- */
+.cast { margin: 28px 0 8px; }
+.cast-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.cast-head h3 { margin: 0; font-size: 20px; }
+.cast.compact .cast-head h3 { font-size: 18px; }
+.cast.compact .cast-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+.cast-seg button { min-height: 32px; padding: 0 14px; font-size: 13px; }
+.cast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 10px; }
+.cast-row { display: flex; justify-content: space-between; gap: 8px; min-height: 76px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
+.cast-side { display: flex; align-items: stretch; gap: 10px; min-width: 0; flex: 1; }
+.cast-side.va { justify-content: flex-end; text-align: right; }
+.cast-side img, .cast-ph { flex: none; width: 56px; height: 76px; object-fit: cover; background: var(--surface2); }
+.cast-ph { display: grid; place-items: center; color: var(--muted); }
+.cast-txt { display: flex; flex-direction: column; justify-content: space-between; padding: 8px 0; min-width: 0; }
+.cast-side:not(.va) .cast-txt { padding-right: 4px; }
+.cast-side.va .cast-txt { padding-left: 4px; align-items: flex-end; }
+.cast-txt b { font-size: 13px; line-height: 1.3; color: var(--cream); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.cast-txt small { font-size: 11px; color: var(--muted); font-weight: 700; }
+.cast .center-row { margin-top: 12px; }
+@media (max-width: 760px) {
+  .cast-row { min-height: 68px; }
+  .cast-side img, .cast-ph { width: 50px; height: 68px; }
+}

@@ -1,3 +1,4 @@
+import AnimeCast from '../components/AnimeCast';
 import { useEffect, useState } from 'react';
 import { usePageTitle } from '../lib/title';
 import { Link, useParams } from 'react-router-dom';
@@ -121,6 +122,7 @@ export default function AnimeDetail() {
       </section>
 
       <div className="container">
+        <AnimeCast id={a.id} />
         <div className="season-head">
           <h2 className="section">Episodes</h2>
           {ranges > 1 && (

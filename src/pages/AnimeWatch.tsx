@@ -16,6 +16,7 @@ import { store as settings } from '../lib/storage';
 import { reportProgress } from '../lib/anilistAccount';
 import Select from '../components/Select';
 import ServerPanel from '../components/ServerPanel';
+import AnimeCast from '../components/AnimeCast';
 import { useEpisodeTitles } from '../lib/episodeTitles';
 
 const QUIET_MS = 25000;
@@ -435,6 +436,7 @@ export default function AnimeWatch() {
           {a && a.genres.length > 0 && <div className="td-chips">{a.genres.map((g) => <span key={g} className="chip">{g}</span>)}</div>}
           <h3 className="wp-h">Overview</h3>
           <p className="wp-overview">{a?.desc || 'No description available.'}</p>
+          <AnimeCast id={aid} compact />
           <div className="wp-tools">
             {ep > 1 && <button className="btn small ghost" onClick={() => go(ep - 1)}><Icon name="chevronLeft" size={15} />Prev</button>}
             {hasNext && <button className="btn small ghost" onClick={() => go(ep + 1)}>Next<Icon name="chevronRight" size={15} /></button>}
