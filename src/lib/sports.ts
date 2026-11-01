@@ -83,13 +83,38 @@ export function parseSports(j: any): SportEvent[] {
   return out.filter((e) => (seen.has(e.id) ? false : (seen.add(e.id), true)));
 }
 
-export async function loadSports(): Promise<SportEvent[]> {
-  const r = await fetch('/api/sports');
-  if (!r.ok) {
-    const j = await r.json().catch(() => null);
-    throw new Error(j?.error || "Couldn't load the sports schedule.");
+// ppv.st has moved domains before; the relay and the browser fallback try each in turn
+const DIRECT = ['https://ppv.st/api/streams', 'https://ppv.to/api/streams'];
+
+async function tryJson(url: string): Promise<{ ok: true; j: any } | { ok: false; why: string }> {
+  try {
+    const r = await fetch(url, { headers: { Accept: 'application/json' } });
+    const text = await r.text();
+    let j: any;
+    try {
+      j = JSON.parse(text);
+    } catch {
+      return { ok: false, why: `${url.startsWith('/') ? 'our server' : new URL(url).host} sent a web page instead of data (${r.status})` };
+    }
+    if (!r.ok) return { ok: false, why: j?.error || `${url.startsWith('/') ? 'our server' : new URL(url).host} answered ${r.status}` };
+    return { ok: true, j };
+  } catch {
+    return { ok: false, why: `couldn't reach ${url.startsWith('/') ? 'our server' : new URL(url).host}` };
   }
-  return parseSports(await r.json());
+}
+
+/** The schedule: through our relay first, then straight from ppv.st in case the relay is blocked or missing. */
+export async function loadSports(): Promise<SportEvent[]> {
+  const why: string[] = [];
+  for (const url of ['/api/sports', ...DIRECT]) {
+    const r = await tryJson(url);
+    if (r.ok) {
+      const list = parseSports(r.j);
+      if (list.length || url !== '/api/sports') return list;
+      why.push('our server sent an empty schedule');
+    } else why.push(r.why);
+  }
+  throw new Error(`Couldn't load the sports schedule: ${why.join('; ')}.`);
 }
 
 /** live = on now, soon = starts within the next hour, later = upcoming, ended = over */

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ConsentGate from '../components/ConsentGate';
 import Icon from '../components/Icon';
@@ -22,14 +22,15 @@ const when = (e: SportEvent, s: SportState, now: number) => {
   return `${d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })} ${t}`;
 };
 
-/** Live and upcoming sports events (schedule from ppv.st), with the player at the top of the page. */
+/** Live and upcoming sports events (schedule from ppv.st). Same layout as the Live TV page. */
 export default function Sports() {
   const [sp, setSp] = useSearchParams();
   const [all, setAll] = useState<SportEvent[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
   const [q, setQ] = useState('');
-  const cat = sp.get('c') ?? 'live';
+  const listTop = useRef<HTMLDivElement>(null);
+  const cat = sp.get('c') ?? 'all';
   const playing = sp.get('e');
 
   const load = (quiet = false) => {
@@ -46,7 +47,7 @@ export default function Sports() {
   };
   useEffect(() => {
     load();
-    // the schedule changes as events start and end: refresh it quietly every minute
+    // events start and end all day: refresh the schedule quietly every minute
     const r = window.setInterval(() => load(true), 60000);
     const t = window.setInterval(() => setNow(Date.now()), 30000);
     return () => {
@@ -58,17 +59,17 @@ export default function Sports() {
   const current = all?.find((e) => e.id === playing) ?? null;
   usePageTitle(current ? `${current.name} · Live` : 'Live Sports');
 
-  const live = useMemo(() => (all ?? []).filter((e) => stateOf(e, now) !== 'ended'), [all, now]);
+  const upcoming = useMemo(() => (all ?? []).filter((e) => stateOf(e, now) !== 'ended'), [all, now]);
   const cats = useMemo(() => {
     const m = new Map<string, number>();
-    live.forEach((e) => m.set(e.category, (m.get(e.category) ?? 0) + 1));
+    upcoming.forEach((e) => m.set(e.category, (m.get(e.category) ?? 0) + 1));
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
-  }, [live]);
-  const liveCount = live.filter((e) => stateOf(e, now) === 'live').length;
+  }, [upcoming]);
+  const liveCount = upcoming.filter((e) => stateOf(e, now) === 'live').length;
 
   const shown = useMemo(() => {
     const words = q.trim().toLowerCase();
-    return live
+    return upcoming
       .filter((e) => (cat === 'live' ? stateOf(e, now) === 'live' : cat === 'all' ? true : e.category === cat))
       .filter((e) => !words || `${e.name} ${e.tag} ${e.category}`.toLowerCase().includes(words))
       .sort((a, b) => {
@@ -78,7 +79,7 @@ export default function Sports() {
         if (a.alwaysLive !== b.alwaysLive) return a.alwaysLive ? 1 : -1; // real events before 24/7 channels
         return (a.start || 0) - (b.start || 0);
       });
-  }, [live, cat, q, now]);
+  }, [upcoming, cat, q, now]);
 
   const pick = (e: SportEvent) => {
     const n = new URLSearchParams(sp);
@@ -97,79 +98,105 @@ export default function Sports() {
     setSp(n, { replace: true });
   };
 
+  const curState = current ? stateOf(current, now) : null;
+
   return (
-    <div className="container pad-top sp">
-      {current ? (
-        <section className="sp-player">
-          <div className="sp-ph">
-            <div>
-              <span className={`sp-state ${stateOf(current, now)}`}>{when(current, stateOf(current, now), now)}</span>
-              <h1>{current.name}</h1>
-              <small>{[current.tag, current.category].filter(Boolean).join(' · ')}</small>
-            </div>
-            <button className="btn small ghost" onClick={close}><Icon name="x" size={15} />Close</button>
-          </div>
-          <ConsentGate label="Load the player" className="wp-frame" onOpen={() => undefined}>
-            <iframe
-              key={current.embed}
-              className="wp-frame"
-              src={current.embed}
-              title={current.name}
-              allow="autoplay *; fullscreen *; picture-in-picture; encrypted-media *"
-              allowFullScreen
-            />
-          </ConsentGate>
-          {stateOf(current, now) !== 'live' && (
-            <p className="sp-note">This hasn't started yet. The stream usually appears a few minutes before kick-off. Keep this page open.</p>
-          )}
-        </section>
-      ) : (
+    <main className="page pad-top">
+      <div className="container">
         <section className="live-hero">
-          <span className="live-badge"><span className="live-dot" />LIVE SPORTS</span>
-          <h1 className="title">Sports</h1>
-          <p className="muted">Football, basketball, fights, racing and more, live and upcoming. Pick an event to watch it here.</p>
+          <span className="live-badge">LIVE EVENTS</span>
+          <h1 className="title">Live Sports &amp; <span className="accent">Events</span></h1>
+          <p className="muted">Football, basketball, fights, racing and more, live and upcoming. Streams usually open a few minutes before the start.</p>
+          {all && (
+            <p className="stats">
+              <span><Icon name="live" size={14} />{liveCount} Live now</span>
+              <span><Icon name="calendar" size={14} />{upcoming.length} Events</span>
+              <span><Icon name="trophy" size={14} />{cats.length} Sports</span>
+            </p>
+          )}
+          {all && <button className="btn small ghost live-refresh" onClick={() => load()}><Icon name="refresh" size={14} />Refresh</button>}
         </section>
-      )}
 
-      <div className="sp-bar">
-        <div className="sp-chips" role="tablist" aria-label="Category">
-          <button role="tab" aria-selected={cat === 'live'} className={`chip ${cat === 'live' ? 'on' : ''}`} onClick={() => setCat('live')}>
-            <span className="live-dot" />Live now{all && ` · ${liveCount}`}
-          </button>
-          <button role="tab" aria-selected={cat === 'all'} className={`chip ${cat === 'all' ? 'on' : ''}`} onClick={() => setCat('all')}>All{all && ` · ${live.length}`}</button>
-          {cats.map(([c, n]) => (
-            <button key={c} role="tab" aria-selected={cat === c} className={`chip ${cat === c ? 'on' : ''}`} onClick={() => setCat(c)}>{c} · {n}</button>
-          ))}
-        </div>
-        <input className="field sp-search" type="search" placeholder="Search teams, leagues…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search events" />
+        {current && curState && (
+          <section className="now">
+            <div className="now-head">
+              <h2 className="section"><span className="live-dot" aria-hidden="true" /> Now streaming: <span className="accent">{current.name}</span></h2>
+            </div>
+            <div className="live-player">
+              <div className="lp-head">
+                <span className="lp-logo sp-logo"><Icon name="trophy" size={20} /></span>
+                <div className="lp-info">
+                  <div className="lp-title">
+                    <strong>{current.name}</strong>
+                    <span className={`sp-state ${curState}`}>{curState === 'live' && <i />}{when(current, curState, now)}</span>
+                  </div>
+                  <small>{[current.tag, current.category].filter(Boolean).join(' · ')}</small>
+                </div>
+                <button className="lp-icon" onClick={() => listTop.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} aria-label="Show the event list" title="Event list"><Icon name="grid" size={18} /></button>
+                <button className="lp-icon" onClick={close} aria-label="Close the player" title="Close"><Icon name="x" size={18} /></button>
+              </div>
+              <div className="lp-stage">
+                <ConsentGate label="Load the player" className="sp-gate">
+                  <iframe
+                    key={current.embed}
+                    className="sp-frame"
+                    src={current.embed}
+                    title={current.name}
+                    allow="autoplay *; fullscreen *; picture-in-picture; encrypted-media *"
+                    allowFullScreen
+                  />
+                </ConsentGate>
+              </div>
+              {curState !== 'live' && <p className="lp-hint">This hasn't started yet. The stream usually appears a few minutes before the start, so keep this page open.</p>}
+            </div>
+          </section>
+        )}
+
+        {error ? (
+          <Status kind="error" text={error} retry={() => load()} />
+        ) : !all ? (
+          <Status kind="loading" />
+        ) : (
+          <>
+            <div className="live-filters" ref={listTop}>
+              <input className="field" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search teams, leagues or sports…" aria-label="Search events" />
+            </div>
+            <div className="chips flush" role="tablist" aria-label="Categories">
+              <button role="tab" aria-selected={cat === 'all'} className={`chip ${cat === 'all' ? 'on' : ''}`} onClick={() => setCat('all')}>All</button>
+              <button role="tab" aria-selected={cat === 'live'} className={`chip ${cat === 'live' ? 'on' : ''}`} onClick={() => setCat('live')}>Live now</button>
+              {cats.map(([c]) => (
+                <button key={c} role="tab" aria-selected={cat === c} className={`chip ${cat === c ? 'on' : ''}`} onClick={() => setCat(c)}>{c}</button>
+              ))}
+            </div>
+            <p className="muted small">Showing {shown.length} of {upcoming.length} events</p>
+
+            {shown.length === 0 ? (
+              <Status kind="empty" text={cat === 'live' ? 'Nothing is live right now. Check "All" for upcoming events.' : 'No events match.'} />
+            ) : (
+              <div className="sp-grid">
+                {shown.map((e) => {
+                  const s = stateOf(e, now);
+                  return (
+                    <button key={e.id} className={`sp-card ${e.id === playing ? 'on' : ''}`} onClick={() => pick(e)} aria-label={`Watch ${e.name}`}>
+                      <span className="sp-img">
+                        {e.poster ? <img src={e.poster} alt="" loading="lazy" referrerPolicy="no-referrer" onError={(ev) => (ev.currentTarget.style.display = 'none')} /> : <Icon name="trophy" size={34} />}
+                        <span className={`sp-state ${s}`}>{s === 'live' && <i />}{when(e, s, now)}</span>
+                      </span>
+                      <span className="sp-body">
+                        <strong>{e.name}</strong>
+                        <span className="channel-meta">
+                          <small>{e.tag || e.category}</small>
+                          <em>{e.category}</em>
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
       </div>
-
-      {error ? (
-        <Status kind="error" text={error} retry={() => load()} />
-      ) : !all ? (
-        <Status kind="loading" />
-      ) : shown.length === 0 ? (
-        <Status kind="empty" text={cat === 'live' ? 'Nothing is live right now. Check "All" for upcoming events.' : 'No events match.'} />
-      ) : (
-        <div className="sp-grid">
-          {shown.map((e) => {
-            const s = stateOf(e, now);
-            return (
-              <button key={e.id} className={`sp-card ${e.id === playing ? 'now' : ''}`} onClick={() => pick(e)}>
-                <span className="sp-img">
-                  {e.poster ? <img src={e.poster} alt="" loading="lazy" referrerPolicy="no-referrer" onError={(ev) => (ev.currentTarget.style.display = 'none')} /> : null}
-                  <span className="sp-cat"><Icon name="trophy" size={14} />{e.category}</span>
-                  <span className={`sp-state ${s}`}>{s === 'live' && <i />}{when(e, s, now)}</span>
-                </span>
-                <span className="sp-body">
-                  <b>{e.name}</b>
-                  {e.tag && <small>{e.tag}</small>}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    </main>
   );
 }
