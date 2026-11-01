@@ -335,6 +335,16 @@ export const providers: Provider[] = [
     movie: (id) => `https://watch.embed-api.stream/embed/movie/${id}`,
     tv: (id, s, e) => `https://watch.embed-api.stream/embed/tv/${id}/${s}/${e}`,
     parse: () => null
+  },
+  {
+    id: 'zxcstream',
+    name: 'Server 20',
+    quality: 'HD · dubs',
+    sandboxOk: false,
+    // ZXCStream's custom player; it documents no start-time option or progress messages
+    movie: (id) => `https://zxcstream.cc/player/movie/${id}?color=ff6b57&autoplay=true`,
+    tv: (id, s, e) => `https://zxcstream.cc/player/tv/${id}/${s}/${e}?color=ff6b57&autoplay=true`,
+    parse: () => null
   }
 ];
 
