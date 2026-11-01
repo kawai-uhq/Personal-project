@@ -98,16 +98,17 @@ async function tryJson(url: string): Promise<{ ok: true; j: any } | { ok: false;
     try {
       j = JSON.parse(text);
     } catch {
-      return { ok: false, why: `${url.startsWith('/') ? 'our server' : new URL(url).host} sent a web page instead of data (${r.status})` };
+      return { ok: false, why: `${url}: not JSON (${r.status})` };
     }
-    if (!r.ok) return { ok: false, why: j?.error || `${url.startsWith('/') ? 'our server' : new URL(url).host} answered ${r.status}` };
+    if (!r.ok) return { ok: false, why: `${url}: ${r.status}${j?.detail ? ` (${j.detail})` : ''}` };
     return { ok: true, j };
   } catch {
-    return { ok: false, why: `couldn't reach ${url.startsWith('/') ? 'our server' : new URL(url).host}` };
+    return { ok: false, why: `${url}: unreachable` };
   }
 }
 
-/** The schedule: through our relay first, then straight from ppv.st in case the relay is blocked or missing. */
+/** The schedule: through our relay first, then straight from the source in case the relay is blocked or missing.
+ *  Visitors only ever see a generic message; the details go to the browser console for debugging. */
 export async function loadSports(): Promise<SportEvent[]> {
   const why: string[] = [];
   for (const url of ['/api/sports', ...DIRECT]) {
@@ -115,10 +116,11 @@ export async function loadSports(): Promise<SportEvent[]> {
     if (r.ok) {
       const list = parseSports(r.j);
       if (list.length || url !== '/api/sports') return list;
-      why.push('our server sent an empty schedule');
+      why.push(`${url}: empty schedule`);
     } else why.push(r.why);
   }
-  throw new Error(`Couldn't load the sports schedule: ${why.join('; ')}.`);
+  console.warn('[sports] schedule failed:', why.join(' | '));
+  throw new Error("Couldn't load the sports schedule right now. Try again in a minute.");
 }
 
 /** live = on now, soon = starts within the next hour, later = upcoming, ended = over */

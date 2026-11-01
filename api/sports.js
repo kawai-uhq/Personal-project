@@ -50,6 +50,8 @@ export default async function handler(req, res) {
     }
     tried.push(`${new URL(base).host}: ${r.status || 'unreachable'}`);
   }
+  // details only in Vercel's function logs, never in what visitors can see
+  console.error('[sports] every source failed:', tried.join(', '));
   res.setHeader('Cache-Control', 'no-store');
-  return res.status(502).json({ error: `ppv.st didn't answer our server (${tried.join(', ')})` });
+  return res.status(502).json({ error: 'The sports schedule is unavailable right now.' });
 }

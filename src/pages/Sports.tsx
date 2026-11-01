@@ -133,7 +133,7 @@ export default function Sports() {
                   <small>{[current.tag, current.category].filter(Boolean).join(' · ')}</small>
                 </div>
                 <button className="lp-icon" onClick={() => listTop.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} aria-label="Show the event list" title="Event list"><Icon name="grid" size={18} /></button>
-                <a className="lp-icon" href={current.page} target="_blank" rel="noopener noreferrer" aria-label="Open on ppv.st" title="Not loading? Open on ppv.st"><Icon name="link" size={18} /></a>
+                <a className="lp-icon" href={current.page} target="_blank" rel="noopener noreferrer" aria-label="Open the stream in a new tab" title="Not loading? Open the stream in a new tab"><Icon name="link" size={18} /></a>
                 <button className="lp-icon" onClick={close} aria-label="Close the player" title="Close"><Icon name="x" size={18} /></button>
               </div>
               <div className="lp-stage">
