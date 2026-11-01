@@ -30,6 +30,8 @@ export interface Provider {
   parse: (ev: MessageEvent) => PlayerTick | null;
   /** The player says it has no working copy of this title (so we can move to the next server at once) */
   failed?: (ev: MessageEvent) => boolean;
+  /** For servers that resume by message instead of a URL option: what to post to the player once it loads */
+  resume?: (start: number) => { msg: unknown; origin: string };
 }
 
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
@@ -91,6 +93,15 @@ const vidukiProgress = (ev: MessageEvent): PlayerTick | null => {
   if (d > 0 && t >= d - 1) return { t: 0, d: 0, ended: true };
   return { t, d };
 };
+
+const VIDRIFT = 'https://embed.vidrift.net';
+const vidriftMsg = (ev: MessageEvent): any => {
+  if (ev.origin !== VIDRIFT) return null;
+  const m = ev.data;
+  return m && typeof m === 'object' && typeof m.type === 'string' && m.type.startsWith('vidrift:') ? m : null;
+};
+// Vidrift plays the next episode itself; with auto-next off its Next button is hidden instead
+const vidriftQuery = (o: PlayOpts) => `?brandColor=ff6b57${o.autonext === false ? '&hide=next' : ''}`;
 
 /** VidAPI posts `{ type: 'PLAYER_EVENT', data: { player_status, player_progress, player_duration } }` */
 const vidapiProgress = (ev: MessageEvent): PlayerTick | null => {
@@ -214,6 +225,31 @@ export const providers: Provider[] = [
     tv: (id, s, e, start = 0) =>
       `https://vaplayer.ru/embed/tv/${id}/${s}/${e}?autoplay=1&primaryColor=%23ff6b57${start > 0 ? `&startAt=${start}` : ''}`,
     parse: vidapiProgress
+  },
+  {
+    id: 'vidrift',
+    name: 'Server 11',
+    quality: 'HD · auto-next',
+    sandboxOk: false,
+    handlesNext: true,
+    movie: (id, _start = 0, o = {}) => `${VIDRIFT}/embed/movie/${id}${vidriftQuery(o)}`,
+    tv: (id, s, e, _start = 0, o = {}) => `${VIDRIFT}/embed/tv/${id}/${s}/${e}${vidriftQuery(o)}`,
+    // no start-time option in the address: the saved spot is sent as a message once the player loads
+    resume: (start) => ({ msg: { type: 'vidrift:resume', currentTime: start }, origin: VIDRIFT }),
+    parseNext: (ev) => {
+      const m = vidriftMsg(ev);
+      if (!m || m.type !== 'vidrift:episode') return null;
+      const s = num(m.season);
+      const e = num(m.episode);
+      return s > 0 && e > 0 ? { s, e } : null;
+    },
+    parse: (ev) => {
+      const m = vidriftMsg(ev);
+      if (!m) return null;
+      if (m.type === 'vidrift:ended') return { t: 0, d: 0, ended: true };
+      if (m.type === 'vidrift:progress') return { t: num(m.currentTime), d: num(m.duration) };
+      return null;
+    }
   }
 ];
 

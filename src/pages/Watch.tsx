@@ -272,7 +272,12 @@ export default function Watch() {
         allow="autoplay *; fullscreen *; picture-in-picture; encrypted-media *"
         allowFullScreen
         sandbox={sandbox}
-        onLoad={() => setLoaded(true)}
+        onLoad={(e) => {
+          setLoaded(true);
+          // servers that resume by message (Server 11) get the saved spot now
+          const r = start > 0 ? provider.resume?.(start) : undefined;
+          if (r) e.currentTarget.contentWindow?.postMessage(r.msg, r.origin);
+        }}
       />
 
       </ConsentGate>
