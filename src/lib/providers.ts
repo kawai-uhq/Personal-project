@@ -122,6 +122,16 @@ export const providers: Provider[] = [
     tv: (id, s, e, start = 0) =>
       `https://vidy.st/tv/${id}/${s}/${e}?color=ff6b57&autoplay=true${start > 0 ? `&progress=${start}` : ''}`,
     parse: (ev) => playerEvent(ev, (h) => h === 'vidy.st' || h.endsWith('.vidy.st'))
+  },
+  {
+    id: 'vidnest',
+    name: 'Server 5',
+    quality: 'HD · multi-source',
+    sandboxOk: false,
+    // Vidnest documents `startAt` for movies and `progress` for TV
+    movie: (id, start = 0) => `https://vidnest.fun/movie/${id}${start > 0 ? `?startAt=${start}` : ''}`,
+    tv: (id, s, e, start = 0) => `https://vidnest.fun/tv/${id}/${s}/${e}${start > 0 ? `?progress=${start}` : ''}`,
+    parse: (ev) => playerEvent(ev, (h) => h === 'vidnest.fun' || h.endsWith('.vidnest.fun'))
   }
 ];
 
