@@ -92,6 +92,31 @@ const vidukiProgress = (ev: MessageEvent): PlayerTick | null => {
   return { t, d };
 };
 
+/** VidAPI posts `{ type: 'PLAYER_EVENT', data: { player_status, player_progress, player_duration } }` */
+const vidapiProgress = (ev: MessageEvent): PlayerTick | null => {
+  let host = '';
+  try {
+    host = new URL(ev.origin).hostname;
+  } catch {
+    return null;
+  }
+  if (host !== 'vaplayer.ru' && !host.endsWith('.vaplayer.ru')) return null;
+  let m = ev.data;
+  if (typeof m === 'string') {
+    try {
+      m = JSON.parse(m);
+    } catch {
+      return null;
+    }
+  }
+  if (!m || m.type !== 'PLAYER_EVENT' || !m.data || typeof m.data !== 'object') return null;
+  const x = m.data;
+  if (x.player_status === 'completed') return { t: 0, d: 0, ended: true };
+  if (x.player_status === 'playing' || x.player_status === 'paused' || x.player_status === 'seeked')
+    return { t: num(x.player_progress), d: num(x.player_duration) };
+  return null;
+};
+
 const cineQuery = (start: number, o: PlayOpts, first: '?' | '&') => {
   const q: string[] = [];
   if (start > 0) q.push(`t=${start}`, 'continueprompt=false');
@@ -179,7 +204,17 @@ export const providers: Provider[] = [
     tv: (id, s, e) => `https://viduki.net/${i + 1}/tv/${id}/${s}/${e}?color=ff6b57`,
     parse: vidukiProgress,
     failed: (ev) => fromViduki(ev) && !!ev.data && typeof ev.data === 'object' && ev.data.type === 'viduki:all-servers-failed'
-  }))
+  })),
+  {
+    id: 'vidapi',
+    name: 'Server 10',
+    quality: 'HD · auto subs',
+    sandboxOk: false,
+    movie: (id, start = 0) => `https://vaplayer.ru/embed/movie/${id}?autoplay=1&primaryColor=%23ff6b57${start > 0 ? `&startAt=${start}` : ''}`,
+    tv: (id, s, e, start = 0) =>
+      `https://vaplayer.ru/embed/tv/${id}/${s}/${e}?autoplay=1&primaryColor=%23ff6b57${start > 0 ? `&startAt=${start}` : ''}`,
+    parse: vidapiProgress
+  }
 ];
 
 export const providerById = (id: string | null | undefined): Provider =>
