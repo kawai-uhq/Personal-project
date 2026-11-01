@@ -1,5 +1,5 @@
 /** Players used only by the anime section. They are addressed by AniList id + episode number. */
-import { vidlyProgress } from './providers';
+import { vidboltProgress, vidlyProgress } from './providers';
 
 export type Lang = 'sub' | 'dub' | 'hsub';
 
@@ -181,6 +181,19 @@ export const animeServers: AnimeServer[] = [
     url: ({ id, ep, lang, start }) =>
       `https://vidly.pro/anime/${id}/${ep}/${lang}?color=ff6b57&autoplay=1&nextEpisode=0${start > 0 ? `&t=${start}` : ''}`,
     parse: (ev) => vidlyProgress(ev)
+  },
+  {
+    name: 'Server 10',
+    note: 'Sub / Dub · resumes',
+    langs: ['sub', 'dub'],
+    resumes: true,
+    // addressed by AniList id; "Dub" asks the player for English audio. Our page runs its own up-next countdown.
+    url: ({ id, ep, lang, start }) =>
+      `https://vidbolt.xyz/anime/${id}/${ep}?theme=ff6b57&autoPlay=true&nextEpisodeButton=false&episodesButton=false${lang === 'dub' ? '&audio=en' : ''}${start > 0 ? `&startAt=${start}` : ''}`,
+    parse: (ev) => {
+      const r = vidboltProgress(ev);
+      return r ? { t: r.t, d: r.d, ended: r.ended } : null;
+    }
   }
 ];
 

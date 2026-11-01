@@ -107,15 +107,15 @@ const vidriftMsg = (ev: MessageEvent): any => {
 // Vidrift plays the next episode itself; with auto-next off its Next button is hidden instead
 const vidriftQuery = (o: PlayOpts) => `?brandColor=ff6b57${o.autonext === false ? '&hide=next' : ''}`;
 
-/** VidAPI posts `{ type: 'PLAYER_EVENT', data: { player_status, player_progress, player_duration } }` */
-const vidapiProgress = (ev: MessageEvent): PlayerTick | null => {
+/** VidAPI and VidSrc.sh post `{ type: 'PLAYER_EVENT', data: { player_status, player_progress, player_duration } }` */
+const statusProgress = (ev: MessageEvent, domain: string): PlayerTick | null => {
   let host = '';
   try {
     host = new URL(ev.origin).hostname;
   } catch {
     return null;
   }
-  if (host !== 'vaplayer.ru' && !host.endsWith('.vaplayer.ru')) return null;
+  if (host !== domain && !host.endsWith('.' + domain)) return null;
   let m = ev.data;
   if (typeof m === 'string') {
     try {
@@ -175,6 +175,30 @@ export const vidlyProgress = (ev: MessageEvent): PlayerTick | null => {
   const x = m.data;
   if (x.event === 'ended') return { t: 0, d: 0, ended: true };
   if (x.event === 'timeupdate' || x.event === 'pause') return { t: num(x.currentTime), d: num(x.duration) };
+  return null;
+};
+
+const VIDBOLT = 'https://vidbolt.xyz';
+/** VidBolt posts `{ type: 'timeupdate', time }`, `{ type: 'durationchange', duration }` and `{ type: 'ended' }` */
+let vidboltDur = 0;
+export const vidboltProgress = (ev: MessageEvent): PlayerTick | null => {
+  if (ev.origin !== VIDBOLT) return null;
+  let m = ev.data;
+  if (typeof m === 'string') {
+    try {
+      m = JSON.parse(m);
+    } catch {
+      return null;
+    }
+  }
+  if (!m || typeof m !== 'object') return null;
+  const x = m.data && typeof m.data === 'object' ? { ...m.data, type: m.type } : m;
+  if (x.type === 'durationchange') {
+    vidboltDur = num(x.duration);
+    return null;
+  }
+  if (x.type === 'ended') return { t: 0, d: 0, ended: true };
+  if (x.type === 'timeupdate') return { t: num(x.time ?? x.currentTime), d: num(x.duration) || vidboltDur };
   return null;
 };
 
@@ -274,7 +298,7 @@ export const providers: Provider[] = [
     movie: (id, start = 0) => `https://vaplayer.ru/embed/movie/${id}?autoplay=1&primaryColor=%23ff6b57${start > 0 ? `&startAt=${start}` : ''}`,
     tv: (id, s, e, start = 0) =>
       `https://vaplayer.ru/embed/tv/${id}/${s}/${e}?autoplay=1&primaryColor=%23ff6b57${start > 0 ? `&startAt=${start}` : ''}`,
-    parse: vidapiProgress
+    parse: (ev) => statusProgress(ev, 'vaplayer.ru')
   },
   {
     id: 'vidrift',
@@ -516,6 +540,28 @@ export const providers: Provider[] = [
     tv: (id, s, e, start = 0) =>
       `https://vidup.to/tv/${id}/${s}/${e}?autoPlay=true&theme=ff6b57&nextButton=false&autoNext=false${start > 0 ? `&startAt=${start}` : ''}`,
     parse: (ev) => (ev.origin === 'https://vidup.to' ? playerEvent(ev, () => true) : null)
+  },
+  // New servers go at the end so existing server numbers (in saved links and history) stay the same
+  {
+    id: 'vidbolt',
+    name: 'Server 30',
+    quality: 'HD · multi-audio',
+    sandboxOk: false,
+    // our page runs its own up-next countdown, so the player's Next Episode / Episodes buttons are hidden
+    movie: (id, start = 0) => `${VIDBOLT}/movie/${id}?theme=ff6b57&autoPlay=true${start > 0 ? `&startAt=${start}` : ''}`,
+    tv: (id, s, e, start = 0) =>
+      `${VIDBOLT}/tv/${id}/${s}/${e}?theme=ff6b57&autoPlay=true&nextEpisodeButton=false&episodesButton=false${start > 0 ? `&startAt=${start}` : ''}`,
+    parse: vidboltProgress
+  },
+  {
+    id: 'vidsrcsh',
+    name: 'Server 31',
+    quality: 'HD · subtitles',
+    sandboxOk: false,
+    // our page runs its own up-next countdown, so the player's autonext stays off
+    movie: (id, start = 0) => `https://vidsrc.sh/embed/movie/${id}?autoplay=1${start > 0 ? `&startAt=${start}` : ''}`,
+    tv: (id, s, e, start = 0) => `https://vidsrc.sh/embed/tv/${id}/${s}/${e}?autoplay=1&autonext=0${start > 0 ? `&startAt=${start}` : ''}`,
+    parse: (ev) => statusProgress(ev, 'vidsrc.sh')
   }
 ];
 
