@@ -77,11 +77,14 @@ export default function AnimeWatch() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aid, ep, server, reload]);
 
+  // Servers addressed by MyAnimeList id wait for the anime's details (and are skipped when it has no MAL id)
+  const mal = a && a.id === aid ? a.mal : undefined;
+  const missing = !!server.needsMal && mal === null;
   const src = useMemo(
-    () => server.url({ id: aid, ep, lang, start, autoskip }),
+    () => (server.needsMal && !mal ? '' : server.url({ id: aid, mal, ep, lang, start, autoskip })),
     // the address must not change while an episode plays
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [aid, ep, server, lang, start, reload]
+    [aid, ep, server, lang, start, reload, mal]
   );
 
   // History entry (the "Continue Watching" row)
@@ -157,7 +160,7 @@ export default function AnimeWatch() {
     setLoaded(false);
     setSlow(false);
     setAlive(false);
-    if (!mediaOk) return;
+    if (!mediaOk || !src) return;
     const h = window.setTimeout(() => setSlow(true), 20000);
     return () => window.clearTimeout(h);
   }, [src, reload, mediaOk]);
@@ -171,17 +174,18 @@ export default function AnimeWatch() {
   }, [alive, goodKey, server]);
   // a server that never loads is swapped for the next untried one
   useEffect(() => {
-    if (!slow || loaded || alive || !autoSwitch) return;
+    const failed = (slow && !loaded && !alive) || missing;
+    if (!failed || !autoSwitch) return;
     const cur = serverNo(server);
     tried.current.add(cur);
     const order = animeServers.map((_, i) => ((cur + i) % animeServers.length) + 1);
     const fresh = order.find((n) => !tried.current.has(n));
     if (!fresh) return;
-    setSwitched(`${server.name} didn't load, so we switched to ${animeServers[fresh - 1].name}.`);
+    setSwitched(`${server.name} ${missing ? "doesn't have this anime" : "didn't load"}, so we switched to ${animeServers[fresh - 1].name}.`);
     const l = animeServers[fresh - 1].langs.includes(lang) ? lang : 'sub';
     setSp({ e: String(ep), p: String(fresh), l }, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slow, loaded, alive, autoSwitch]);
+  }, [slow, loaded, alive, autoSwitch, missing]);
 
   const inList = !!a && lib.list().some((x) => x.id === a.id);
   const loved = !!a && lib.loved().some((x) => x.id === a.id);
@@ -207,6 +211,7 @@ export default function AnimeWatch() {
 
       <ConsentGate label="Load the player" className="wp-frame" onOpen={() => setGateOpen(true)}>
 
+      {src ? (
       <iframe
         key={`${src}|${reload}`}
         ref={frame}
@@ -222,6 +227,17 @@ export default function AnimeWatch() {
           if (r) e.currentTarget.contentWindow?.postMessage(r.msg, r.origin);
         }}
       />
+      ) : (
+        <div className="gate wp-frame" role="status">
+          <Icon name={missing ? 'play' : 'refresh'} size={28} />
+          <strong>{missing ? `${server.name} doesn't have this anime` : 'Loading the player…'}</strong>
+          {missing && (
+            <button className="btn primary" onClick={() => setSp({ e: String(ep), p: String(serverNo(nextServer)), l: nextServer.langs.includes(lang) ? lang : 'sub' }, { replace: true })}>
+              Try {nextServer.name}
+            </button>
+          )}
+        </div>
+      )}
 
       </ConsentGate>
 
@@ -231,7 +247,7 @@ export default function AnimeWatch() {
           <button className="pill" onClick={() => setSwitched(null)}>OK</button>
         </div>
       )}
-      {slow && !loaded && !switched && (
+      {slow && !loaded && !switched && !!src && (
         <div className="wp-slow" role="status">
           <span>{server.name} is taking a while to load.</span>
           <button className="pill warn" onClick={() => setSp({ e: String(ep), p: String(serverNo(nextServer)), l: nextServer.langs.includes(lang) ? lang : 'sub' }, { replace: true })}>Try {nextServer.name}</button>

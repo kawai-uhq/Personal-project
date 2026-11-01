@@ -9,7 +9,9 @@ export interface AnimeServer {
   langs: Lang[];
   /** true when the player can start from a given second */
   resumes: boolean;
-  url: (o: { id: number; ep: number; lang: Lang; start: number; autoskip: boolean }) => string;
+  /** Addressed by MyAnimeList id instead of AniList id */
+  needsMal?: boolean;
+  url: (o: { id: number; mal?: number | null; ep: number; lang: Lang; start: number; autoskip: boolean }) => string;
   /** For players that resume by message instead of a URL option: what to post once the player loads */
   resume?: (start: number) => { msg: unknown; origin: string };
   /** Read a message from the player. The caller has already checked it came from this server's frame. */
@@ -26,6 +28,24 @@ const obj = (ev: MessageEvent): any => {
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : Number.isFinite(Number(v)) && v !== '' && v != null ? Number(v) : NaN);
 
 const VIDRIFT = 'https://embed.vidrift.net';
+
+/** Players that post `{ type: 'PLAYER_EVENT', data: { event, currentTime, duration } }`, from the given host */
+const playerEvent = (ev: MessageEvent, hostOk: (host: string) => boolean): AnimeTick | null => {
+  try {
+    if (!hostOk(new URL(ev.origin).hostname)) return null;
+  } catch {
+    return null;
+  }
+  const m = obj(ev);
+  if (!m || m.type !== 'PLAYER_EVENT') return null;
+  const x = m.data && typeof m.data === 'object' ? m.data : m;
+  const t = num(x.currentTime);
+  const d = num(x.duration);
+  if (x.event === 'ended') return { t: Number.isFinite(d) ? d : 0, d: Number.isFinite(d) ? d : 0, ended: true };
+  if (x.event === 'timeupdate' || x.event === 'pause' || x.event === 'seeked')
+    return Number.isFinite(t) ? { t, d: Number.isFinite(d) ? d : 0 } : null;
+  return null;
+};
 
 // Server numbers (not names) go in the address bar, same as on the rest of the site
 export const animeServers: AnimeServer[] = [
@@ -122,6 +142,25 @@ export const animeServers: AnimeServer[] = [
       }
       return null;
     }
+  },
+  {
+    name: 'Server 6',
+    note: 'Sub / Dub · resumes',
+    langs: ['sub', 'dub'],
+    resumes: true,
+    needsMal: true,
+    // fallback=true: plays the other language when the chosen one is missing
+    url: ({ mal, ep, lang, start }) =>
+      `https://vidlink.pro/anime/${mal}/${ep}/${lang}?fallback=true&primaryColor=ff6b57&autoplay=true${start > 0 ? `&startAt=${start}` : ''}`,
+    parse: (ev) => playerEvent(ev, (h) => h === 'vidlink.pro' || h.endsWith('.vidlink.pro'))
+  },
+  {
+    name: 'Server 7',
+    note: 'Sub · resumes',
+    langs: ['sub'],
+    resumes: true,
+    url: ({ id, ep, start }) => `https://vidy.st/anime/${id}/${ep}?color=ff6b57&autoplay=true${start > 0 ? `&progress=${start}` : ''}`,
+    parse: (ev) => playerEvent(ev, (h) => h === 'vidy.st' || h.endsWith('.vidy.st'))
   }
 ];
 
