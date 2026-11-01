@@ -16,6 +16,7 @@ import { store as settings } from '../lib/storage';
 import { reportProgress } from '../lib/anilistAccount';
 import Select from '../components/Select';
 import ServerPanel from '../components/ServerPanel';
+import { useEpisodeTitles } from '../lib/episodeTitles';
 
 const QUIET_MS = 25000;
 const SWITCH_IN = 8;
@@ -264,12 +265,14 @@ export default function AnimeWatch() {
   const ranges = Math.ceil(nums.length / CHUNK);
   const rangeNow = Math.min(range, Math.max(0, ranges - 1));
   const shown = nums.slice(rangeNow * CHUNK, rangeNow * CHUNK + CHUNK);
+  // episode names for the range on screen (falls back to "Episode N")
+  const titles = useEpisodeTitles(mal, shown[0] ?? 1, shown[shown.length - 1] ?? 0);
   const nextServer = animeServers[(pickNext(new Set(tried)) ?? (serverNo(server) % animeServers.length) + 1) - 1];
 
   // keep the playing episode in view inside the episode column (without moving the page)
   useEffect(() => {
     const g = epGrid.current;
-    const now = g?.querySelector<HTMLElement>('.aep.now');
+    const now = g?.querySelector<HTMLElement>('.eprow.now');
     if (!g || !now) return;
     const top = now.offsetTop - g.offsetTop;
     if (top < g.scrollTop || top + now.offsetHeight > g.scrollTop + g.clientHeight) g.scrollTop = top - g.clientHeight / 2 + now.offsetHeight / 2;
@@ -303,13 +306,19 @@ export default function AnimeWatch() {
                   </Select>
                 )}
               </div>
-              <div className="aep-grid compact" ref={epGrid}>
+              <div className="eplist" ref={epGrid}>
                 {shown.map((n) => {
                   const done = seen.has(n);
+                  const info = titles[n];
+                  const name = info?.title || `Episode ${n}`;
                   return (
-                    <button key={n} className={`aep ${done ? 'seen' : ''} ${n === ep ? 'now' : ''}`} onClick={() => go(n)}>
+                    <button key={n} className={`eprow ${done ? 'seen' : ''} ${n === ep ? 'now' : ''}`} onClick={() => go(n)} title={name} aria-current={n === ep ? 'true' : undefined}>
+                      <span className="eprow-no">{n}</span>
+                      <span className="eprow-name">
+                        {name}
+                        {(info?.filler || info?.recap) && <small className="eprow-tag">{info.recap ? 'Recap' : 'Filler'}</small>}
+                      </span>
                       <WatchedTick on={done} onToggle={() => animeStore.setSeen(aid, n, !done)} />
-                      <b>EP {n}</b>
                     </button>
                   );
                 })}
