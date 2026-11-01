@@ -378,6 +378,16 @@ export const providers: Provider[] = [
     movie: (id, start = 0) => `https://vidstuck.cc/embed/movie/${id}?color=ff6b57${start > 0 ? `&progress=${start}` : ''}`,
     tv: (id, s, e, start = 0) => `https://vidstuck.cc/embed/tv/${id}/${s}/${e}?color=ff6b57${start > 0 ? `&progress=${start}` : ''}`,
     parse: vidstuckProgress
+  },
+  {
+    id: 'vidrock',
+    name: 'Server 22',
+    quality: 'HD',
+    sandboxOk: false,
+    // Vidrock documents no start-time option; our page runs its own up-next countdown, so its next button is off
+    movie: (id) => `https://vidrock.net/movie/${id}?autoplay=true&theme=ff6b57`,
+    tv: (id, s, e) => `https://vidrock.net/tv/${id}/${s}/${e}?autoplay=true&theme=ff6b57&autonext=false&nextbutton=false`,
+    parse: (ev) => (ev.origin === 'https://vidrock.net' ? playerEvent(ev, () => true) : null)
   }
 ];
 
