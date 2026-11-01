@@ -168,17 +168,18 @@ export const providers: Provider[] = [
     tv: (id, s, e, start = 0) => `https://vidnest.fun/tv/${id}/${s}/${e}${start > 0 ? `?progress=${start}` : ''}`,
     parse: (ev) => playerEvent(ev, (h) => h === 'vidnest.fun' || h.endsWith('.vidnest.fun'))
   },
-  {
-    id: 'viduki',
-    name: 'Server 6',
-    quality: 'HD · multi-server',
+  // Viduki's four APIs: 1 multi server, 2 multi language, 3 multi embeds, 4 premium embeds
+  ...(['multi-server', 'multi-language', 'multi-embed', 'premium'] as const).map((kind, i): Provider => ({
+    id: i === 0 ? 'viduki' : `viduki${i + 1}`,
+    name: `Server ${6 + i}`,
+    quality: `HD · ${kind}`,
     sandboxOk: false,
-    // Viduki API 1 (multi server); its docs list no start-time option, so it starts from the beginning
-    movie: (id) => `https://viduki.net/1/movie/${id}?color=ff6b57`,
-    tv: (id, s, e) => `https://viduki.net/1/tv/${id}/${s}/${e}?color=ff6b57`,
+    // Viduki's docs list no start-time option, so these start from the beginning
+    movie: (id) => `https://viduki.net/${i + 1}/movie/${id}?color=ff6b57`,
+    tv: (id, s, e) => `https://viduki.net/${i + 1}/tv/${id}/${s}/${e}?color=ff6b57`,
     parse: vidukiProgress,
     failed: (ev) => fromViduki(ev) && !!ev.data && typeof ev.data === 'object' && ev.data.type === 'viduki:all-servers-failed'
-  }
+  }))
 ];
 
 export const providerById = (id: string | null | undefined): Provider =>
