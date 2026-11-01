@@ -261,6 +261,16 @@ export const providers: Provider[] = [
     tv: (id, s, e, start = 0) =>
       `https://cinemaos.tech/player/${id}/${s}/${e}?theme=ff6b57&autoPlay=true&autoNext=false&nextButton=false${start > 0 ? `&startTime=${start}` : ''}`,
     parse: (ev) => playerEvent(ev, (h) => h === 'cinemaos.tech' || h.endsWith('.cinemaos.tech'))
+  },
+  {
+    id: 'superembed',
+    name: 'Server 13',
+    quality: 'HD · multi-source',
+    sandboxOk: false,
+    // SuperEmbed documents no start-time option or progress messages: it starts from the beginning
+    movie: (id) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
+    tv: (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
+    parse: () => null
   }
 ];
 
