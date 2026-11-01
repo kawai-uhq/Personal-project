@@ -28,6 +28,8 @@ export interface Provider {
   parseNext?: (ev: MessageEvent) => { s: number; e: number } | null;
   /** Reads a progress message posted by this server's player, or null if the message isn't one. */
   parse: (ev: MessageEvent) => PlayerTick | null;
+  /** The player says it has no working copy of this title (so we can move to the next server at once) */
+  failed?: (ev: MessageEvent) => boolean;
 }
 
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
@@ -55,6 +57,39 @@ const playerEvent = (ev: MessageEvent, hostOk: (host: string) => boolean): Playe
   if (e === 'ended') return { t: 0, d: 0, ended: true };
   if (e === 'timeupdate' || e === 'pause' || e === 'seeked') return { t: num(p.currentTime), d: num(p.duration) };
   return null;
+};
+
+const fromViduki = (ev: MessageEvent) => {
+  try {
+    const h = new URL(ev.origin).hostname;
+    return h === 'viduki.net' || h.endsWith('.viduki.net');
+  } catch {
+    return false;
+  }
+};
+
+/** Viduki posts `{ type: 'MEDIA_DATA', data }` with the watch progress (watched/duration in seconds) */
+const vidukiProgress = (ev: MessageEvent): PlayerTick | null => {
+  if (!fromViduki(ev)) return null;
+  let m = ev.data;
+  if (typeof m === 'string') {
+    try {
+      m = JSON.parse(m);
+    } catch {
+      return null;
+    }
+  }
+  if (!m || m.type !== 'MEDIA_DATA' || !m.data || typeof m.data !== 'object') return null;
+  // either one entry, or entries keyed by TMDB id: take the one updated last
+  const entries: any[] = m.data.progress ? [m.data] : Object.values(m.data);
+  const e = entries
+    .filter((x) => x && typeof x === 'object' && x.progress)
+    .sort((a, b) => num(b.last_updated) - num(a.last_updated))[0];
+  if (!e) return null;
+  const t = num(e.progress.watched);
+  const d = num(e.progress.duration);
+  if (d > 0 && t >= d - 1) return { t: 0, d: 0, ended: true };
+  return { t, d };
 };
 
 const cineQuery = (start: number, o: PlayOpts, first: '?' | '&') => {
@@ -132,6 +167,17 @@ export const providers: Provider[] = [
     movie: (id, start = 0) => `https://vidnest.fun/movie/${id}${start > 0 ? `?startAt=${start}` : ''}`,
     tv: (id, s, e, start = 0) => `https://vidnest.fun/tv/${id}/${s}/${e}${start > 0 ? `?progress=${start}` : ''}`,
     parse: (ev) => playerEvent(ev, (h) => h === 'vidnest.fun' || h.endsWith('.vidnest.fun'))
+  },
+  {
+    id: 'viduki',
+    name: 'Server 6',
+    quality: 'HD · multi-server',
+    sandboxOk: false,
+    // Viduki API 1 (multi server); its docs list no start-time option, so it starts from the beginning
+    movie: (id) => `https://viduki.net/1/movie/${id}?color=ff6b57`,
+    tv: (id, s, e) => `https://viduki.net/1/tv/${id}/${s}/${e}?color=ff6b57`,
+    parse: vidukiProgress,
+    failed: (ev) => fromViduki(ev) && !!ev.data && typeof ev.data === 'object' && ev.data.type === 'viduki:all-servers-failed'
   }
 ];
 

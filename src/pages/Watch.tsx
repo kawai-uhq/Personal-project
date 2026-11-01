@@ -55,6 +55,7 @@ export default function Watch() {
   const [autoSwitch] = useState(store.getAutoSwitch());
   const [loaded, setLoaded] = useState(false);
   const [switched, setSwitched] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
   const tried = useRef<Set<string>>(new Set());
   const [autoskip] = useState(store.getAutoskip());
   const [upNext, setUpNext] = useState<{ s: number; e: number; left: number } | null>(null);
@@ -128,6 +129,10 @@ export default function Watch() {
       if (l) saveAt(t, mid, season, episode, l.pos, l.dur);
     };
     const onMessage = (ev: MessageEvent) => {
+      if (provider.failed?.(ev)) {
+        setFailed(true);
+        return;
+      }
       const n = provider.parseNext?.(ev);
       if (n) {
         setAlive(true);
@@ -172,6 +177,7 @@ export default function Watch() {
     setAlive(false);
     setSlow(false);
     setLoaded(false);
+    setFailed(false);
     if (!mediaOk) return;
     const h = window.setTimeout(() => setSlow(true), 20000);
     return () => window.clearTimeout(h);
@@ -190,15 +196,16 @@ export default function Watch() {
 
   // Source reliability: a server whose page never even loads is swapped for the next untried one
   useEffect(() => {
-    if (!slow || loaded || alive || !autoSwitch) return;
+    const bad = (slow && !loaded && !alive) || failed;
+    if (!bad || !autoSwitch) return;
     tried.current.add(pid);
     const order = providers.map((_, i) => providers[(providers.findIndex((x) => x.id === pid) + 1 + i) % providers.length]);
     const fresh = order.find((p) => !tried.current.has(p.id));
     if (!fresh) return; // every server tried: leave the "taking a while" note up
-    setSwitched(`${provider.name} didn't load, so we switched to ${fresh.name}.`);
+    setSwitched(`${provider.name} ${failed ? "doesn't have this one" : "didn't load"}, so we switched to ${fresh.name}.`);
     setServer(fresh.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slow, loaded, alive, autoSwitch]);
+  }, [slow, loaded, alive, autoSwitch, failed]);
 
   const seasonInfo = d?.seasons.find((s) => s.number === season);
   const next = useMemo(() => {
@@ -287,9 +294,9 @@ export default function Watch() {
         </div>
       )}
 
-      {slow && !alive && (
+      {((slow && !alive) || failed) && (
         <div className="wp-slow" role="status">
-          <span>{provider.name} is taking a while to load.</span>
+          <span>{failed ? `${provider.name} doesn't have this one.` : `${provider.name} is taking a while to load.`}</span>
           <button className="pill warn" onClick={() => setServer(nextServer.id)}>Try {nextServer.name}</button>
           <button className="pill" onClick={() => setReload((n) => n + 1)}><Icon name="refresh" size={14} />Reload</button>
         </div>
