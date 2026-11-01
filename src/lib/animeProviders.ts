@@ -12,8 +12,8 @@ export interface AnimeServer {
   /** Addressed by MyAnimeList id instead of AniList id */
   needsMal?: boolean;
   url: (o: { id: number; mal?: number | null; ep: number; lang: Lang; start: number; autoskip: boolean }) => string;
-  /** For players that resume by message instead of a URL option: what to post once the player loads */
-  resume?: (start: number) => { msg: unknown; origin: string };
+  /** A message to post to the player once it loads (resume position, a hello), or null for none */
+  onFrameLoad?: (start: number) => { msg: unknown; origin: string } | null;
   /** Read a message from the player. The caller has already checked it came from this server's frame. */
   parse: (ev: MessageEvent) => AnimeTick | null;
 }
@@ -129,7 +129,7 @@ export const animeServers: AnimeServer[] = [
     resumes: true,
     // our page runs its own up-next countdown, so the player's Next button is hidden
     url: ({ id, ep, lang }) => `${VIDRIFT}/embed/anilist/${id}/${ep}?brandColor=ff6b57&hide=next${lang === 'dub' ? '&dub=1' : ''}`,
-    resume: (start) => ({ msg: { type: 'vidrift:resume', currentTime: start }, origin: VIDRIFT }),
+    onFrameLoad: (start) => (start > 0 ? { msg: { type: 'vidrift:resume', currentTime: start }, origin: VIDRIFT } : null),
     parse: (ev) => {
       if (ev.origin !== VIDRIFT) return null;
       const m = obj(ev);

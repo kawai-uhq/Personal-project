@@ -30,8 +30,8 @@ export interface Provider {
   parse: (ev: MessageEvent) => PlayerTick | null;
   /** The player says it has no working copy of this title (so we can move to the next server at once) */
   failed?: (ev: MessageEvent) => boolean;
-  /** For servers that resume by message instead of a URL option: what to post to the player once it loads */
-  resume?: (start: number) => { msg: unknown; origin: string };
+  /** A message to post to the player once it loads (resume position, a hello), or null for none */
+  onFrameLoad?: (start: number) => { msg: unknown; origin: string } | null;
 }
 
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
@@ -95,6 +95,7 @@ const vidukiProgress = (ev: MessageEvent): PlayerTick | null => {
 };
 
 const VIDRIFT = 'https://embed.vidrift.net';
+const VELARIUM = 'https://velarium.cc';
 const vidriftMsg = (ev: MessageEvent): any => {
   if (ev.origin !== VIDRIFT) return null;
   const m = ev.data;
@@ -235,7 +236,7 @@ export const providers: Provider[] = [
     movie: (id, _start = 0, o = {}) => `${VIDRIFT}/embed/movie/${id}${vidriftQuery(o)}`,
     tv: (id, s, e, _start = 0, o = {}) => `${VIDRIFT}/embed/tv/${id}/${s}/${e}${vidriftQuery(o)}`,
     // no start-time option in the address: the saved spot is sent as a message once the player loads
-    resume: (start) => ({ msg: { type: 'vidrift:resume', currentTime: start }, origin: VIDRIFT }),
+    onFrameLoad: (start) => (start > 0 ? { msg: { type: 'vidrift:resume', currentTime: start }, origin: VIDRIFT } : null),
     parseNext: (ev) => {
       const m = vidriftMsg(ev);
       if (!m || m.type !== 'vidrift:episode') return null;
@@ -291,6 +292,19 @@ export const providers: Provider[] = [
     movie: (id) => `https://videm.xyz/embed/movie/${id}?autoplay=true`,
     tv: (id, s, e) => `https://videm.xyz/embed/tv/${id}/${s}/${e}?autoplay=true`,
     parse: () => null
+  },
+  {
+    id: 'velarium',
+    name: 'Server 16',
+    quality: 'HD · skip intro',
+    sandboxOk: false,
+    // our page runs its own up-next countdown, so the player's next-episode button and auto-next are off
+    movie: (id, start = 0) => `${VELARIUM}/en/watch/movie/${id}?autoPlay=true&theme=ff6b57${start > 0 ? `&startAt=${start}` : ''}`,
+    tv: (id, s, e, start = 0, o = {}) =>
+      `${VELARIUM}/en/watch/tv/${id}-${s}-${e}?autoPlay=true&theme=ff6b57&autoNext=false&nextButton=false${o.autoskip ? '&autoSkipIntro=true' : ''}${start > 0 ? `&startAt=${start}` : ''}`,
+    // the player only shares progress after the page says hello
+    onFrameLoad: () => ({ msg: { type: 'VELARIUM_EMBED_INIT' }, origin: VELARIUM }),
+    parse: (ev) => (ev.origin === VELARIUM ? playerEvent(ev, () => true) : null)
   }
 ];
 

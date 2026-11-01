@@ -274,8 +274,8 @@ export default function Watch() {
         sandbox={sandbox}
         onLoad={(e) => {
           setLoaded(true);
-          // servers that resume by message (Server 11) get the saved spot now
-          const r = start > 0 ? provider.resume?.(start) : undefined;
+          // some servers want a message once loaded: the saved spot (Server 11) or a hello (Server 16)
+          const r = provider.onFrameLoad?.(start);
           if (r) e.currentTarget.contentWindow?.postMessage(r.msg, r.origin);
         }}
       />

@@ -223,7 +223,7 @@ export default function AnimeWatch() {
         onLoad={(e) => {
           setLoaded(true);
           // players that resume by message (Server 5) get the saved spot now
-          const r = start > 0 ? server.resume?.(start) : undefined;
+          const r = server.onFrameLoad?.(start);
           if (r) e.currentTarget.contentWindow?.postMessage(r.msg, r.origin);
         }}
       />
