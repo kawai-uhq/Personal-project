@@ -194,6 +194,18 @@ export const tmdb = {
     const items = list({ results: j?.parts ?? [] }, 'movie').sort((a, b) => (a.year || '9999').localeCompare(b.year || '9999'));
     return { id, name: j?.name ?? '', poster: j?.poster_path ?? null, backdrop: j?.backdrop_path ?? null, overview: j?.overview ?? '', items };
   },
+  /** Best-known films from a studio (TMDB company id), most-voted first. */
+  companyFilms: async (company: number): Promise<Media[]> => {
+    const j = await get(`/discover/movie?with_companies=${company}&sort_by=vote_count.desc&language=en-US&include_adult=false&page=1`);
+    return list(j, 'movie');
+  },
+  /** Films a person directed, most-voted first. */
+  directorFilms: async (person: number): Promise<Media[]> => {
+    const j = await get(`/person/${person}/movie_credits?language=en-US`);
+    const seen = new Set<number>();
+    const crew = ((j?.crew ?? []) as any[]).filter((c) => c.job === 'Director' && !seen.has(c.id) && seen.add(c.id));
+    return list({ results: crew }, 'movie').sort((a, b) => (b.votes ?? 0) - (a.votes ?? 0));
+  },
   feed: (key: string, page = 1) => {
     const f = FEEDS[key];
     if (!f) return Promise.resolve({ items: [] as Media[], pages: 1 });

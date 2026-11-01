@@ -1591,3 +1591,45 @@ html.light .sv-item { background: rgba(40, 20, 30, .04); }
 }
 .cast-note { margin: -4px 0 10px; }
 .cast-grid.loading { opacity: .55; transition: opacity .15s ease; }
+
+/* ---- Collections: poster-fan cards ---- */
+.cf { position: relative; flex: none; display: flex; flex-direction: column; width: min(400px, 84vw); height: 236px; padding-top: 22px; color: var(--text); text-decoration: none; }
+/* the card's panel starts below the top, so the front poster rises above it */
+.cf::before { content: ''; position: absolute; inset: 22px 0 0 0; border-radius: 16px; border: 1px solid var(--line); background: linear-gradient(180deg, rgba(255, 233, 214, .035), rgba(255, 233, 214, .015)), var(--surface); transition: border-color .2s ease, background-color .2s ease; }
+.cf:hover::before { border-color: rgba(255, 233, 214, .25); }
+.cf-fan { position: absolute; left: 50%; top: 0; width: 108px; height: 162px; transform: translateX(-50%); z-index: 1; }
+.cf-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; background: var(--surface2); box-shadow: 0 10px 28px rgba(0, 0, 0, .55); transition: transform .7s cubic-bezier(.2, .8, .2, 1), opacity .7s ease, filter .7s ease; will-change: transform; }
+.cf-poster[data-slot='0'] { transform: translate(0, 0) rotate(0) scale(1); z-index: 5; }
+.cf-poster[data-slot='1'] { transform: translate(52%, 16px) rotate(7deg) scale(.86); z-index: 4; filter: brightness(.7); }
+.cf-poster[data-slot='-1'] { transform: translate(-52%, 16px) rotate(-7deg) scale(.86); z-index: 4; filter: brightness(.7); }
+.cf-poster[data-slot='2'] { transform: translate(92%, 30px) rotate(13deg) scale(.74); z-index: 3; filter: brightness(.5); }
+.cf-poster[data-slot='-2'] { transform: translate(-92%, 30px) rotate(-13deg) scale(.74); z-index: 3; filter: brightness(.5); }
+.cf-poster[data-slot='hidden'] { transform: translate(0, 40px) scale(.6); opacity: 0; z-index: 1; }
+.cf:hover .cf-poster[data-slot='0'] { transform: translate(0, -4px) scale(1.03); }
+.cf-body { position: relative; z-index: 2; margin-top: auto; display: flex; flex-direction: column; gap: 3px; padding: 0 16px 14px; }
+.cf-body strong { font-size: 15px; color: var(--cream); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-body small { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* loading shape */
+.sk-cf .cf-poster { background: rgba(255, 233, 214, .06); box-shadow: none; filter: none; }
+.sk-cf .cf-body i { display: block; height: 11px; width: 40%; border-radius: 6px; background: rgba(255, 233, 214, .07); }
+.sk-cf .cf-body i + i { width: 62%; height: 9px; }
+.cf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 18px 16px; margin-bottom: 30px; }
+.cf-grid .cf { width: auto; }
+@media (prefers-reduced-motion: reduce) { .cf-poster { transition: none; } }
+
+/* ---- One collection: backdrop header ---- */
+.ch { position: relative; min-height: 380px; display: flex; align-items: flex-end; padding: calc(var(--nav-h) + 40px) 0 28px; overflow: hidden; }
+.ch-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; opacity: .55; }
+.ch::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(18, 12, 24, .35), var(--bg) 96%), linear-gradient(90deg, rgba(18, 12, 24, .85), transparent 70%); }
+.ch-in { position: relative; z-index: 1; width: 100%; }
+.ch .crumb { margin: 0 0 18px; }
+.ch-kind { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.ch-title { margin: 6px 0 6px; font-size: clamp(32px, 6vw, 58px); line-height: 1.05; }
+.ch-tag { margin: 0; font-size: 17px; color: var(--cream); }
+.ch-count { margin: 6px 0 0; font-size: 13px; color: var(--muted); font-weight: 700; }
+.ch-ov { margin: 0 0 22px; }
+@media (max-width: 760px) {
+  .ch { min-height: 300px; padding-bottom: 20px; }
+  .cf { height: 220px; }
+  .cf-fan { width: 96px; height: 144px; }
+}

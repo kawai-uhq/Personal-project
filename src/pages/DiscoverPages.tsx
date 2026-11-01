@@ -7,10 +7,14 @@ import { MoodCard, moodPath, moodsFor } from '../components/Discover';
 import { Grid, GridSkeleton, Status } from '../components/Rows';
 import { aniList } from '../lib/anilist';
 import type { Ani } from '../lib/anilist';
-import { ANIME_MOODS, CINEMA_MOODS, COLLECTION_IDS, MANGA_MOODS } from '../lib/discover';
+import { ANIME_MOODS, CINEMA_MOODS, MANGA_MOODS } from '../lib/discover';
+import { COLLECTION_KEYS, loadCollection } from '../lib/collections';
+import type { Coll } from '../lib/collections';
+import { CollectionCardByKey } from '../components/CollectionCard';
+import { usePageTitle } from '../lib/title';
 import { mangaList } from '../lib/manga';
 import type { Manga } from '../lib/manga';
-import { IMG, posterSrc, tmdb } from '../lib/tmdb';
+import { IMG, backdropSrc, posterSrc, tmdb } from '../lib/tmdb';
 import type { Media } from '../lib/types';
 
 type Kind = 'cinema' | 'anime' | 'manga';
@@ -87,61 +91,47 @@ export const CinemaMood = () => <MoodPage kind="cinema" />;
 export const AnimeMood = () => <MoodPage kind="anime" />;
 export const MangaMood = () => <MoodPage kind="manga" />;
 
-type Coll = Awaited<ReturnType<typeof tmdb.collection>>;
-
-/** Every film series. */
+/** Every collection: studios, directors and film series, as poster-fan cards. */
 export function CollectionsPage() {
-  const [list, setList] = useState<Coll[] | null>(null);
-  useEffect(() => {
-    let live = true;
-    Promise.all(COLLECTION_IDS.map((id) => tmdb.collection(id).catch(() => null))).then((r) => live && setList(r.filter((c): c is Coll => !!c && !!c.name && c.items.length > 1)));
-    return () => { live = false; };
-  }, []);
   return (
     <main className="page pad-top">
       <div className="container">
-        <div className="page-head"><div><h1 className="title">Film <span className="accent">Collections</span></h1><p className="muted">Whole film series, in release order.</p></div></div>
-        {!list ? <GridSkeleton /> : (
-          <div className="coll-grid">
-            {list.map((c) => (
-              <Link key={c.id} to={`/collection/${c.id}`} className="coll">
-                {c.backdrop && <img src={IMG.large + c.backdrop} alt="" loading="lazy" />}
-                <span className="studio-shade" />
-                <strong>{c.name.replace(/ Collection$/, '')}</strong>
-                <small>{c.items.length} films · {c.items[0]?.year}–{c.items[c.items.length - 1]?.year}</small>
-              </Link>
-            ))}
-          </div>
-        )}
+        <div className="page-head"><div><h1 className="title">Film <span className="accent">Collections</span></h1><p className="muted">Studios, directors and whole film series.</p></div></div>
+        <div className="cf-grid">
+          {COLLECTION_KEYS.map((k, i) => <CollectionCardByKey key={k} k={k} delay={(i % 3) * 1200} />)}
+        </div>
       </div>
     </main>
   );
 }
 
-/** One film series. */
+/** One collection: a backdrop header with its name and tagline, then every film. */
 export function CollectionPage() {
-  const { id } = useParams();
-  const [c, setC] = useState<Coll | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { id = '' } = useParams();
+  const [c, setC] = useState<Coll | null | undefined>(undefined);
   useEffect(() => {
     let live = true;
-    setC(null);
-    tmdb.collection(Number(id)).then((r) => live && setC(r)).catch((e: Error) => live && setError(e.message));
+    setC(undefined);
+    loadCollection(id).then((r) => live && setC(r));
     return () => { live = false; };
   }, [id]);
-  if (error) return <main className="page pad-top"><Status kind="error" text={error} /></main>;
+  usePageTitle(c ? c.name : null);
+  if (c === null) return <main className="page pad-top"><Status kind="error" text="This collection couldn't be loaded. Try again in a moment." /></main>;
+  const what = c?.kind === 'studio' ? 'Studio' : c?.kind === 'director' ? 'Director' : 'Collection';
   return (
-    <main className="page pad-top">
-      <div className="container">
-        <p className="crumb"><Link to="/collections" className="link"><Icon name="chevronLeft" size={14} />Collections</Link></p>
-        <div className="coll-head">
-          {c?.poster && <img src={posterSrc(c.poster)} alt="" />}
-          <div>
-            <h1 className="title">{c?.name ?? '…'}</h1>
-            {c?.overview && <p className="overview">{c.overview}</p>}
-            {c && <p className="muted">{c.items.length} films in release order</p>}
-          </div>
+    <main className="page">
+      <section className="ch">
+        {c?.backdrop && <img className="ch-bg" src={backdropSrc(c.backdrop)} alt="" />}
+        <div className="container ch-in">
+          <p className="crumb"><Link to="/collections" className="link"><Icon name="chevronLeft" size={14} />Collections</Link></p>
+          <span className="ch-kind">{what}</span>
+          <h1 className="ch-title">{c?.name ?? '…'}</h1>
+          {c && <p className="ch-tag">{c.tagline}</p>}
+          {c && <p className="ch-count">{c.items.length} films · in release order</p>}
         </div>
+      </section>
+      <div className="container">
+        {c?.overview && <p className="overview ch-ov">{c.overview}</p>}
         {!c ? <GridSkeleton /> : <Grid items={c.items} cards />}
       </div>
     </main>
