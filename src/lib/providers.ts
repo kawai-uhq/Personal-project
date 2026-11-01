@@ -19,6 +19,8 @@ export interface Provider {
   quality: string;
   /** Works inside a sandboxed frame (popup protection). Some servers refuse to play when sandboxed. */
   sandboxOk: boolean;
+  /** The player never reports playback to the page, so silence from it doesn't mean it's broken */
+  silent?: boolean;
   /** `start` = seconds to begin from (0 = from the beginning) */
   movie: (id: number, start?: number, o?: PlayOpts) => string;
   tv: (id: number, season: number, episode: number, start?: number, o?: PlayOpts) => string;
@@ -315,6 +317,7 @@ export const providers: Provider[] = [
     name: 'Server 13',
     quality: 'HD · multi-source',
     sandboxOk: false,
+    silent: true,
     // SuperEmbed documents no start-time option or progress messages: it starts from the beginning
     movie: (id) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
     tv: (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
@@ -325,6 +328,7 @@ export const providers: Provider[] = [
     name: 'Server 14',
     quality: 'HD · multi-source',
     sandboxOk: false,
+    silent: true,
     // EmbedWave documents no start-time option or progress messages: it starts from the beginning
     movie: (id) => `https://embedwave.cc/embed/movie/${id}?autoplay=1`,
     tv: (id, s, e) => `https://embedwave.cc/embed/tv/${id}/${s}/${e}?autoplay=1`,
@@ -335,6 +339,7 @@ export const providers: Provider[] = [
     name: 'Server 15',
     quality: 'HD · auto source',
     sandboxOk: false,
+    silent: true,
     // Videm documents no start-time option or progress messages: it starts from the beginning
     movie: (id) => `https://videm.xyz/embed/movie/${id}?autoplay=true`,
     tv: (id, s, e) => `https://videm.xyz/embed/tv/${id}/${s}/${e}?autoplay=true`,
@@ -358,6 +363,7 @@ export const providers: Provider[] = [
     name: 'Server 17',
     quality: 'HD',
     sandboxOk: false,
+    silent: true,
     // Cinezo documents no start-time option; its progress messages are assumed to be the common PLAYER_EVENT kind
     movie: (id) => `https://player.cinezo.live/embed/movie/${id}?autoplay=true`,
     tv: (id, s, e) => `https://player.cinezo.live/embed/tv/${id}/${s}/${e}?autoplay=true`,
@@ -368,6 +374,7 @@ export const providers: Provider[] = [
     name: 'Server 18',
     quality: 'HD',
     sandboxOk: false,
+    silent: true,
     // 2Embed documents no options or progress messages; the TV address really uses "&s=" with no "?"
     movie: (id) => `https://www.2embed.cc/embed/${id}`,
     tv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
@@ -378,6 +385,7 @@ export const providers: Provider[] = [
     name: 'Server 19',
     quality: 'HD',
     sandboxOk: false,
+    silent: true,
     // Embed-API documents no options or progress messages: it starts from the beginning
     movie: (id) => `https://watch.embed-api.stream/embed/movie/${id}`,
     tv: (id, s, e) => `https://watch.embed-api.stream/embed/tv/${id}/${s}/${e}`,
@@ -388,6 +396,7 @@ export const providers: Provider[] = [
     name: 'Server 20',
     quality: 'HD · dubs',
     sandboxOk: false,
+    silent: true,
     // ZXCStream's custom player; it documents no start-time option or progress messages
     movie: (id) => `https://zxcstream.cc/player/movie/${id}?color=ff6b57&autoplay=true`,
     tv: (id, s, e) => `https://zxcstream.cc/player/tv/${id}/${s}/${e}?color=ff6b57&autoplay=true`,
@@ -439,6 +448,7 @@ export const providers: Provider[] = [
     name: 'Server 25',
     quality: 'HD',
     sandboxOk: false,
+    silent: true,
     // EmbedMaster documents no start-time option and no progress times in its messages
     movie: (id) => `https://embedmaster.link/movie/${id}?autoplay=on&welcome_page=off`,
     tv: (id, s, e) => `https://embedmaster.link/tv/${id}/${s}/${e}?autoplay=on&welcome_page=off`,
@@ -449,6 +459,7 @@ export const providers: Provider[] = [
     name: 'Server 26',
     quality: 'HD',
     sandboxOk: false,
+    silent: true,
     // VidSrc.mov documents no options or progress messages
     movie: (id) => `https://vidsrc.mov/embed/movie/${id}`,
     tv: (id, s, e) => `https://vidsrc.mov/embed/tv/${id}/${s}/${e}`,
@@ -459,6 +470,7 @@ export const providers: Provider[] = [
     name: 'Server 27',
     quality: 'HD',
     sandboxOk: false,
+    silent: true,
     movie: (id, start = 0) => `https://vidcore.org/embed/movie/${id}?autoplay=true&theme=ff6b57${start > 0 ? `&startAt=${start}` : ''}`,
     tv: (id, s, e, start = 0) => `https://vidcore.org/embed/tv/${id}/${s}/${e}?autoplay=true&theme=ff6b57${start > 0 ? `&startAt=${start}` : ''}`,
     // VidCore only reports play / pause / ended (no times), so only the end is used

@@ -88,6 +88,22 @@ export const store = {
     if (keys.length > 300) keys.slice(0, keys.length - 300).forEach((k) => delete all[k]);
     write('comvie.goodserver', all);
   },
+  /** Servers hidden from the player's server list (and skipped by auto-switch), per section ("movie", "anime") */
+  getHiddenServers: (section: string) => read<Record<string, string[]>>('comvie.serverhide', {})[section] ?? [],
+  saveHiddenServers: (section: string, ids: string[]) => {
+    const all = read<Record<string, string[]>>('comvie.serverhide', {});
+    all[section] = ids;
+    write('comvie.serverhide', all);
+  },
+  /** Servers that have played something on this device (the green dots), per section */
+  getWorkedServers: (section: string) => read<Record<string, string[]>>('comvie.serverok', {})[section] ?? [],
+  saveWorkedServer: (section: string, id: string) => {
+    const all = read<Record<string, string[]>>('comvie.serverok', {});
+    const cur = all[section] ?? [];
+    if (cur.includes(id)) return;
+    all[section] = [...cur, id];
+    write('comvie.serverok', all);
+  },
   getRemember: () => read<boolean>('comvie.remember', true),
   saveRemember: (v: boolean) => write('comvie.remember', v),
   getHistory: () => read<WatchEntry[]>('comvie.history', []),

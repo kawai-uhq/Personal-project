@@ -15,6 +15,10 @@ import { animeStore, resumeFrom, useAnimeStore } from '../lib/animeStore';
 import { store as settings } from '../lib/storage';
 import { reportProgress } from '../lib/anilistAccount';
 import Select from '../components/Select';
+import ServerPanel from '../components/ServerPanel';
+
+const QUIET_MS = 25000;
+const SWITCH_IN = 8;
 
 const CHUNK = 100;
 
@@ -39,8 +43,14 @@ export default function AnimeWatch() {
   const [slow, setSlow] = useState(false);
   const [alive, setAlive] = useState(false);
   const [switched, setSwitched] = useState<string | null>(null);
-  const tried = useRef<Set<number>>(new Set());
-  const autoSwitch = settings.getAutoSwitch();
+  const [tried, setTried] = useState<number[]>([]); // servers that didn't work for this episode
+  const [autoSwitch, setAutoSwitch] = useState(settings.getAutoSwitch());
+  const [hidden, setHidden] = useState(settings.getHiddenServers('anime'));
+  const [worked, setWorked] = useState(() => new Set(settings.getWorkedServers('anime')));
+  const [quiet, setQuiet] = useState(false);
+  const [stay, setStay] = useState(false);
+  const [quietLeft, setQuietLeft] = useState<number | null>(null);
+  const [poke, setPoke] = useState(0);
   const frame = useRef<HTMLIFrameElement>(null);
   const latest = useRef<{ t: number; d: number } | null>(null);
   const lastSave = useRef(0);
@@ -165,27 +175,86 @@ export default function AnimeWatch() {
     return () => window.clearTimeout(h);
   }, [src, reload, mediaOk]);
   useEffect(() => {
-    tried.current = new Set();
+    setTried([]);
     setSwitched(null);
   }, [aid, ep]);
-  // the player is talking to us, so this server works: remember it for this anime
+  // the player is talking to us, so this server works: remember it for this anime (and give it a green dot)
   useEffect(() => {
-    if (alive) settings.saveGoodServer(goodKey, String(serverNo(server)));
+    if (!alive) return;
+    const k = String(serverNo(server));
+    settings.saveGoodServer(goodKey, k);
+    settings.saveWorkedServer('anime', k);
+    setWorked((w) => (w.has(k) ? w : new Set(w).add(k)));
+    setQuiet(false);
   }, [alive, goodKey, server]);
-  // a server that never loads is swapped for the next untried one
+
+  const pickServer = (n: number) => {
+    const s = animeServers[n - 1];
+    setSp({ e: String(ep), p: String(n), l: s.langs.includes(lang) ? lang : 'sub' }, { replace: true });
+  };
+  // the next server to try: the visible ones after this one, servers that worked before first
+  const pickNext = (skip: Set<number>) => {
+    const cur = serverNo(server);
+    const order = animeServers
+      .map((_, i) => ((cur + i) % animeServers.length) + 1)
+      .filter((n) => n !== cur && !skip.has(n) && !hidden.includes(String(n)));
+    return order.find((n) => worked.has(String(n))) ?? order[0] ?? null;
+  };
+  const switchAway = (why: string) => {
+    const skip = new Set([...tried, serverNo(server)]);
+    setTried([...skip]);
+    const fresh = pickNext(skip);
+    if (!fresh) {
+      setSwitched(`Tried every server in your list and none started this one. Try Reload, or show more servers with Customize.`);
+      return;
+    }
+    setSwitched(`${server.name} ${why}, so we switched to ${animeServers[fresh - 1].name}.`);
+    pickServer(fresh);
+  };
+
+  // a server that never loads (or can't play this anime) is swapped for the next untried one
   useEffect(() => {
     const failed = (slow && !loaded && !alive) || missing;
     if (!failed || !autoSwitch) return;
-    const cur = serverNo(server);
-    tried.current.add(cur);
-    const order = animeServers.map((_, i) => ((cur + i) % animeServers.length) + 1);
-    const fresh = order.find((n) => !tried.current.has(n));
-    if (!fresh) return;
-    setSwitched(`${server.name} ${missing ? "doesn't have this anime" : "didn't load"}, so we switched to ${animeServers[fresh - 1].name}.`);
-    const l = animeServers[fresh - 1].langs.includes(lang) ? lang : 'sub';
-    setSp({ e: String(ep), p: String(fresh), l }, { replace: true });
+    switchAway(missing ? "doesn't have this anime" : "didn't load");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slow, loaded, alive, autoSwitch, missing]);
+
+  // a player that loaded but never started a video is probably broken; tapping inside it restarts the wait
+  useEffect(() => {
+    setQuiet(false);
+    setStay(false);
+  }, [src, reload]);
+  useEffect(() => {
+    if (!loaded || alive || !mediaOk || stay) return;
+    setQuiet(false);
+    const h = window.setTimeout(() => (document.hidden ? setPoke((n) => n + 1) : setQuiet(true)), QUIET_MS);
+    return () => window.clearTimeout(h);
+  }, [loaded, alive, server, mediaOk, stay, poke]);
+  useEffect(() => {
+    const onBlur = () =>
+      window.setTimeout(() => {
+        if (frame.current && document.activeElement === frame.current) setPoke((n) => n + 1);
+      }, 0);
+    window.addEventListener('blur', onBlur);
+    return () => window.removeEventListener('blur', onBlur);
+  }, []);
+  useEffect(() => {
+    if (!quiet || !autoSwitch) {
+      setQuietLeft(null);
+      return;
+    }
+    setQuietLeft(SWITCH_IN);
+    const h = window.setInterval(() => setQuietLeft((n) => (n == null ? n : n - 1)), 1000);
+    return () => window.clearInterval(h);
+  }, [quiet, autoSwitch]);
+  useEffect(() => {
+    if (quietLeft == null || quietLeft > 0 || !quiet) return;
+    setQuietLeft(null);
+    setQuiet(false);
+    switchAway('never started the video');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quietLeft, quiet]);
 
   const inList = !!a && lib.list().some((x) => x.id === a.id);
   const loved = !!a && lib.loved().some((x) => x.id === a.id);
@@ -194,7 +263,7 @@ export default function AnimeWatch() {
   const ranges = Math.ceil(nums.length / CHUNK);
   const rangeNow = Math.min(range, Math.max(0, ranges - 1));
   const shown = nums.slice(rangeNow * CHUNK, rangeNow * CHUNK + CHUNK);
-  const nextServer = animeServers[serverNo(server) % animeServers.length];
+  const nextServer = animeServers[(pickNext(new Set(tried)) ?? (serverNo(server) % animeServers.length) + 1) - 1];
 
   return (
     <div className="wp">
@@ -255,6 +324,20 @@ export default function AnimeWatch() {
         </div>
       )}
 
+      {quiet && !alive && (
+        <div className="wp-slow" role="status">
+          <span>
+            {quietLeft != null
+              ? <>No video from {server.name} yet. Switching to {nextServer.name} in {Math.max(quietLeft, 0)}s</>
+              : <>{server.name} hasn't started a video.</>}
+          </span>
+          <button className="pill warn" onClick={() => { setQuiet(false); switchAway('never started the video'); }}>
+            {quietLeft != null ? 'Switch now' : `Try ${nextServer.name}`}
+          </button>
+          <button className="pill" onClick={() => { setQuiet(false); setStay(true); }}>Stay here</button>
+        </div>
+      )}
+
       {upNext != null && (
         <div className="wp-upnext" role="status">
           <span><Icon name="play" size={13} fill /> Up next: <b>Episode {upNext}</b> in {Math.max(left, 0)}s</span>
@@ -262,24 +345,6 @@ export default function AnimeWatch() {
           <button className="pill" onClick={() => setUpNext(null)}>Cancel</button>
         </div>
       )}
-
-      <div className="wp-servers">
-        <b>STREAMING SERVER:</b>
-        {animeServers.map((s) => (
-          <button key={s.name} className={`pill ${s === server ? 'on' : ''}`} onClick={() => setSp({ e: String(ep), p: String(serverNo(s)), l: s.langs.includes(lang) ? lang : 'sub' }, { replace: true })}>
-            {s.name} <small>({s.note})</small>
-          </button>
-        ))}
-        <button className="pill" onClick={() => setReload((n) => n + 1)}><Icon name="refresh" size={14} />Reload</button>
-        <span className="chip stat wp-ep">Episode {ep}</span>
-      </div>
-      <div className="wp-servers">
-        <b>AUDIO:</b>
-        {server.langs.map((l) => (
-          <button key={l} className={`pill ${l === lang ? 'on' : ''}`} onClick={() => setSp({ e: String(ep), p: String(serverNo(server)), l }, { replace: true })}>{LANG_NAME[l]}</button>
-        ))}
-        <span className="muted small">Not loading? Try <button className="link" onClick={() => setSp({ e: String(ep), p: String(serverNo(nextServer)), l: nextServer.langs.includes(lang) ? lang : 'sub' }, { replace: true })}>{nextServer.name}</button>.</span>
-      </div>
 
       <div className="wp-main">
         <div className="wp-left">
@@ -299,9 +364,6 @@ export default function AnimeWatch() {
             {hasNext && <button className="btn small ghost" onClick={() => go(ep + 1)}>Next<Icon name="chevronRight" size={15} /></button>}
             <Link to={`/anime/title/${aid}`} className="btn small ghost">Details</Link>
           </div>
-        </div>
-
-        <aside className="wp-side">
           <section className="wp-eps">
             <div className="season-head">
               <h2 className="section">Episodes</h2>
@@ -325,6 +387,31 @@ export default function AnimeWatch() {
               })}
             </div>
           </section>
+        </div>
+
+        <aside className="wp-side">
+          <ServerPanel
+            items={animeServers.map((x) => ({ key: String(serverNo(x)), name: x.name, note: x.note }))}
+            current={String(serverNo(server))}
+            onPick={(k) => { setSwitched(null); pickServer(Number(k)); }}
+            onReload={() => setReload((n) => n + 1)}
+            worked={worked}
+            failed={new Set(tried.map(String))}
+            hidden={hidden}
+            onHidden={(v) => { setHidden(v); settings.saveHiddenServers('anime', v); }}
+            autoSwitch={autoSwitch}
+            onAutoSwitch={(v) => { setAutoSwitch(v); settings.saveAutoSwitch(v); }}
+          >
+            <div className="sv-lang">
+              <span>Audio</span>
+              <div className="seg" role="radiogroup" aria-label="Audio">
+                {server.langs.map((l) => (
+                  <button key={l} type="button" role="radio" aria-checked={l === lang} className={l === lang ? 'on' : ''} onClick={() => setSp({ e: String(ep), p: String(serverNo(server)), l }, { replace: true })}>{LANG_NAME[l]}</button>
+                ))}
+              </div>
+            </div>
+            <p className="sv-now">Playing <b>Episode {ep}</b></p>
+          </ServerPanel>
         </aside>
       </div>
 

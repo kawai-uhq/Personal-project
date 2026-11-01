@@ -10,10 +10,16 @@ import WatchedTick from '../components/WatchedTick';
 import { clearAt, fractionOf, isWatched, resumeAt, saveAt, setSeasonWatched, setWatched } from '../lib/progress';
 import { providerById, providerFromParam, providers, serverSlug } from '../lib/providers';
 import { store } from '../lib/storage';
-import { IMG, posterSrc, tmdb } from '../lib/tmdb';
+import { IMG, tmdb } from '../lib/tmdb';
 import type { Details, Episode, Media, MediaType } from '../lib/types';
 import { useApp } from '../state';
 import Select from '../components/Select';
+import ServerPanel from '../components/ServerPanel';
+
+/** How long a server that normally reports playback may stay silent before we call it broken */
+const QUIET_MS = 25000;
+/** Seconds the viewer gets to keep a silent server before we move on */
+const SWITCH_IN = 8;
 
 export default function Watch() {
   const { type, id } = useParams();
@@ -52,11 +58,18 @@ export default function Watch() {
   const consent = useConsent();
   const [gateOpen, setGateOpen] = useState(false);
   const mediaOk = mediaAllowed(consent) || gateOpen; // player actually on the page
-  const [autoSwitch] = useState(store.getAutoSwitch());
+  const [autoSwitch, setAutoSwitch] = useState(store.getAutoSwitch());
   const [loaded, setLoaded] = useState(false);
   const [switched, setSwitched] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
-  const tried = useRef<Set<string>>(new Set());
+  const [tried, setTried] = useState<string[]>([]); // servers that didn't work for this episode
+  const [hidden, setHidden] = useState(store.getHiddenServers('movie'));
+  const [worked, setWorked] = useState(() => new Set(store.getWorkedServers('movie')));
+  const [quiet, setQuiet] = useState(false); // the player loaded but never started a video
+  const [stay, setStay] = useState(false); // the viewer chose to keep this server anyway
+  const [left, setLeft] = useState<number | null>(null);
+  const [poke, setPoke] = useState(0); // bumps when the viewer taps inside the player
+  const frame = useRef<HTMLIFrameElement>(null);
   const [autoskip] = useState(store.getAutoskip());
   const [upNext, setUpNext] = useState<{ s: number; e: number; left: number } | null>(null);
   const [wv, setWv] = useState(0); // bumps when "watched" marks change
@@ -185,27 +198,83 @@ export default function Watch() {
 
   // A new title / episode starts a fresh round of servers
   useEffect(() => {
-    tried.current = new Set();
+    setTried([]);
     setSwitched(null);
   }, [t, mid, season, episode]);
 
-  // The player is talking to us, so this server works: remember it for this title
+  // The player is talking to us, so this server works: remember it for this title (and give it a green dot)
   useEffect(() => {
-    if (alive) store.saveGoodServer(goodKey, serverSlug(pid));
+    if (!alive) return;
+    store.saveGoodServer(goodKey, serverSlug(pid));
+    store.saveWorkedServer('movie', pid);
+    setWorked((w) => (w.has(pid) ? w : new Set(w).add(pid)));
+    setQuiet(false);
   }, [alive, goodKey, pid]);
 
-  // Source reliability: a server whose page never even loads is swapped for the next untried one
+  // The next server to try: the visible ones after this one, servers that worked before first
+  const pickNext = (skip: Set<string>) => {
+    const vis = providers.filter((p) => !hidden.includes(p.id) || p.id === pid);
+    const i = vis.findIndex((p) => p.id === pid);
+    const order = vis.map((_, k) => vis[(i + 1 + k) % vis.length]).filter((p) => p.id !== pid && !skip.has(p.id));
+    return order.find((p) => worked.has(p.id)) ?? order[0] ?? null;
+  };
+  const switchAway = (why: string) => {
+    const skip = new Set([...tried, pid]);
+    setTried([...skip]);
+    const fresh = pickNext(skip);
+    if (!fresh) {
+      setSwitched(`Tried every server in your list and none started this one. Try Reload, or show more servers with Customize.`);
+      return;
+    }
+    setSwitched(`${provider.name} ${why}, so we switched to ${fresh.name}.`);
+    setServer(fresh.id);
+  };
+
+  // Source reliability 1: a server whose page never loads, or that says it has nothing, is swapped at once
   useEffect(() => {
     const bad = (slow && !loaded && !alive) || failed;
     if (!bad || !autoSwitch) return;
-    tried.current.add(pid);
-    const order = providers.map((_, i) => providers[(providers.findIndex((x) => x.id === pid) + 1 + i) % providers.length]);
-    const fresh = order.find((p) => !tried.current.has(p.id));
-    if (!fresh) return; // every server tried: leave the "taking a while" note up
-    setSwitched(`${provider.name} ${failed ? "doesn't have this one" : "didn't load"}, so we switched to ${fresh.name}.`);
-    setServer(fresh.id);
+    switchAway(failed ? "doesn't have this one" : "didn't load");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slow, loaded, alive, autoSwitch, failed]);
+
+  // Source reliability 2: the page loaded but the video never started. Servers that normally report playback
+  // and stay silent are probably broken ("no sources", endless spinner). Tapping inside the player restarts the wait.
+  useEffect(() => {
+    setQuiet(false);
+    setStay(false);
+  }, [src, reload]);
+  useEffect(() => {
+    if (!loaded || alive || provider.silent || !mediaOk || stay) return;
+    setQuiet(false);
+    const h = window.setTimeout(() => (document.hidden ? setPoke((n) => n + 1) : setQuiet(true)), QUIET_MS);
+    return () => window.clearTimeout(h);
+  }, [loaded, alive, provider, mediaOk, stay, poke]);
+  useEffect(() => {
+    // focus moves into the player's frame when the viewer taps it
+    const onBlur = () =>
+      window.setTimeout(() => {
+        if (frame.current && document.activeElement === frame.current) setPoke((n) => n + 1);
+      }, 0);
+    window.addEventListener('blur', onBlur);
+    return () => window.removeEventListener('blur', onBlur);
+  }, []);
+  useEffect(() => {
+    if (!quiet || !autoSwitch) {
+      setLeft(null);
+      return;
+    }
+    setLeft(SWITCH_IN);
+    const h = window.setInterval(() => setLeft((n) => (n == null ? n : n - 1)), 1000);
+    return () => window.clearInterval(h);
+  }, [quiet, autoSwitch]);
+  useEffect(() => {
+    if (left == null || left > 0 || !quiet) return;
+    setLeft(null);
+    setQuiet(false);
+    switchAway('never started the video');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [left, quiet]);
 
   const seasonInfo = d?.seasons.find((s) => s.number === season);
   const next = useMemo(() => {
@@ -241,7 +310,7 @@ export default function Watch() {
 
   // Servers that refuse to run in a sandbox ("Please disable sandbox") are loaded without it
   const sandbox = sandboxed ? 'allow-scripts allow-same-origin allow-forms allow-presentation' : undefined;
-  const nextServer = providers[(providers.findIndex((p) => p.id === pid) + 1) % providers.length];
+  const nextServer = pickNext(new Set(tried)) ?? providers[(providers.findIndex((p) => p.id === pid) + 1) % providers.length];
 
   const m = d?.media;
   const fav = m ? isFavorite(m) : false;
@@ -266,6 +335,7 @@ export default function Watch() {
 
       <iframe
         key={`${src}|${reload}|${sandboxed}`}
+        ref={frame}
         className="wp-frame"
         src={src}
         title={m?.title ?? 'Player'}
@@ -299,7 +369,7 @@ export default function Watch() {
         </div>
       )}
 
-      {((slow && !alive) || failed) && (
+      {((slow && !alive) || failed) && !quiet && (
         <div className="wp-slow" role="status">
           <span>{failed ? `${provider.name} doesn't have this one.` : `${provider.name} is taking a while to load.`}</span>
           <button className="pill warn" onClick={() => setServer(nextServer.id)}>Try {nextServer.name}</button>
@@ -307,16 +377,19 @@ export default function Watch() {
         </div>
       )}
 
-      <div className="wp-servers">
-        <b>STREAMING SERVER:</b>
-        {providers.map((p) => (
-          <button key={p.id} className={`pill ${p.id === pid ? 'on' : ''}`} onClick={() => setServer(p.id)}>
-            {p.name} <small>({p.quality})</small>
+      {quiet && !alive && (
+        <div className="wp-slow" role="status">
+          <span>
+            {left != null
+              ? <>No video from {provider.name} yet. Switching to {nextServer.name} in {Math.max(left, 0)}s</>
+              : <>{provider.name} hasn't started a video.</>}
+          </span>
+          <button className="pill warn" onClick={() => { setQuiet(false); switchAway('never started the video'); }}>
+            {left != null ? 'Switch now' : `Try ${nextServer.name}`}
           </button>
-        ))}
-        <button className="pill" onClick={() => setReload((n) => n + 1)}><Icon name="refresh" size={14} />Reload</button>
-        {t === 'tv' && <span className="chip stat wp-ep">Season {season} • Episode {episode}</span>}
-      </div>
+          <button className="pill" onClick={() => { setQuiet(false); setStay(true); }}>Stay here</button>
+        </div>
+      )}
 
       <div className="wp-main">
         <div className="wp-left">
@@ -355,7 +428,7 @@ export default function Watch() {
             <Link to={`/title/${t}/${mid}`} className="btn small ghost">Details</Link>
           </div>
           <p className="watch-help" style={{ background: 'none', padding: '14px 0', textAlign: 'left' }}>
-            Video not loading? Try another server above or{' '}
+            Video not loading? Pick another server from the list or{' '}
             <button
               className="link"
               onClick={() => {
@@ -437,7 +510,20 @@ export default function Watch() {
         </div>
 
         <aside className="wp-side">
-          {m?.poster ? <img src={posterSrc(m.poster)} alt={m.title} /> : null}
+          <ServerPanel
+            items={providers.map((p) => ({ key: p.id, name: p.name, note: p.quality }))}
+            current={pid}
+            onPick={(k) => { setSwitched(null); setServer(k); }}
+            onReload={() => setReload((n) => n + 1)}
+            worked={worked}
+            failed={new Set(tried)}
+            hidden={hidden}
+            onHidden={(v) => { setHidden(v); store.saveHiddenServers('movie', v); }}
+            autoSwitch={autoSwitch}
+            onAutoSwitch={(v) => { setAutoSwitch(v); store.saveAutoSwitch(v); }}
+          >
+            {t === 'tv' && <p className="sv-now">Playing <b>Season {season} · Episode {episode}</b></p>}
+          </ServerPanel>
         </aside>
       </div>
 
