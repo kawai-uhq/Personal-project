@@ -60,17 +60,23 @@ export default function Sports() {
   usePageTitle(current ? `${current.name} · Live` : 'Live Sports');
 
   const upcoming = useMemo(() => (all ?? []).filter((e) => stateOf(e, now) !== 'ended'), [all, now]);
+  // matches (games, fights, races with a start time) are kept apart from 24/7 channels
+  const matches = useMemo(() => upcoming.filter((e) => !e.alwaysLive), [upcoming]);
+  const channels = useMemo(() => upcoming.filter((e) => e.alwaysLive), [upcoming]);
   const cats = useMemo(() => {
     const m = new Map<string, number>();
-    upcoming.forEach((e) => m.set(e.category, (m.get(e.category) ?? 0) + 1));
+    matches.forEach((e) => m.set(e.category, (m.get(e.category) ?? 0) + 1));
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
-  }, [upcoming]);
-  const liveCount = upcoming.filter((e) => stateOf(e, now) === 'live').length;
+  }, [matches]);
+  const liveCount = matches.filter((e) => stateOf(e, now) === 'live').length;
+  // "Matches" falls back to the channels when the schedule has no matches at all
+  const view = cat === 'all' && matches.length === 0 ? 'channels' : cat;
+  const pool = view === 'channels' ? channels : matches;
 
   const shown = useMemo(() => {
     const words = q.trim().toLowerCase();
-    return upcoming
-      .filter((e) => (cat === 'live' ? stateOf(e, now) === 'live' : cat === 'all' ? true : e.category === cat))
+    return pool
+      .filter((e) => (view === 'live' ? stateOf(e, now) === 'live' : view === 'all' || view === 'channels' ? true : e.category === view))
       .filter((e) => !words || `${e.name} ${e.tag} ${e.category}`.toLowerCase().includes(words))
       .sort((a, b) => {
         const sa = stateOf(a, now);
@@ -79,7 +85,7 @@ export default function Sports() {
         if (a.alwaysLive !== b.alwaysLive) return a.alwaysLive ? 1 : -1; // real events before 24/7 channels
         return (a.start || 0) - (b.start || 0);
       });
-  }, [upcoming, cat, q, now]);
+  }, [pool, view, q, now]);
 
   const pick = (e: SportEvent) => {
     const n = new URLSearchParams(sp);
@@ -110,8 +116,8 @@ export default function Sports() {
           {all && (
             <p className="stats">
               <span><Icon name="live" size={14} />{liveCount} Live now</span>
-              <span><Icon name="calendar" size={14} />{upcoming.length} Events</span>
-              <span><Icon name="trophy" size={14} />{cats.length} Sports</span>
+              <span><Icon name="calendar" size={14} />{matches.length} {matches.length === 1 ? 'Match' : 'Matches'}</span>
+              {channels.length > 0 && <span><Icon name="tv" size={14} />{channels.length} {channels.length === 1 ? 'Channel' : 'Channels'}</span>}
             </p>
           )}
           {all && <button className="btn small ghost live-refresh" onClick={() => load()}><Icon name="refresh" size={14} />Refresh</button>}
@@ -163,16 +169,23 @@ export default function Sports() {
               <input className="field" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search teams, leagues or sports…" aria-label="Search events" />
             </div>
             <div className="chips flush" role="tablist" aria-label="Categories">
-              <button role="tab" aria-selected={cat === 'all'} className={`chip ${cat === 'all' ? 'on' : ''}`} onClick={() => setCat('all')}>All</button>
-              <button role="tab" aria-selected={cat === 'live'} className={`chip ${cat === 'live' ? 'on' : ''}`} onClick={() => setCat('live')}>Live now</button>
+              <button role="tab" aria-selected={view === 'all'} className={`chip ${view === 'all' ? 'on' : ''}`} onClick={() => setCat('all')}>Matches</button>
+              <button role="tab" aria-selected={view === 'live'} className={`chip ${view === 'live' ? 'on' : ''}`} onClick={() => setCat('live')}>Live now</button>
               {cats.map(([c]) => (
-                <button key={c} role="tab" aria-selected={cat === c} className={`chip ${cat === c ? 'on' : ''}`} onClick={() => setCat(c)}>{c}</button>
+                <button key={c} role="tab" aria-selected={view === c} className={`chip ${view === c ? 'on' : ''}`} onClick={() => setCat(c)}>{c}</button>
               ))}
+              {channels.length > 0 && (
+                <button role="tab" aria-selected={view === 'channels'} className={`chip ${view === 'channels' ? 'on' : ''}`} onClick={() => setCat('channels')}>24/7 Channels</button>
+              )}
             </div>
-            <p className="muted small">Showing {shown.length} of {upcoming.length} events</p>
+            <p className="muted small">
+              {view === 'channels'
+                ? `${shown.length} channels that stream all day${cat === 'all' ? ' (no matches are scheduled right now)' : ''}`
+                : `Showing ${shown.length} of ${matches.length} matches`}
+            </p>
 
             {shown.length === 0 ? (
-              <Status kind="empty" text={cat === 'live' ? 'Nothing is live right now. Check "All" for upcoming events.' : 'No events match.'} />
+              <Status kind="empty" text={view === 'live' ? 'No match is live right now. Check "Matches" for what\'s coming up, or the 24/7 channels.' : 'Nothing matches your search.'} />
             ) : (
               <div className="sp-grid">
                 {shown.map((e) => {
