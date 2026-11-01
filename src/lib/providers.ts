@@ -388,6 +388,17 @@ export const providers: Provider[] = [
     movie: (id) => `https://vidrock.net/movie/${id}?autoplay=true&theme=ff6b57`,
     tv: (id, s, e) => `https://vidrock.net/tv/${id}/${s}/${e}?autoplay=true&theme=ff6b57&autonext=false&nextbutton=false`,
     parse: (ev) => (ev.origin === 'https://vidrock.net' ? playerEvent(ev, () => true) : null)
+  },
+  {
+    id: 'mapple',
+    name: 'Server 23',
+    quality: 'HD',
+    sandboxOk: false,
+    // our page runs its own up-next countdown, so the player's auto-next and next button are off
+    movie: (id, start = 0) => `https://mapple.fun/watch/movie/${id}?autoPlay=true&theme=ff6b57${start > 0 ? `&startAt=${start}` : ''}`,
+    tv: (id, s, e, start = 0) =>
+      `https://mapple.fun/watch/tv/${id}-${s}-${e}?autoPlay=true&theme=ff6b57&autoNext=false&nextButton=false${start > 0 ? `&startAt=${start}` : ''}`,
+    parse: (ev) => (ev.origin === 'https://mapple.fun' ? playerEvent(ev, () => true) : null)
   }
 ];
 
