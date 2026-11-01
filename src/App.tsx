@@ -21,6 +21,7 @@ import Home from './pages/Home';
 import { About, Dmca, Privacy, Terms } from './pages/Legal';
 const Help = lazy(() => import('./pages/Help'));
 const Live = lazy(() => import('./pages/Live'));
+const Sports = lazy(() => import('./pages/Sports'));
 const PersonPage = lazy(() => import('./pages/Person'));
 const MyList = lazy(() => import('./pages/MyList'));
 const Providers = lazy(() => import('./pages/Providers'));
@@ -146,6 +147,7 @@ export default function App() {
         <Route path="/manga/*" element={<NotFound />} />
         <Route path="/anime/*" element={<NotFound />} />
         <Route path="/live" element={<Live />} />
+        <Route path="/sports" element={<Sports />} />
         <Route path="/list" element={<MyList key="main" />} />
         <Route path="/person/:id" element={<PersonPage />} />
         <Route path="/account" element={<Account />} />

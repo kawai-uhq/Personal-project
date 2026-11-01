@@ -56,6 +56,7 @@ export default function Navbar() {
               <NavLink to="/movies"><Icon name="film" size={18} />Movies</NavLink>
               <NavLink to="/tv"><Icon name="tv" size={18} />TV Shows</NavLink>
               <NavLink to="/live"><Icon name="live" size={18} />Live TV</NavLink>
+              <NavLink to="/sports"><Icon name="trophy" size={18} />Sports</NavLink>
               <NavLink to="/genres"><Icon name="grid" size={18} />Genres</NavLink>
               <NavLink to="/list"><Icon name="bookmark" size={18} />My Library{dot > 0 && <span className="nav-dot" aria-label={dotTip} data-tip={dotTip} />}</NavLink>
             </nav>
@@ -104,6 +105,7 @@ export default function Navbar() {
           <NavLink to="/movies"><Icon name="film" size={18} /><span>Movies</span></NavLink>
           <NavLink to="/tv"><Icon name="tv" size={18} /><span>TV</span></NavLink>
           <NavLink to="/live"><Icon name="live" size={18} /><span>Live</span></NavLink>
+          <NavLink to="/sports"><Icon name="trophy" size={18} /><span>Sports</span></NavLink>
           <NavLink to="/list"><Icon name="bookmark" size={18} /><span>Library</span>{dot > 0 && <i className="nav-dot" />}</NavLink>
         </nav>
       )}

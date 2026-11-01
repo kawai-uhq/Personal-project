@@ -1,6 +1,6 @@
 // Vercel serverless function: robots.txt and sitemap.xml for whichever Comvie sub-domain asked.
 const PAGES = {
-  cinema: ['/', '/movies', '/tv', '/live', '/genres', '/providers', '/collections', '/search'],
+  cinema: ['/', '/movies', '/tv', '/live', '/sports', '/genres', '/providers', '/collections', '/search'],
   anime: ['/', '/explore', '/genres', '/studios', '/search'],
   manga: ['/', '/explore', '/genres', '/publishers', '/search'],
   shared: ['/about', '/help', '/contact', '/legal/terms', '/legal/privacy', '/legal/dmca']
