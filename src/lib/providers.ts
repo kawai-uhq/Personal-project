@@ -96,6 +96,7 @@ const vidukiProgress = (ev: MessageEvent): PlayerTick | null => {
 
 const VIDRIFT = 'https://embed.vidrift.net';
 const VELARIUM = 'https://velarium.cc';
+const STELLAR = 'https://stellar.rip';
 const vidriftMsg = (ev: MessageEvent): any => {
   if (ev.origin !== VIDRIFT) return null;
   const m = ev.data;
@@ -432,6 +433,66 @@ export const providers: Provider[] = [
     movie: (id, start = 0) => `https://vidly.pro/movie/${id}?color=ff6b57&autoplay=1${start > 0 ? `&t=${start}` : ''}`,
     tv: (id, s, e, start = 0) => `https://vidly.pro/tv/${id}/${s}/${e}?color=ff6b57&autoplay=1&nextEpisode=0${start > 0 ? `&t=${start}` : ''}`,
     parse: vidlyProgress
+  },
+  {
+    id: 'embedmaster',
+    name: 'Server 25',
+    quality: 'HD',
+    sandboxOk: false,
+    // EmbedMaster documents no start-time option and no progress times in its messages
+    movie: (id) => `https://embedmaster.link/movie/${id}?autoplay=on&welcome_page=off`,
+    tv: (id, s, e) => `https://embedmaster.link/tv/${id}/${s}/${e}?autoplay=on&welcome_page=off`,
+    parse: () => null
+  },
+  {
+    id: 'vidsrcmov',
+    name: 'Server 26',
+    quality: 'HD',
+    sandboxOk: false,
+    // VidSrc.mov documents no options or progress messages
+    movie: (id) => `https://vidsrc.mov/embed/movie/${id}`,
+    tv: (id, s, e) => `https://vidsrc.mov/embed/tv/${id}/${s}/${e}`,
+    parse: () => null
+  },
+  {
+    id: 'vidcore',
+    name: 'Server 27',
+    quality: 'HD',
+    sandboxOk: false,
+    movie: (id, start = 0) => `https://vidcore.org/embed/movie/${id}?autoplay=true&theme=ff6b57${start > 0 ? `&startAt=${start}` : ''}`,
+    tv: (id, s, e, start = 0) => `https://vidcore.org/embed/tv/${id}/${s}/${e}?autoplay=true&theme=ff6b57${start > 0 ? `&startAt=${start}` : ''}`,
+    // VidCore only reports play / pause / ended (no times), so only the end is used
+    parse: (ev) => {
+      try {
+        const h = new URL(ev.origin).hostname;
+        if (h !== 'vidcore.org' && !h.endsWith('.vidcore.org')) return null;
+      } catch {
+        return null;
+      }
+      let m = ev.data;
+      if (typeof m === 'string') {
+        try {
+          m = JSON.parse(m);
+        } catch {
+          return m === 'vidcore:ended' ? { t: 0, d: 0, ended: true } : null;
+        }
+      }
+      const type = m && typeof m === 'object' ? m.type ?? m.event : null;
+      return type === 'vidcore:ended' ? { t: 0, d: 0, ended: true } : null;
+    }
+  },
+  {
+    id: 'stellar',
+    name: 'Server 28',
+    quality: 'HD',
+    sandboxOk: false,
+    // our page runs its own up-next countdown, so the player's next-episode button and auto-next are off
+    movie: (id, start = 0) => `${STELLAR}/en/watch/embed/movie/${id}?autoPlay=true&theme=ff6b57${start > 0 ? `&startAt=${start}` : ''}`,
+    tv: (id, s, e, start = 0) =>
+      `${STELLAR}/en/watch/embed/tv/${id}-${s}-${e}?autoPlay=true&theme=ff6b57&autoNext=false&nextButton=false${start > 0 ? `&startAt=${start}` : ''}`,
+    // the player only shares progress after the page says hello
+    onFrameLoad: () => ({ msg: { type: 'STELLAR_EMBED_INIT' }, origin: STELLAR }),
+    parse: (ev) => (ev.origin === STELLAR ? playerEvent(ev, () => true) : null)
   }
 ];
 
