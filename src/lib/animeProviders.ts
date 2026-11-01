@@ -81,22 +81,6 @@ export const animeServers: AnimeServer[] = [
       }
       return null;
     }
-  },
-  {
-    name: 'Server 4',
-    note: 'Sub / Dub',
-    langs: ['sub', 'dub'],
-    resumes: false,
-    url: ({ id, ep, lang }) => `https://vidnest.fun/anime/${id}/${ep}/${lang}`,
-    parse: (ev) => {
-      const m = obj(ev);
-      if (!m || m.type !== 'PLAYER_EVENT') return null;
-      const x = m.data ?? m;
-      const t = num(x.currentTime);
-      const d = num(x.duration);
-      if (x.event === 'ended') return { t: Number.isFinite(d) ? d : 0, d: Number.isFinite(d) ? d : 0, ended: true };
-      return Number.isFinite(t) ? { t, d: Number.isFinite(d) ? d : 0 } : null;
-    }
   }
 ];
 
