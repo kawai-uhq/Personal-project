@@ -315,6 +315,16 @@ export const providers: Provider[] = [
     movie: (id) => `https://player.cinezo.live/embed/movie/${id}?autoplay=true`,
     tv: (id, s, e) => `https://player.cinezo.live/embed/tv/${id}/${s}/${e}?autoplay=true`,
     parse: (ev) => playerEvent(ev, (h) => h === 'cinezo.live' || h.endsWith('.cinezo.live'))
+  },
+  {
+    id: '2embed',
+    name: 'Server 18',
+    quality: 'HD',
+    sandboxOk: false,
+    // 2Embed documents no options or progress messages; the TV address really uses "&s=" with no "?"
+    movie: (id) => `https://www.2embed.cc/embed/${id}`,
+    tv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
+    parse: () => null
   }
 ];
 
