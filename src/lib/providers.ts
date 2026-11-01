@@ -493,6 +493,17 @@ export const providers: Provider[] = [
     // the player only shares progress after the page says hello
     onFrameLoad: () => ({ msg: { type: 'STELLAR_EMBED_INIT' }, origin: STELLAR }),
     parse: (ev) => (ev.origin === STELLAR ? playerEvent(ev, () => true) : null)
+  },
+  {
+    id: 'vidup',
+    name: 'Server 29',
+    quality: 'HD',
+    sandboxOk: false,
+    // our page runs its own up-next countdown, so the player's next button and auto-next are off
+    movie: (id, start = 0) => `https://vidup.to/movie/${id}?autoPlay=true&theme=ff6b57${start > 0 ? `&startAt=${start}` : ''}`,
+    tv: (id, s, e, start = 0) =>
+      `https://vidup.to/tv/${id}/${s}/${e}?autoPlay=true&theme=ff6b57&nextButton=false&autoNext=false${start > 0 ? `&startAt=${start}` : ''}`,
+    parse: (ev) => (ev.origin === 'https://vidup.to' ? playerEvent(ev, () => true) : null)
   }
 ];
 
