@@ -271,6 +271,16 @@ export const providers: Provider[] = [
     movie: (id) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
     tv: (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
     parse: () => null
+  },
+  {
+    id: 'embedwave',
+    name: 'Server 14',
+    quality: 'HD · multi-source',
+    sandboxOk: false,
+    // EmbedWave documents no start-time option or progress messages: it starts from the beginning
+    movie: (id) => `https://embedwave.cc/embed/movie/${id}?autoplay=1`,
+    tv: (id, s, e) => `https://embedwave.cc/embed/tv/${id}/${s}/${e}?autoplay=1`,
+    parse: () => null
   }
 ];
 
