@@ -1,4 +1,6 @@
 /** Players used only by the anime section. They are addressed by AniList id + episode number. */
+import { vidlyProgress } from './providers';
+
 export type Lang = 'sub' | 'dub' | 'hsub';
 
 export interface AnimeTick { t: number; d: number; ended?: boolean }
@@ -169,6 +171,16 @@ export const animeServers: AnimeServer[] = [
     resumes: false,
     url: ({ id, ep, lang }) => `https://player.cinezo.live/embed/anime/${id}/${ep}?dub=${lang === 'dub'}&autoplay=true`,
     parse: (ev) => playerEvent(ev, (h) => h === 'cinezo.live' || h.endsWith('.cinezo.live'))
+  },
+  {
+    name: 'Server 9',
+    note: 'Sub / Dub · resumes',
+    langs: ['sub', 'dub'],
+    resumes: true,
+    // our page runs its own up-next countdown, so the player's Next Episode button is hidden
+    url: ({ id, ep, lang, start }) =>
+      `https://vidly.pro/anime/${id}/${ep}/${lang}?color=ff6b57&autoplay=1&nextEpisode=0${start > 0 ? `&t=${start}` : ''}`,
+    parse: (ev) => vidlyProgress(ev)
   }
 ];
 

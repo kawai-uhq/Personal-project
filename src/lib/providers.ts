@@ -152,6 +152,29 @@ const vidstuckProgress = (ev: MessageEvent): PlayerTick | null => {
   return { t, d };
 };
 
+/** Vidly posts `{ type: 'VIDLY_PLAYER_EVENT', data: { event, currentTime, duration } }` */
+export const vidlyProgress = (ev: MessageEvent): PlayerTick | null => {
+  try {
+    const h = new URL(ev.origin).hostname;
+    if (h !== 'vidly.pro' && !h.endsWith('.vidly.pro')) return null;
+  } catch {
+    return null;
+  }
+  let m = ev.data;
+  if (typeof m === 'string') {
+    try {
+      m = JSON.parse(m);
+    } catch {
+      return null;
+    }
+  }
+  if (!m || m.type !== 'VIDLY_PLAYER_EVENT' || !m.data || typeof m.data !== 'object') return null;
+  const x = m.data;
+  if (x.event === 'ended') return { t: 0, d: 0, ended: true };
+  if (x.event === 'timeupdate' || x.event === 'pause') return { t: num(x.currentTime), d: num(x.duration) };
+  return null;
+};
+
 const cineQuery = (start: number, o: PlayOpts, first: '?' | '&') => {
   const q: string[] = [];
   if (start > 0) q.push(`t=${start}`, 'continueprompt=false');
@@ -399,6 +422,16 @@ export const providers: Provider[] = [
     tv: (id, s, e, start = 0) =>
       `https://mapple.fun/watch/tv/${id}-${s}-${e}?autoPlay=true&theme=ff6b57&autoNext=false&nextButton=false${start > 0 ? `&startAt=${start}` : ''}`,
     parse: (ev) => (ev.origin === 'https://mapple.fun' ? playerEvent(ev, () => true) : null)
+  },
+  {
+    id: 'vidly',
+    name: 'Server 24',
+    quality: 'HD · best source',
+    sandboxOk: false,
+    // our page runs its own up-next countdown, so the player's Next Episode button is hidden
+    movie: (id, start = 0) => `https://vidly.pro/movie/${id}?color=ff6b57&autoplay=1${start > 0 ? `&t=${start}` : ''}`,
+    tv: (id, s, e, start = 0) => `https://vidly.pro/tv/${id}/${s}/${e}?color=ff6b57&autoplay=1&nextEpisode=0${start > 0 ? `&t=${start}` : ''}`,
+    parse: vidlyProgress
   }
 ];
 
