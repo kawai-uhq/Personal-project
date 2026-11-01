@@ -129,6 +129,29 @@ const vidapiProgress = (ev: MessageEvent): PlayerTick | null => {
   return null;
 };
 
+/** Vidstuck posts a JSON string: { id, type, progress (%), timestamp (seconds), duration, season, episode } */
+const vidstuckProgress = (ev: MessageEvent): PlayerTick | null => {
+  try {
+    const h = new URL(ev.origin).hostname;
+    if (h !== 'vidstuck.cc' && !h.endsWith('.vidstuck.cc')) return null;
+  } catch {
+    return null;
+  }
+  let m = ev.data;
+  if (typeof m === 'string') {
+    try {
+      m = JSON.parse(m);
+    } catch {
+      return null;
+    }
+  }
+  if (!m || typeof m !== 'object' || !('timestamp' in m)) return null;
+  const t = num(m.timestamp);
+  const d = num(m.duration);
+  if (d > 0 && t >= d - 1) return { t: 0, d: 0, ended: true };
+  return { t, d };
+};
+
 const cineQuery = (start: number, o: PlayOpts, first: '?' | '&') => {
   const q: string[] = [];
   if (start > 0) q.push(`t=${start}`, 'continueprompt=false');
@@ -345,6 +368,16 @@ export const providers: Provider[] = [
     movie: (id) => `https://zxcstream.cc/player/movie/${id}?color=ff6b57&autoplay=true`,
     tv: (id, s, e) => `https://zxcstream.cc/player/tv/${id}/${s}/${e}?color=ff6b57&autoplay=true`,
     parse: () => null
+  },
+  {
+    id: 'vidstuck',
+    name: 'Server 21',
+    quality: 'HD',
+    sandboxOk: false,
+    // our page runs its own up-next countdown, so the player's next-episode options stay off
+    movie: (id, start = 0) => `https://vidstuck.cc/embed/movie/${id}?color=ff6b57${start > 0 ? `&progress=${start}` : ''}`,
+    tv: (id, s, e, start = 0) => `https://vidstuck.cc/embed/tv/${id}/${s}/${e}?color=ff6b57${start > 0 ? `&progress=${start}` : ''}`,
+    parse: vidstuckProgress
   }
 ];
 
