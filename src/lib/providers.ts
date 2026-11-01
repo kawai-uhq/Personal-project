@@ -281,6 +281,16 @@ export const providers: Provider[] = [
     movie: (id) => `https://embedwave.cc/embed/movie/${id}?autoplay=1`,
     tv: (id, s, e) => `https://embedwave.cc/embed/tv/${id}/${s}/${e}?autoplay=1`,
     parse: () => null
+  },
+  {
+    id: 'videm',
+    name: 'Server 15',
+    quality: 'HD · auto source',
+    sandboxOk: false,
+    // Videm documents no start-time option or progress messages: it starts from the beginning
+    movie: (id) => `https://videm.xyz/embed/movie/${id}?autoplay=true`,
+    tv: (id, s, e) => `https://videm.xyz/embed/tv/${id}/${s}/${e}?autoplay=true`,
+    parse: () => null
   }
 ];
 
