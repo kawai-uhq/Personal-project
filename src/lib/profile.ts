@@ -73,7 +73,7 @@ async function rest(token: string | null, method: string, path: string, body?: u
   });
 }
 
-/** A username made from what someone typed at sign-up (or their Discord / Google name) */
+/** A username made from what someone typed at sign-up (or their Discord name) */
 export const cleanUsername = (s: string) => s.toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 20);
 
 export async function usernameFree(name: string): Promise<boolean> {
@@ -97,7 +97,7 @@ export async function loadProfile(token: string): Promise<Profile | null> {
       set(rows[0]);
       return rows[0];
     }
-    // first time: take the username chosen at sign-up (or the Discord / Google name) if it's free
+    // first time: take the username chosen at sign-up (or the Discord name) if it's free
     const u = await getUser(token);
     let username: string | null = cleanUsername(u?.username || '');
     if (!USERNAME_RE.test(username) || !(await usernameFree(username))) username = null;

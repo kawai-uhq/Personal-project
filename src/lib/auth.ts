@@ -196,9 +196,9 @@ export async function getUser(accessToken: string): Promise<{ id: string; email:
   }
 }
 
-export type OAuthProvider = 'discord' | 'google';
+export type OAuthProvider = 'discord';
 
-/** Where "Continue with Discord / Google" goes. Supabase sends the person back to this page with the sign-in in the
+/** Where "Continue with Discord" goes. Supabase sends the person back to this page with the sign-in in the
  *  address (#access_token=…). Discord also asks to join the Discord server ("guilds.join"). */
 export function oauthUrl(provider: OAuthProvider): string {
   const back = `${location.origin}${location.pathname}`;
@@ -206,7 +206,7 @@ export function oauthUrl(provider: OAuthProvider): string {
   return `${BASE}/auth/v1/authorize?provider=${provider}&redirect_to=${encodeURIComponent(back)}${scopes ? `&scopes=${encodeURIComponent(scopes)}` : ''}`;
 }
 
-/** The sign-in Supabase put in the address after Discord / Google (and clears it from the address bar). */
+/** The sign-in Supabase put in the address after Discord (and clears it from the address bar). */
 export function takeOAuthResult(): { session: Session; providerToken: string | null } | { error: string } | null {
   if (typeof location === 'undefined' || !location.hash) return null;
   const h = new URLSearchParams(location.hash.slice(1));

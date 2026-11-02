@@ -242,7 +242,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void signOutRemote(token);
   };
 
-  // Back from "Continue with Discord / Google": Supabase put the sign-in in the address
+  // Back from "Continue with Discord": Supabase put the sign-in in the address
   const signedInRef = useRef(onSignedIn);
   signedInRef.current = onSignedIn;
   useEffect(() => {

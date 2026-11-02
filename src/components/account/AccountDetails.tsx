@@ -64,7 +64,7 @@ export default function AccountDetails() {
       <div className="acct-line">
         <div>
           <strong>Password</strong>
-          <small className="muted">Signed in with Discord or Google? Set one here to sign in with your email too.</small>
+          <small className="muted">Signed in with Discord? Set one here to sign in with your email too.</small>
         </div>
         <button className="btn small ghost" onClick={() => { setOpen(open === 'pass' ? null : 'pass'); setMsg(null); }}><Icon name="lock" size={14} />Change password</button>
       </div>

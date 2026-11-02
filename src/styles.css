@@ -1781,7 +1781,6 @@ html.light .sv-item { background: rgba(40, 20, 30, .04); }
 .auth-social .btn { width: 100%; height: 46px; gap: 10px; text-decoration: none; }
 .auth-discord { background: #5865f2; color: #fff; }
 .auth-discord:hover { background: #4752c4; }
-.auth-google { background: #fff; color: #1f1f1f; }
 .auth-or { display: flex; align-items: center; gap: 12px; margin: 18px 0 2px; color: var(--muted); font-size: 12px; font-weight: 700; }
 .auth-or::before, .auth-or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 
