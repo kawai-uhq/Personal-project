@@ -6,6 +6,7 @@ import Surprise from '../components/Surprise';
 import { useSection } from '../lib/section';
 import { tmdb } from '../lib/tmdb';
 import AnimeSearch from './AnimeSearch';
+import AlsoIn from '../components/AlsoIn';
 import type { Media } from '../lib/types';
 
 type Filter = 'all' | 'movie' | 'tv';
@@ -142,6 +143,7 @@ function CinemaSearch() {
             ) : (
               <Grid items={shown} cards />
             )}
+            <AlsoIn q={urlQ} />
           </>
         )}
       </div>

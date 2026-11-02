@@ -6,6 +6,8 @@ import FeedRow from '../components/FeedRow';
 import { ContinueRow, HomeSkeleton, PosterRow, Status } from '../components/Rows';
 import { CollectionsRow, MoodRow } from '../components/Discover';
 import BecauseRows from '../components/BecauseRows';
+import { PopularCinemaRow } from '../components/PopularRow';
+import AiringRow from '../components/AiringRow';
 import { tmdb } from '../lib/tmdb';
 import type { Media } from '../lib/types';
 import { useNewEpisodes } from '../lib/useNewEpisodes';
@@ -53,12 +55,14 @@ export default function Home() {
       <Ambient items={heroes} active={active} />
       <Billboard items={heroes} onActive={onActive} />
       <ContinueRow items={history} onRemove={removeWatch} />
+      <AiringRow kind="tv" />
       <ProviderRow />
       <MoodRow section="cinema" />
       <PosterRow title="My Watchlist" items={favorites} to="/list" fresh={fresh} />
       <PosterRow title="My Favorites" items={loved} to="/list" fresh={fresh} />
       <BecauseRows history={history} />
       <PosterRow title="Trending Today" items={trending} to="/explore/trending-day" />
+      <PopularCinemaRow />
       <CollectionsRow />
       {FEED_ORDER.map((f) => (
         <FeedRow key={f} feed={f} />

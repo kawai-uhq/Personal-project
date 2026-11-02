@@ -114,6 +114,15 @@ export async function mangaList(q: MangaQuery): Promise<{ items: Manga[]; more: 
   return { items: ((d?.Page?.media ?? []) as any[]).map(mapManga), more: !!d?.Page?.pageInfo?.hasNextPage, last: d?.Page?.pageInfo?.lastPage ?? 1 };
 }
 
+/** Manga matching a search, never adult titles (for showing on the main site). */
+export async function mangaSearchSafe(search: string, perPage = 14): Promise<Manga[]> {
+  const d = await gql(
+    `query($s:String,$n:Int){ Page(perPage:$n){ media(search:$s, type:MANGA, format_not:NOVEL, isAdult:false, sort:SEARCH_MATCH){ ${MEDIA} } } }`,
+    { s: search, n: perPage }
+  );
+  return ((d?.Page?.media ?? []) as any[]).map(mapManga);
+}
+
 export async function mangaFull(id: number): Promise<MangaFull> {
   const d = await gql(
     `query($id:Int){ Media(id:$id, type:MANGA){ ${MEDIA}

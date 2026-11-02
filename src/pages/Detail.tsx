@@ -1,3 +1,5 @@
+import { useAnimeHome } from '../lib/animeLink';
+import { useNavigate as useNav2 } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { usePageTitle } from '../lib/title';
 import { Link, useParams } from 'react-router-dom';
@@ -36,6 +38,12 @@ export default function DetailPage() {
   const [showTrailer, setShowTrailer] = useState(false);
   const [cast, setCast] = useState<CastMember[]>([]);
   const [directors, setDirectors] = useState<string[]>([]);
+  // anime are shown in the anime section: once it's found there, go (the main page stays if it isn't)
+  const go2 = useNav2();
+  const animeHome = useAnimeHome(d?.media, (aid) => `/anime/title/${aid}`);
+  useEffect(() => {
+    if (animeHome.to) go2(animeHome.to, { replace: true });
+  }, [animeHome.to, go2]);
 
   useEffect(() => {
     let live = true;
@@ -77,7 +85,7 @@ export default function DetailPage() {
   }, [t, mid, season]);
 
   if (error) return <main className="page pad-top"><Status kind="error" text={error} /></main>;
-  if (!d) return <DetailSkeleton />;
+  if (!d || animeHome.looking || animeHome.to) return <DetailSkeleton />;
 
   const m = d.media;
   const resume = history.find((w) => mediaKey(w.media) === mediaKey(m));

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimeCard } from '../components/AnimeCard';
 import Icon from '../components/Icon';
+import { toPublic as P } from '../lib/site';
 import { askConfirm } from '../components/Confirm';
 import { Status } from '../components/Rows';
 import { useAnimeStore } from '../lib/animeStore';
@@ -46,6 +47,7 @@ export default function AnimeLibrary() {
             <h1 className="title">Anime <span className="accent">Library</span></h1>
             <p className="muted">Your anime history, watchlist and favorites (saved locally on your device).</p>
           </div>
+          <Link to={P('/anime/schedule')} className="btn small ghost"><Icon name="calendar" size={15} />Airing this week</Link>
         </div>
         <div className="lib-tabs">
           <div className="pills" style={{ margin: 0, justifyContent: 'flex-start' }} role="tablist">

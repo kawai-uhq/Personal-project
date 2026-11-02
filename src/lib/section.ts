@@ -4,7 +4,7 @@ import { hostSection } from './site';
 export type Section = 'cinema' | 'anime' | 'manga';
 
 // Pages of the main site; everything else (a title page, search, settings…) stays in whichever section you came from
-const MAIN = new Set(['/', '/movies', '/tv', '/live', '/sports', '/genres', '/list']);
+const MAIN = new Set(['/', '/movies', '/tv', '/live', '/sports', '/schedule', '/genres', '/list']);
 let current: Section = 'cinema';
 
 export function sectionFor(pathname: string): Section {

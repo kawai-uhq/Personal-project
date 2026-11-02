@@ -102,6 +102,7 @@ export default function MyList({ anime = false }: { anime?: boolean }) {
             <h1 className="title">My <span className="accent">Library</span></h1>
             <p className="muted">Manage your watch history, watchlist and favorites{session ? '.' : ' (saved locally on your device).'}</p>
           </div>
+          <Link to="/schedule" className="btn small ghost"><Icon name="calendar" size={15} />Airing this week</Link>
           <div className="seg lib-kind" role="tablist" aria-label="Show">
             {([['all', 'All'], ['movie', 'Movies'], ['tv', 'TV Shows'], ['anime', 'Anime']] as [Kind, string][]).map(([k, label]) => (
               <button key={k} role="tab" aria-selected={kind === k} className={kind === k ? 'on' : ''} onClick={() => setKind(k)}>{label} ({count(k)})</button>

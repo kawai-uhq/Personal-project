@@ -415,3 +415,34 @@ export async function aniCast(id: number, page = 1, lang: CastLang = 'JAPANESE')
     more: !!c?.pageInfo?.hasNextPage
   };
 }
+
+/** Several anime by id, in the order given (one request). */
+export async function aniByIds(ids: number[]): Promise<Ani[]> {
+  if (!ids.length) return [];
+  const d = await gql(`query($ids:[Int]){ Page(perPage:50){ media(id_in:$ids, type:ANIME, isAdult:false){ ${MEDIA} } } }`, { ids });
+  const got = ((d?.Page?.media ?? []) as any[]).map(mapAni);
+  return ids.map((id) => got.find((a) => a.id === id)).filter((a): a is Ani => !!a);
+}
+
+/** Anime matching a search, never adult titles (for showing on the main site). */
+export async function aniSearchSafe(search: string, perPage = 14): Promise<Ani[]> {
+  const d = await gql(
+    `query($s:String,$n:Int){ Page(perPage:$n){ media(search:$s, type:ANIME, isAdult:false, sort:SEARCH_MATCH){ ${MEDIA} } } }`,
+    { s: search, n: perPage }
+  );
+  return ((d?.Page?.media ?? []) as any[]).map(mapAni);
+}
+
+/** Possible AniList matches for a TMDB title (title variants, format and year), never adult titles. */
+export async function aniCandidates(search: string): Promise<{ id: number; titles: string[]; format: string | null; year: number | null }[]> {
+  const d = await gql(
+    `query($s:String){ Page(perPage:10){ media(search:$s, type:ANIME, isAdult:false, sort:SEARCH_MATCH){ id title{ romaji english native } synonyms format startDate{ year } } } }`,
+    { s: search }
+  );
+  return ((d?.Page?.media ?? []) as any[]).map((m) => ({
+    id: m.id,
+    titles: [m.title?.english, m.title?.romaji, m.title?.native, ...((m.synonyms ?? []) as string[])].filter(Boolean),
+    format: m.format ?? null,
+    year: m.startDate?.year ?? null
+  }));
+}

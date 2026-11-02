@@ -16,6 +16,9 @@ import { useApp } from '../state';
 import Select from '../components/Select';
 import ServerPanel from '../components/ServerPanel';
 import { isBad, isGood, scoreOf, useHealth, vote } from '../lib/serverHealth';
+import { recordPlay } from '../lib/popular';
+import { useShortcuts } from '../lib/shortcuts';
+import { useAnimeHome } from '../lib/animeLink';
 
 /** How long a server that normally reports playback may stay silent before we call it broken */
 const QUIET_MS = 25000;
@@ -98,9 +101,17 @@ export default function Watch() {
     };
   }, [t, mid, viewSeason]);
 
-  // Remember what is being watched
+  // anime play in the anime section: same episode for a show's first season, the title page otherwise
+  const animeHome = useAnimeHome(d?.media, (aid) =>
+    t === 'movie' ? `/anime/watch/${aid}` : season === 1 ? `/anime/watch/${aid}?e=${episode}` : `/anime/title/${aid}`
+  );
   useEffect(() => {
-    if (!d) return;
+    if (animeHome.to) nav(animeHome.to, { replace: true });
+  }, [animeHome.to, nav]);
+
+  // Remember what is being watched (not while an anime is on its way to the anime section)
+  useEffect(() => {
+    if (!d || animeHome.looking || animeHome.to) return;
     recordWatch({
       media: d.media,
       season: t === 'tv' ? season : null,
@@ -110,7 +121,7 @@ export default function Watch() {
     });
     // only when the title / episode / server changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [d, season, episode, pid]);
+  }, [d, season, episode, pid, animeHome.looking, animeHome.to]);
 
   // Where to start: the saved spot minus 5 seconds. Read when the episode / server / reload changes,
   // never while playing (that would reload the player).
@@ -211,6 +222,7 @@ export default function Watch() {
     store.saveGoodServer(goodKey, serverSlug(pid));
     store.saveWorkedServer('movie', pid);
     vote(goodKey, pid, true);
+    recordPlay(goodKey);
     setWorked((w) => (w.has(pid) ? w : new Set(w).add(pid)));
     setQuiet(false);
   }, [alive, goodKey, pid]);
@@ -333,6 +345,19 @@ export default function Watch() {
   // Servers that refuse to run in a sandbox ("Please disable sandbox") are loaded without it
   const sandbox = sandboxed ? 'allow-scripts allow-same-origin allow-forms allow-presentation' : undefined;
   const nextServer = pickNext(new Set(tried)) ?? providers[(providers.findIndex((p) => p.id === pid) + 1) % providers.length];
+  const prevEp = (): { s: number; e: number } | null => {
+    if (t !== 'tv') return null;
+    if (episode > 1) return { s: season, e: episode - 1 };
+    const ps = d?.seasons.find((x) => x.number === season - 1);
+    return ps ? { s: ps.number, e: ps.episodeCount } : null;
+  };
+  // keyboard: N next episode, P previous episode, S next server, R reload
+  useShortcuts({
+    n: next ? () => go(next.s, next.e) : null,
+    p: prevEp() ? () => { const x = prevEp(); if (x) go(x.s, x.e); } : null,
+    s: () => { setSwitched(null); setServer(nextServer.id); },
+    r: () => setReload((n) => n + 1)
+  });
 
   const m = d?.media;
   const fav = m ? isFavorite(m) : false;
@@ -471,6 +496,9 @@ export default function Watch() {
             {next && <button className="btn small ghost" onClick={() => go(next.s, next.e)}>Next<Icon name="chevronRight" size={15} /></button>}
             <Link to={`/title/${t}/${mid}`} className="btn small ghost">Details</Link>
           </div>
+          <p className="muted small wp-keys">
+            Keys: {t === 'tv' && <><kbd>N</kbd> next · <kbd>P</kbd> previous · </>}<kbd>S</kbd> switch server · <kbd>R</kbd> reload
+          </p>
           <p className="watch-help" style={{ background: 'none', padding: '14px 0', textAlign: 'left' }}>
             Video not loading? Pick another server from the list or{' '}
             <button

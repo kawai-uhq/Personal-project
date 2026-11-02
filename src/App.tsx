@@ -23,6 +23,7 @@ import { About, Dmca, Privacy, Terms } from './pages/Legal';
 const Help = lazy(() => import('./pages/Help'));
 const Live = lazy(() => import('./pages/Live'));
 const Sports = lazy(() => import('./pages/Sports'));
+const Schedule = lazy(() => import('./pages/Schedule'));
 const PersonPage = lazy(() => import('./pages/Person'));
 const MyList = lazy(() => import('./pages/MyList'));
 const Providers = lazy(() => import('./pages/Providers'));
@@ -149,6 +150,8 @@ export default function App() {
         <Route path="/anime/*" element={<NotFound />} />
         <Route path="/live" element={<Live />} />
         <Route path="/sports" element={<Sports />} />
+        <Route path="/schedule" element={<Schedule key="tv" kind="tv" />} />
+        <Route path="/anime/schedule" element={<Schedule key="anime" kind="anime" />} />
         <Route path="/list" element={<MyList key="main" />} />
         <Route path="/person/:id" element={<PersonPage />} />
         <Route path="/account" element={<Account />} />

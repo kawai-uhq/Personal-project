@@ -60,6 +60,7 @@ function parse(o: any, fallback: 'all' | MediaType): Media | null {
     rating: o.vote_average ?? 0,
     year: date.slice(0, 4),
     votes: (o.vote_count as number) ?? 0,
+    orig: (type === 'movie' ? o.original_title : o.original_name) || undefined,
     anime:
       o.original_language === 'ja' &&
       (((o.genre_ids ?? []) as number[]).includes(16) || ((o.genres ?? []) as { id: number }[]).some((g) => g.id === 16))
@@ -246,6 +247,16 @@ export const tmdb = {
     const rec = await get(`/${t}/${id}/recommendations?language=en-US&page=1`).then((j) => list(j, t));
     if (rec.length) return rec;
     return get(`/${t}/${id}/similar?language=en-US&page=1`).then((j) => list(j, t));
+  },
+  /** A TV show's latest and next episode air dates (same request as its details, so it's shared). */
+  episodesAround: async (id: number): Promise<{ media: Media; eps: { season: number; episode: number; name: string; date: string }[] } | null> => {
+    const j = await get(`/tv/${id}?language=en-US`);
+    const media = parse(j, 'tv');
+    if (!media) return null;
+    const eps = [j.last_episode_to_air, j.next_episode_to_air]
+      .filter((e: any) => e?.air_date && e.season_number)
+      .map((e: any) => ({ season: e.season_number as number, episode: e.episode_number as number, name: (e.name as string) ?? '', date: e.air_date as string }));
+    return { media, eps };
   },
   details: async (t: MediaType, id: number): Promise<Details> => {
     const j = await get(`/${t}/${id}?language=en-US`);

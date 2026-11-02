@@ -17,6 +17,8 @@ import { reportProgress } from '../lib/anilistAccount';
 import Select from '../components/Select';
 import ServerPanel from '../components/ServerPanel';
 import { isBad, isGood, scoreOf, useHealth, vote } from '../lib/serverHealth';
+import { recordPlay } from '../lib/popular';
+import { useShortcuts } from '../lib/shortcuts';
 import AnimeCast from '../components/AnimeCast';
 import { useEpisodeTitles } from '../lib/episodeTitles';
 
@@ -38,6 +40,17 @@ export default function AnimeWatch() {
   const [reload, setReload] = useState(0);
   const [range, setRange] = useState(0);
   const [upNext, setUpNext] = useState<number | null>(null);
+  // "Skip filler": the up-next countdown jumps over filler and recap episodes
+  const [skipFiller, setSkipFiller] = useState(() => {
+    try { return localStorage.getItem('comvie.skipfiller') === '1'; } catch { return false; }
+  });
+  const toggleSkipFiller = () =>
+    setSkipFiller((v) => {
+      try { localStorage.setItem('comvie.skipfiller', v ? '0' : '1'); } catch { /* storage blocked */ }
+      return !v;
+    });
+  /** the episode the up-next countdown should go to (set further down, once episode names are known) */
+  const nextUp = useRef<number | null>(null);
   const [left, setLeft] = useState(5);
   const consent = useConsent();
   const [gateOpen, setGateOpen] = useState(false);
@@ -133,7 +146,7 @@ export default function AnimeWatch() {
         void reportProgress(aid, ep, a?.episodes ?? null);
         animeStore.savePos(aid, ep, 0, 0);
         latest.current = null;
-        if (autoplay && hasNext) setUpNext(ep + 1);
+        if (autoplay && hasNext) setUpNext(nextUp.current ?? ep + 1);
         return;
       }
       latest.current = r;
@@ -191,6 +204,7 @@ export default function AnimeWatch() {
     settings.saveGoodServer(goodKey, k);
     settings.saveWorkedServer('anime', k);
     vote(goodKey, k, true);
+    recordPlay(goodKey);
     setWorked((w) => (w.has(k) ? w : new Set(w).add(k)));
     setQuiet(false);
   }, [alive, goodKey, server]);
@@ -293,7 +307,22 @@ export default function AnimeWatch() {
   const shown = nums.slice(rangeNow * CHUNK, rangeNow * CHUNK + CHUNK);
   // episode names for the range on screen (falls back to "Episode N")
   const titles = useEpisodeTitles(mal, shown[0] ?? 1, shown[shown.length - 1] ?? 0);
+  const isFiller = (n: number) => !!(titles[n]?.filler || titles[n]?.recap);
+  const fillerCount = shown.filter(isFiller).length;
+  // next episode to play: the next one, or with "Skip filler" the next one that isn't filler / recap
+  {
+    let n = ep + 1;
+    if (skipFiller) while (n <= last && isFiller(n)) n++;
+    nextUp.current = n <= last ? n : null;
+  }
   const nextServer = animeServers[(pickNext(new Set(tried)) ?? (serverNo(server) % animeServers.length) + 1) - 1];
+  // keyboard: N next episode, P previous episode, S next server, R reload
+  useShortcuts({
+    n: hasNext ? () => go(ep + 1) : null,
+    p: ep > 1 ? () => go(ep - 1) : null,
+    s: () => { setSwitched(null); pickServer(serverNo(nextServer)); },
+    r: () => setReload((n) => n + 1)
+  });
 
   // keep the playing episode in view inside the episode column (without moving the page)
   useEffect(() => {
@@ -331,6 +360,18 @@ export default function AnimeWatch() {
                     ))}
                   </Select>
                 )}
+                {fillerCount > 0 && (
+                  <button
+                    type="button"
+                    className={`ep-skipf ${skipFiller ? 'on' : ''}`}
+                    role="switch"
+                    aria-checked={skipFiller}
+                    onClick={toggleSkipFiller}
+                    title={skipFiller ? 'Filler and recap episodes are skipped when the next episode starts on its own' : `${fillerCount} filler / recap episodes here. Turn on to skip them`}
+                  >
+                    <i aria-hidden="true" />Skip filler
+                  </button>
+                )}
               </div>
               <div className="eplist" ref={epGrid}>
                 {shown.map((n) => {
@@ -338,7 +379,7 @@ export default function AnimeWatch() {
                   const info = titles[n];
                   const name = info?.title || `Episode ${n}`;
                   return (
-                    <button key={n} className={`eprow ${done ? 'seen' : ''} ${n === ep ? 'now' : ''}`} onClick={() => go(n)} title={name} aria-current={n === ep ? 'true' : undefined}>
+                    <button key={n} className={`eprow ${done ? 'seen' : ''} ${n === ep ? 'now' : ''} ${skipFiller && isFiller(n) && n !== ep ? 'filler' : ''}`} onClick={() => go(n)} title={name} aria-current={n === ep ? 'true' : undefined}>
                       <span className="eprow-no">{n}</span>
                       <span className="eprow-name">
                         {name}
@@ -415,7 +456,7 @@ export default function AnimeWatch() {
 
           {upNext != null && (
             <div className="wp-upnext" role="status">
-              <span><Icon name="play" size={13} fill /> Up next: <b>Episode {upNext}</b> in {Math.max(left, 0)}s</span>
+              <span><Icon name="play" size={13} fill /> Up next: <b>Episode {upNext}</b>{upNext > ep + 1 ? ` (skipping ${upNext - ep - 1} filler)` : ''} in {Math.max(left, 0)}s</span>
               <button className="pill on" onClick={() => { setUpNext(null); go(upNext); }}>Play now</button>
               <button className="pill" onClick={() => setUpNext(null)}>Cancel</button>
             </div>
@@ -467,6 +508,7 @@ export default function AnimeWatch() {
             {hasNext && <button className="btn small ghost" onClick={() => go(ep + 1)}>Next<Icon name="chevronRight" size={15} /></button>}
             <Link to={`/anime/title/${aid}`} className="btn small ghost">Details</Link>
           </div>
+          <p className="muted small wp-keys">Keys: <kbd>N</kbd> next · <kbd>P</kbd> previous · <kbd>S</kbd> switch server · <kbd>R</kbd> reload</p>
         </div>
 
       </div>

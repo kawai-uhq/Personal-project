@@ -8,6 +8,8 @@ import type { Ani } from '../lib/anilist';
 import { useAnimeStore } from '../lib/animeStore';
 import AniSourceRow from '../components/AniSourceRow';
 import { MoodRow } from '../components/Discover';
+import { PopularAnimeRow } from '../components/PopularRow';
+import AiringRow from '../components/AiringRow';
 
 /** The anime section's home, powered by AniList. */
 export default function AnimeHome() {
@@ -46,11 +48,13 @@ export default function AnimeHome() {
           ))}
         </Row>
       )}
+      <AiringRow kind="anime" />
       <AniSourceRow kind="anime" />
       <MoodRow section="anime" />
       {list.length > 0 && <Row title="My Anime Watchlist" to="/anime/library">{list.map((a) => <AnimeCard key={a.id} a={a} />)}</Row>}
       {loved.length > 0 && <Row title="My Anime Favorites" to="/anime/library">{loved.map((a) => <AnimeCard key={a.id} a={a} />)}</Row>}
       <AniFeedRow title="Trending Right Now" q={{ sort: 'TRENDING_DESC' }} to="/anime/explore?sort=TRENDING_DESC" />
+      <PopularAnimeRow />
       <AniFeedRow title="Popular This Season" q={{ sort: 'POPULARITY_DESC', season: now.season, seasonYear: now.year }} to={`/anime/explore?season=${now.season}&year=${now.year}`} />
       <AniFeedRow title="Upcoming Next Season" q={{ sort: 'POPULARITY_DESC', season: next.season, seasonYear: next.year }} to={`/anime/explore?season=${next.season}&year=${next.year}`} />
       <AniFeedRow title="All-Time Popular" q={{ sort: 'POPULARITY_DESC' }} to="/anime/explore?sort=POPULARITY_DESC" />

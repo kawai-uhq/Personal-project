@@ -80,3 +80,58 @@ $$;
 
 revoke all on function public.server_vote(text, text, boolean) from public;
 grant execute on function public.server_vote(text, text, boolean) to anon, authenticated;
+
+-- ---------------------------------------------------------------------------------------------
+-- "Popular on comvie": plays per title per day, counted when a player actually starts playing.
+-- Readable by anyone; written only through record_play() (one +1 per call, well-formed keys only).
+create table if not exists public.title_plays (
+  media_key text not null,                 -- "movie:603", "tv:1399" or "anime:16498"
+  day       date not null default current_date,
+  plays     int  not null default 0,
+  primary key (media_key, day)
+);
+
+alter table public.title_plays enable row level security;
+
+drop policy if exists "anyone can read title plays" on public.title_plays;
+create policy "anyone can read title plays" on public.title_plays
+  for select to anon, authenticated
+  using (true);
+
+create or replace function public.record_play(p_key text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_key !~ '^(movie|tv|anime):[0-9]{1,9}$' then
+    return;
+  end if;
+  insert into public.title_plays as t (media_key, day, plays) values (p_key, current_date, 1)
+  on conflict (media_key, day) do update set plays = t.plays + 1;
+  -- keep the table small: only the last 30 days matter
+  delete from public.title_plays where day < current_date - 30;
+end;
+$$;
+
+-- The most-played titles of the last p_days days: p_kind 'cinema' (movies and TV) or 'anime'
+create or replace function public.top_titles(p_kind text, p_days int default 7, p_limit int default 20)
+returns table (media_key text, plays bigint)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select t.media_key, sum(t.plays)::bigint as plays
+  from public.title_plays t
+  where t.day > current_date - least(greatest(p_days, 1), 30)
+    and (case when p_kind = 'anime' then t.media_key like 'anime:%' else t.media_key ~ '^(movie|tv):' end)
+  group by t.media_key
+  order by plays desc
+  limit least(greatest(p_limit, 1), 40);
+$$;
+
+revoke all on function public.record_play(text) from public;
+grant execute on function public.record_play(text) to anon, authenticated;
+grant execute on function public.top_titles(text, int, int) to anon, authenticated;
