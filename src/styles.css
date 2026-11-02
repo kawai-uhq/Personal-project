@@ -1723,3 +1723,9 @@ html.light .sv-item { background: rgba(40, 20, 30, .04); }
 .air-when em { font-style: normal; font-size: 10px; padding: 1px 6px; border-radius: 6px; background: rgba(61, 220, 151, .16); color: #3ddc97; }
 .air-mine { position: absolute; right: 8px; top: 8px; color: var(--accent); }
 @media (max-width: 760px) { .air-card { width: 230px; } }
+
+/* ---- Sign-in: Cloudflare "Verify you are human" box ---- */
+.turnstile { margin-top: 18px; min-height: 65px; display: flex; justify-content: center; }
+.turnstile iframe { max-width: 100%; }
+.auth-info { margin-top: 14px; text-align: left; }
+.auth-go:disabled { opacity: .55; box-shadow: none; }

@@ -86,35 +86,21 @@ function errorText(reply: Reply, fallback: string): string {
   if (lower.includes('already registered') || lower.includes('already been registered'))
     return 'An account with this email already exists. Sign in instead.';
   if (lower.includes('at least') && lower.includes('password')) return 'Password must be at least 6 characters.';
-  if (lower.includes('not confirmed')) return 'Confirm your email first (check your inbox), or sign in with an email code.';
-  if (lower.includes('expired') || lower.includes('token') || lower.includes('otp'))
-    return 'That code is wrong or has expired.';
+  if (lower.includes('not confirmed')) return 'Confirm your email first: open the link in the email we sent you, then sign in.';
+  if (lower.includes('captcha')) return 'The verification check failed or expired. Tick it again and retry.';
   return raw || fallback;
 }
 
-export async function sendCode(email: string): Promise<void> {
-  const r = await post('/otp', { email, create_user: true });
-  if (r.code < 200 || r.code > 299) throw new AuthError(errorText(r, "Couldn't send the code. Try again."));
-}
+/** Cloudflare Turnstile site key (public). With it set, sign-in and sign-up show the "Verify you are human" box,
+ *  and Supabase checks the result (Supabase: Authentication → Attack Protection → Captcha → Turnstile). */
+export const turnstileSiteKey = ((import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined) ?? '').trim();
 
-/** Check an emailed code: 'email' for sign-in codes, 'signup' for the code that confirms a new account. */
-export async function verifyCode(email: string, code: string, type: 'email' | 'signup' = 'email'): Promise<Session> {
-  const r = await post('/verify', { type, email, token: code });
-  if (r.code < 200 || r.code > 299) throw new AuthError(errorText(r, "That code didn't work. Try again."));
-  const s = toSession(r.body, email);
-  if (!s) throw new AuthError('Sign-in failed. Please try again.');
-  return s;
-}
-
-/** Send the new-account confirmation code again. */
-export async function resendSignup(email: string): Promise<void> {
-  const r = await post('/resend', { type: 'signup', email });
-  if (r.code < 200 || r.code > 299) throw new AuthError(errorText(r, "Couldn't resend the code. Try again."));
-}
+const withCaptcha = (body: Record<string, unknown>, captcha?: string) =>
+  captcha ? { ...body, gotrue_meta_security: { captcha_token: captcha } } : body;
 
 /** Email + password sign-in. */
-export async function signInPassword(email: string, password: string): Promise<Session> {
-  const r = await post('/token?grant_type=password', { email, password });
+export async function signInPassword(email: string, password: string, captcha?: string): Promise<Session> {
+  const r = await post('/token?grant_type=password', withCaptcha({ email, password }, captcha));
   if (r.code < 200 || r.code > 299) throw new AuthError(errorText(r, "Couldn't sign in. Try again."));
   const s = toSession(r.body, email);
   if (!s) throw new AuthError('Sign-in failed. Please try again.');
@@ -122,8 +108,8 @@ export async function signInPassword(email: string, password: string): Promise<S
 }
 
 /** Create an account. Returns a session, or null when Supabase wants the email confirmed first. */
-export async function signUpPassword(email: string, password: string, username: string): Promise<Session | null> {
-  const r = await post('/signup', { email, password, data: username ? { username } : {} });
+export async function signUpPassword(email: string, password: string, username: string, captcha?: string): Promise<Session | null> {
+  const r = await post('/signup', withCaptcha({ email, password, data: username ? { username } : {} }, captcha));
   if (r.code < 200 || r.code > 299) throw new AuthError(errorText(r, "Couldn't create the account. Try again."));
   return toSession(r.body, email);
 }
