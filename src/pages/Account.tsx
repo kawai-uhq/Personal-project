@@ -8,6 +8,13 @@ import { animeStore } from '../lib/animeStore';
 import { mangaStore } from '../lib/mangaStore';
 import { useSection } from '../lib/section';
 import { toPublic as P } from '../lib/site';
+import Avatar from '../components/Avatar';
+import ProfileEditor from '../components/account/ProfileEditor';
+import AccountDetails from '../components/account/AccountDetails';
+import Devices from '../components/account/Devices';
+import StatsGrid from '../components/account/StatsGrid';
+import { useProfile } from '../lib/profile';
+import { watchStats } from '../lib/stats';
 import { useApp } from '../state';
 
 /** Your account: who you're signed in as, what's saved, and signing out. */
@@ -19,6 +26,7 @@ export default function Account() {
   useEffect(() => {
     if (hash === '#settings') window.setTimeout(() => document.getElementById('settings')?.scrollIntoView({ behavior: 'smooth' }), 60);
   }, [hash]);
+  const profile = useProfile();
   const libraryLink = section === 'anime' ? P('/anime/library') : section === 'manga' ? P('/manga/library') : '/list';
 
   if (!session) {
@@ -37,7 +45,9 @@ export default function Account() {
     );
   }
 
-  const name = session.email.split('@')[0];
+  const name = profile?.username || session.email.split('@')[0];
+  const deco = profile?.deco ?? {};
+  const ws = watchStats();
 
   const deleteAccount = async () => {
     const yes = await askConfirm({
@@ -74,16 +84,30 @@ export default function Account() {
   return (
     <main className="page pad-top">
       <div className="container mid acct">
-        <div className="acct-card">
+        <div className={`acct-card acct-hero ${deco.nameplate ? `np-${deco.nameplate}` : ''}`}>
+          {deco.effect && <span className={`fx fx-${deco.effect}`} />}
           <div className="acct-top">
-            <span className="acct-avatar big">{session.email.charAt(0).toUpperCase()}</span>
+            <Avatar avatar={profile?.avatar} deco={deco} letter={name} size={76} />
             <div>
-              <h1 className="acct-name">{name}</h1>
+              <h1 className="acct-name">{profile?.username ? `@${name}` : name}</h1>
               <p className="muted"><Icon name="mail" size={14} /> {session.email}</p>
-              <span className="acct-badge"><Icon name="check" size={13} />Signed in · lists synced to your account</span>
+              <span className="acct-badge"><Icon name="check" size={13} />Signed in · synced to your account</span>
             </div>
           </div>
         </div>
+
+        <h2 className="section">Your stats</h2>
+        <StatsGrid stats={ws} />
+        <p className="muted small">{ws.titles} titles started · active {ws.activeThisMonth} {ws.activeThisMonth === 1 ? 'day' : 'days'} this month. Hours are an estimate.</p>
+
+        <h2 className="section">Profile</h2>
+        <ProfileEditor />
+
+        <h2 className="section">Sign-in & security</h2>
+        <AccountDetails />
+
+        <h2 className="section">Devices</h2>
+        <Devices />
 
         <h2 className="section">Your library</h2>
         <div className="acct-stats">

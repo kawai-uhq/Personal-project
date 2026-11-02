@@ -1,0 +1,216 @@
+import { useEffect, useState } from 'react';
+import Avatar from '../Avatar';
+import Icon from '../Icon';
+import { buildPublicData } from '../AccountRuntime';
+import { gql } from '../../lib/anilist';
+import { AVATAR_COLORS, EFFECTS, FRAMES, NAMEPLATES } from '../../lib/decorations';
+import type { DecoItem } from '../../lib/decorations';
+import { USERNAME_RE, cleanUsername, discordInfo, saveProfile, usernameFree, useProfile } from '../../lib/profile';
+import type { Avatar as AvatarData, Deco } from '../../lib/profile';
+import { CINEMA_ORIGIN, onProd } from '../../lib/site';
+import { useApp } from '../../state';
+
+type PicTab = 'letter' | 'anime' | 'stars' | 'discord';
+interface Pic { url: string; name: string }
+
+async function searchCharacters(q: string): Promise<Pic[]> {
+  const d = await gql(`query($s:String){ Page(perPage:18){ characters(search:$s, sort:FAVOURITES_DESC){ name{ full } image{ large } } } }`, { s: q });
+  return ((d?.Page?.characters ?? []) as any[]).filter((c) => c.image?.large && !/default\.jpg$/.test(c.image.large)).map((c) => ({ url: c.image.large, name: c.name?.full ?? '' }));
+}
+async function searchStars(q: string): Promise<Pic[]> {
+  const r = await fetch('/api/tmdb?path=' + encodeURIComponent(`/search/person?query=${encodeURIComponent(q)}&include_adult=false&language=en-US&page=1`));
+  const j = r.ok ? await r.json() : null;
+  return ((j?.results ?? []) as any[]).filter((p) => p.profile_path).slice(0, 18).map((p) => ({ url: `https://image.tmdb.org/t/p/w185${p.profile_path}`, name: p.name }));
+}
+
+/** Username, picture, decorations and the public profile switch. */
+export default function ProfileEditor() {
+  const { session, getToken, loved, history } = useApp();
+  const profile = useProfile();
+  const [name, setName] = useState(profile?.username ?? '');
+  const [nameMsg, setNameMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState<PicTab>('letter');
+  const [q, setQ] = useState('');
+  const [pics, setPics] = useState<Pic[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const discord = discordInfo();
+
+  useEffect(() => setName(profile?.username ?? ''), [profile?.username]);
+
+  // live "is it free?" check while typing a username
+  useEffect(() => {
+    const n = name.trim();
+    if (!n || n === profile?.username) return setNameMsg(null);
+    if (!USERNAME_RE.test(n)) return setNameMsg({ ok: false, text: '3 to 20 lowercase letters, numbers or underscores.' });
+    let live = true;
+    const t = window.setTimeout(() => {
+      usernameFree(n).then((free) => live && setNameMsg(free ? { ok: true, text: 'Available' } : { ok: false, text: 'Taken. Try another.' }));
+    }, 400);
+    return () => {
+      live = false;
+      window.clearTimeout(t);
+    };
+  }, [name, profile?.username]);
+
+  if (!session || !profile) {
+    return <p className="muted small">Loading your profile… (if this stays, run the latest supabase/schema.sql in Supabase)</p>;
+  }
+
+  const save = async (patch: Parameters<typeof saveProfile>[1]) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Sign in again, then try once more.');
+      await saveProfile(token, patch);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't save. Try again.");
+    }
+    setBusy(false);
+  };
+
+  const saveName = async () => {
+    const n = name.trim();
+    if (!USERNAME_RE.test(n)) return setNameMsg({ ok: false, text: '3 to 20 lowercase letters, numbers or underscores.' });
+    await save({ username: n });
+  };
+
+  const search = async () => {
+    const t = q.trim();
+    if (t.length < 2) return;
+    setPics(null);
+    try {
+      setPics(tab === 'stars' ? await searchStars(t) : await searchCharacters(t));
+    } catch {
+      setPics([]);
+    }
+  };
+
+  const setAvatar = (a: AvatarData) => void save({ avatar: a });
+  const setDeco = (d: Deco) => void save({ deco: { ...profile.deco, ...d } });
+  const letter = profile.username || session.email;
+  const publicUrl = `${onProd() ? CINEMA_ORIGIN : location.origin}/u/${profile.username ?? ''}`;
+
+  const decoGrid = (items: DecoItem[], current: string | undefined, key: 'frame' | 'nameplate' | 'effect') => (
+    <div className="pe-grid">
+      <button type="button" className={`pe-opt ${!current ? 'on' : ''}`} disabled={busy} onClick={() => setDeco({ [key]: '' })}>
+        <span className="pe-none"><Icon name="x" size={16} /></span>
+        <small>None</small>
+      </button>
+      {items.map((it) => (
+        <button key={it.id} type="button" className={`pe-opt ${current === it.id ? 'on' : ''}`} disabled={busy} onClick={() => setDeco({ [key]: it.id })} title={it.name}>
+          {key === 'frame' ? (
+            <Avatar avatar={profile.avatar} deco={{ frame: it.id }} letter={letter} size={46} />
+          ) : (
+            <span className={`pe-swatch ${key === 'nameplate' ? `np-${it.id}` : 'pe-fx'}`}>{key === 'effect' && <span className={`fx fx-${it.id}`} />}</span>
+          )}
+          <small>{it.name}</small>
+          <em className={`pe-theme t-${it.theme}`}>{it.theme === 'anime' ? 'Anime' : it.theme === 'movie' ? 'Movie' : ''}</em>
+        </button>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="pe">
+      {error && <p className="error">{error}</p>}
+
+      <div className="pe-block">
+        <h3>Username</h3>
+        <div className="pe-row">
+          <span className="auth-input pe-name">
+            <span className="pe-at">@</span>
+            <input value={name} maxLength={20} placeholder="kawai_pirate" onChange={(e) => setName(cleanUsername(e.target.value.replace(/^@/, '')) || e.target.value.toLowerCase().slice(0, 20))} aria-label="Username" />
+          </span>
+          <button className="btn primary" disabled={busy || !name.trim() || name.trim() === profile.username || nameMsg?.ok === false} onClick={() => void saveName()}>Save</button>
+        </div>
+        {nameMsg && <p className={`small ${nameMsg.ok ? 'pe-ok' : 'error'}`}>{nameMsg.text}</p>}
+      </div>
+
+      <div className="pe-block">
+        <h3>Picture</h3>
+        <div className="seg pe-tabs" role="tablist">
+          {(['letter', 'anime', 'stars', ...(discord?.avatar ? ['discord'] : [])] as PicTab[]).map((t) => (
+            <button key={t} type="button" role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => { setTab(t); setPics(null); setQ(''); }}>
+              {t === 'letter' ? 'Letter' : t === 'anime' ? 'Anime character' : t === 'stars' ? 'Movie & TV star' : 'Discord'}
+            </button>
+          ))}
+        </div>
+        {tab === 'letter' && (
+          <div className="pe-colors">
+            {AVATAR_COLORS.map((c) => (
+              <button key={c} type="button" className={`pe-color ${!profile.avatar.url && profile.avatar.color === c ? 'on' : ''}`} style={{ background: c }} disabled={busy} aria-label={`Colour ${c}`} onClick={() => setAvatar({ color: c })}>
+                {letter.charAt(0).toUpperCase()}
+              </button>
+            ))}
+          </div>
+        )}
+        {(tab === 'anime' || tab === 'stars') && (
+          <>
+            <form className="pe-row" onSubmit={(e) => { e.preventDefault(); void search(); }}>
+              <span className="auth-input"><Icon name="search" size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === 'anime' ? 'Search a character (e.g. Frieren)' : 'Search an actor (e.g. Zendaya)'} /></span>
+              <button className="btn" type="submit">Search</button>
+            </form>
+            {pics && (pics.length === 0 ? <p className="muted small">Nothing found.</p> : (
+              <div className="pe-pics">
+                {pics.map((p) => (
+                  <button key={p.url} type="button" className={`pe-pic ${profile.avatar.url === p.url ? 'on' : ''}`} disabled={busy} onClick={() => setAvatar({ url: p.url })} title={p.name}>
+                    <img src={p.url} alt={p.name} loading="lazy" referrerPolicy="no-referrer" />
+                  </button>
+                ))}
+              </div>
+            ))}
+          </>
+        )}
+        {tab === 'discord' && discord?.avatar && (
+          <div className="pe-row">
+            <Avatar avatar={{ url: discord.avatar }} letter={discord.name} size={56} />
+            <button className="btn" disabled={busy} onClick={() => setAvatar({ url: discord.avatar! })}>Use my Discord picture</button>
+          </div>
+        )}
+      </div>
+
+      <div className="pe-block">
+        <h3>Avatar frame</h3>
+        {decoGrid(FRAMES, profile.deco.frame, 'frame')}
+        {discord?.decoration && (
+          <label className="pe-check">
+            <input type="checkbox" checked={!!profile.deco.discord} disabled={busy} onChange={(e) => setDeco({ discord: e.target.checked ? discord.decoration! : '' })} />
+            Show my Discord avatar decoration
+          </label>
+        )}
+      </div>
+
+      <div className="pe-block">
+        <h3>Nameplate</h3>
+        {decoGrid(NAMEPLATES, profile.deco.nameplate, 'nameplate')}
+      </div>
+
+      <div className="pe-block">
+        <h3>Profile effect</h3>
+        {decoGrid(EFFECTS, profile.deco.effect, 'effect')}
+      </div>
+
+      <div className="pe-block">
+        <h3>Public profile</h3>
+        <label className="pe-check">
+          <input
+            type="checkbox"
+            checked={profile.is_public}
+            disabled={busy || !profile.username}
+            onChange={(e) => void save(e.target.checked ? { is_public: true, public_data: buildPublicData(loved, history) } : { is_public: false })}
+          />
+          Show my profile to anyone with the link: picture, favorites, what I'm watching and my stats
+        </label>
+        {!profile.username && <p className="muted small">Pick a username first.</p>}
+        {profile.is_public && profile.username && (
+          <div className="pe-row">
+            <a className="link" href={publicUrl} target="_blank" rel="noopener noreferrer">{publicUrl.replace(/^https?:\/\//, '')}</a>
+            <button className="btn small ghost" onClick={() => void navigator.clipboard?.writeText(publicUrl)}><Icon name="link" size={14} />Copy link</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

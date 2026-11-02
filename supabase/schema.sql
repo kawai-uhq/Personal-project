@@ -135,3 +135,135 @@ $$;
 revoke all on function public.record_play(text) from public;
 grant execute on function public.record_play(text) to anon, authenticated;
 grant execute on function public.top_titles(text, int, int) to anon, authenticated;
+
+-- ---------------------------------------------------------------------------------------------
+-- Anime / manga lists, resume positions, watched marks and settings, one row per item, per account.
+-- (Before this was added here, these only synced if the table had been created by hand.)
+create table if not exists public.user_data (
+  user_id    uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  key        text not null,
+  value      jsonb not null default '[]'::jsonb,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, key)
+);
+
+alter table public.user_data enable row level security;
+
+drop policy if exists "Own library rows" on public.user_data;
+drop policy if exists "own user data" on public.user_data;
+create policy "own user data" on public.user_data
+  for all to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+-- ---------------------------------------------------------------------------------------------
+-- Profiles: username, avatar, decorations, and the optional public profile page (/u/<username>).
+create table if not exists public.profiles (
+  user_id     uuid primary key default auth.uid() references auth.users (id) on delete cascade,
+  username    text unique check (username ~ '^[a-z0-9_]{3,20}$'),
+  avatar      jsonb not null default '{}'::jsonb,   -- { url?, color? }; url only from AniList / Discord / TMDB images
+  deco        jsonb not null default '{}'::jsonb,   -- { frame?, nameplate?, effect?, discord? }
+  is_public   boolean not null default false,
+  public_data jsonb not null default '{}'::jsonb,   -- what the public page shows (written by the owner)
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  constraint avatar_url_ok check (
+    coalesce(avatar->>'url', '') = ''
+    or avatar->>'url' ~ '^https://(s4\.anilist\.co|cdn\.discordapp\.com|image\.tmdb\.org)/'
+  ),
+  constraint discord_deco_ok check (
+    coalesce(deco->>'discord', '') = ''
+    or deco->>'discord' ~ '^https://cdn\.discordapp\.com/avatar-decoration-presets/'
+  )
+);
+
+alter table public.profiles enable row level security;
+
+drop policy if exists "read own or public profiles" on public.profiles;
+create policy "read own or public profiles" on public.profiles
+  for select to anon, authenticated
+  using (is_public or (select auth.uid()) = user_id);
+
+drop policy if exists "create own profile" on public.profiles;
+create policy "create own profile" on public.profiles
+  for insert to authenticated
+  with check ((select auth.uid()) = user_id);
+
+drop policy if exists "edit own profile" on public.profiles;
+create policy "edit own profile" on public.profiles
+  for update to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+-- Is a username still free? (without revealing anything about private profiles)
+create or replace function public.username_free(p_name text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select p_name ~ '^[a-z0-9_]{3,20}$'
+     and not exists (select 1 from public.profiles where username = p_name and user_id is distinct from auth.uid());
+$$;
+grant execute on function public.username_free(text) to anon, authenticated;
+
+-- ---------------------------------------------------------------------------------------------
+-- Devices: one row per sign-in (browser, approximate location). Written only by the server (api/account.js);
+-- each person can read their own. Signing devices out also goes through the server, after an email code.
+create table if not exists public.devices (
+  session_id uuid primary key,
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  browser    text,
+  os         text,
+  kind       text,          -- phone / tablet / computer
+  city       text,
+  region     text,
+  country    text,
+  first_seen timestamptz not null default now(),
+  last_seen  timestamptz not null default now()
+);
+
+alter table public.devices enable row level security;
+
+drop policy if exists "read own devices" on public.devices;
+create policy "read own devices" on public.devices
+  for select to authenticated
+  using ((select auth.uid()) = user_id);
+
+-- The account's devices that are still signed in (rows for ended sign-ins are cleaned up)
+create or replace function public.list_devices(p_user uuid)
+returns setof public.devices
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+begin
+  delete from public.devices d
+  where d.user_id = p_user and not exists (select 1 from auth.sessions s where s.id = d.session_id);
+  return query select * from public.devices d where d.user_id = p_user order by d.last_seen desc;
+end;
+$$;
+
+-- Sign out one device (p_only) or every device except p_keep
+create or replace function public.revoke_sessions(p_user uuid, p_keep uuid, p_only uuid default null)
+returns int
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare n int;
+begin
+  delete from auth.sessions s
+  where s.user_id = p_user and s.id <> p_keep and (p_only is null or s.id = p_only);
+  get diagnostics n = row_count;
+  delete from public.devices d
+  where d.user_id = p_user and d.session_id <> p_keep and (p_only is null or d.session_id = p_only);
+  return n;
+end;
+$$;
+
+revoke all on function public.list_devices(uuid) from public, anon, authenticated;
+revoke all on function public.revoke_sessions(uuid, uuid, uuid) from public, anon, authenticated;
+grant execute on function public.list_devices(uuid) to service_role;
+grant execute on function public.revoke_sessions(uuid, uuid, uuid) to service_role;

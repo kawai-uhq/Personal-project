@@ -8,6 +8,7 @@ import { chapterLabel, mangaFull, mdChapters, mdFind, mdPages } from '../lib/man
 import type { Chapter, MangaFull, PageSet } from '../lib/manga';
 import { mangaStore } from '../lib/mangaStore';
 import { reportProgress } from '../lib/anilistAccount';
+import { markChanged } from '../lib/cloudData';
 
 type Mode = 'strip' | 'pages';
 interface ReaderPrefs { mode: Mode; rtl: boolean }
@@ -19,6 +20,7 @@ const readJson = <T,>(k: string, fb: T): T => {
 };
 const writeJson = (k: string, v: unknown) => {
   try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage blocked */ }
+  markChanged(k); // account sync
 };
 
 /** Reading mode for a title: what the viewer chose for it, else page-by-page right-to-left for Japanese manga

@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { authConfigured, refreshSession, signOutRemote } from './lib/auth';
+import { authConfigured, getUser, refreshSession, signOutRemote, takeOAuthResult } from './lib/auth';
+import { clearProfile } from './lib/profile';
+import { askConfirm } from './components/Confirm';
 import * as sync from './lib/sync';
 import { setTokenProvider, syncLibrary } from './lib/cloudData';
 import { MAX_HISTORY, store } from './lib/storage';
@@ -236,8 +238,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const signOut = () => {
     const token = sessionRef.current?.accessToken ?? '';
     applySession(null); // what is already on this device stays
+    clearProfile();
     void signOutRemote(token);
   };
+
+  // Back from "Continue with Discord / Google": Supabase put the sign-in in the address
+  const signedInRef = useRef(onSignedIn);
+  signedInRef.current = onSignedIn;
+  useEffect(() => {
+    const r = takeOAuthResult();
+    if (!r) return;
+    if ('error' in r) {
+      // shortly, so the dialog host on the page is ready
+      window.setTimeout(() => void askConfirm({ title: "Couldn't sign in", text: r.error, ok: 'OK', cancel: 'Close', icon: 'x' }), 400);
+      return;
+    }
+    void (async () => {
+      const u = await getUser(r.session.accessToken);
+      if (r.providerToken && u?.providers.includes('discord')) {
+        // used once, right after sign-in, to add them to the Discord server (see AccountRuntime)
+        try { sessionStorage.setItem('comvie.discordToken', r.providerToken); } catch { /* storage blocked */ }
+      }
+      signedInRef.current({ ...r.session, email: u?.email || '' });
+    })();
+  }, []);
 
   const value = useMemo<AppState>(
     () => ({

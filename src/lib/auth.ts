@@ -171,3 +171,56 @@ export async function signOutRemote(accessToken: string): Promise<void> {
     /* already signed out locally */
   }
 }
+
+/** Change the account's email: Supabase emails a confirmation link to the new address (and the old one, if
+ *  "Secure email change" is on); the change happens when the link is opened. */
+export async function updateEmail(accessToken: string, email: string): Promise<void> {
+  const r = await post('/user', { email }, accessToken, 'PUT');
+  if (r.code < 200 || r.code > 299) throw new AuthError(errorText(r, "Couldn't change the email. Try again."));
+}
+
+/** The signed-in account as Supabase sees it (email, username, how they signed in). */
+export async function getUser(accessToken: string): Promise<{ id: string; email: string; username: string; providers: string[] } | null> {
+  try {
+    const r = await fetch(`${BASE}/auth/v1/user`, { headers: { apikey: KEY, Authorization: `Bearer ${accessToken}` } });
+    if (!r.ok) return null;
+    const u = await r.json();
+    return {
+      id: u.id,
+      email: u.email || '',
+      username: String(u.user_metadata?.username || u.user_metadata?.preferred_username || u.user_metadata?.name || ''),
+      providers: ((u.identities ?? []) as any[]).map((i) => String(i.provider))
+    };
+  } catch {
+    return null;
+  }
+}
+
+export type OAuthProvider = 'discord' | 'google';
+
+/** Where "Continue with Discord / Google" goes. Supabase sends the person back to this page with the sign-in in the
+ *  address (#access_token=…). Discord also asks to join the Discord server ("guilds.join"). */
+export function oauthUrl(provider: OAuthProvider): string {
+  const back = `${location.origin}${location.pathname}`;
+  const scopes = provider === 'discord' ? 'identify email guilds.join' : '';
+  return `${BASE}/auth/v1/authorize?provider=${provider}&redirect_to=${encodeURIComponent(back)}${scopes ? `&scopes=${encodeURIComponent(scopes)}` : ''}`;
+}
+
+/** The sign-in Supabase put in the address after Discord / Google (and clears it from the address bar). */
+export function takeOAuthResult(): { session: Session; providerToken: string | null } | { error: string } | null {
+  if (typeof location === 'undefined' || !location.hash) return null;
+  const h = new URLSearchParams(location.hash.slice(1));
+  const clear = () => history.replaceState(null, '', location.pathname + location.search);
+  if (h.get('error') || h.get('error_description')) {
+    clear();
+    return { error: (h.get('error_description') || h.get('error') || 'Sign-in was cancelled.').replace(/\+/g, ' ') };
+  }
+  const access = h.get('access_token');
+  const refresh = h.get('refresh_token');
+  if (!access || !refresh) return null;
+  clear();
+  return {
+    session: { accessToken: access, refreshToken: refresh, expiresAt: Date.now() + (Number(h.get('expires_in')) || 3600) * 1000, email: '' },
+    providerToken: h.get('provider_token')
+  };
+}

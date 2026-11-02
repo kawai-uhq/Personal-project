@@ -1,14 +1,21 @@
 import { supabaseBase, supabaseKey } from './auth';
 
 /**
- * Anime and manga lists, history and watched/read marks, kept in the signed-in account (Supabase table "user_data",
- * one row per item below). Each side remembers when it last changed something; on sync the newer copy wins, so
- * removals carry over too.
+ * Kept in the signed-in account (Supabase table "user_data", one row per item below): anime and manga lists,
+ * history and watched/read marks; where you stopped in each movie / episode and your watched ticks; and settings.
+ * Each side remembers when it last changed something; on sync the newer copy wins, so removals carry over too.
  */
 export const SYNC_KEYS = [
-  'comvie.anime.history', 'comvie.anime.list', 'comvie.anime.loved', 'comvie.anime.seen',
-  'comvie.manga.history', 'comvie.manga.list', 'comvie.manga.seen'
+  'comvie.anime.history', 'comvie.anime.list', 'comvie.anime.loved', 'comvie.anime.seen', 'comvie.anime.progress',
+  'comvie.manga.history', 'comvie.manga.list', 'comvie.manga.seen',
+  // movies & TV: resume positions and watched ticks
+  'comvie.progress', 'comvie.watched',
+  // settings
+  'comvie.prefs', 'comvie.autoswitch', 'comvie.autoplay2', 'comvie.autoskip2', 'comvie.nextdelay', 'comvie.protect2',
+  'comvie.serverhide', 'comvie.skipfiller', 'comvie.reader', 'comvie.readpos'
 ];
+/** saved often while something plays, so uploaded less eagerly */
+const SLOW = new Set(['comvie.progress', 'comvie.anime.progress', 'comvie.readpos']);
 
 const STAMPS = 'comvie.sync.at';
 type Stamps = Record<string, number>;
@@ -62,7 +69,7 @@ export function markChanged(key: string) {
   writeStamp(key, Date.now());
   if (!tokenFor) return;
   window.clearTimeout(timers.get(key));
-  timers.set(key, window.setTimeout(() => void push([key]), 1500));
+  timers.set(key, window.setTimeout(() => void push([key]), SLOW.has(key) ? 20000 : 1500));
 }
 
 /** Two-way sync: download what's newer in the account, upload what's newer here. */
@@ -85,7 +92,11 @@ export async function syncLibrary(): Promise<void> {
     const c = cloud.get(key);
     const localAt = stamps[key] || 0;
     const hasLocal = (() => {
-      try { const v = JSON.parse(localStorage.getItem(key) || 'null'); return Array.isArray(v) ? v.length > 0 : !!v && Object.keys(v).length > 0; } catch { return false; }
+      try {
+        const v = JSON.parse(localStorage.getItem(key) || 'null');
+        if (v === null || v === undefined) return false;
+        return Array.isArray(v) ? v.length > 0 : typeof v === 'object' ? Object.keys(v).length > 0 : true; // settings can be true / false / numbers
+      } catch { return false; }
     })();
     const cloudAt = c ? Date.parse(c.updated_at) || 0 : 0;
     if (c && cloudAt > localAt) {
@@ -101,17 +112,8 @@ export async function syncLibrary(): Promise<void> {
   if (changed) {
     window.dispatchEvent(new Event('comvie:anime'));
     window.dispatchEvent(new Event('comvie:manga'));
+    window.dispatchEvent(new Event('comvie:synced'));
   }
 }
 
-/** The SQL to run once in Supabase (shown in the setup notes). */
-export const USER_DATA_SQL = `create table if not exists public.user_data (
-  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  key text not null,
-  value jsonb not null default '[]'::jsonb,
-  updated_at timestamptz not null default now(),
-  primary key (user_id, key)
-);
-alter table public.user_data enable row level security;
-create policy "Own library rows" on public.user_data
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);`;
+// The table these rows live in is created by supabase/schema.sql ("user_data").

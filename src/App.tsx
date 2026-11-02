@@ -17,10 +17,12 @@ import { defaultTitle } from './lib/title';
 import Contact from './pages/Contact';
 import Floating from './components/Floating';
 import SportAlerts from './components/SportAlerts';
+import AccountRuntime from './components/AccountRuntime';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import { About, Dmca, Privacy, Terms } from './pages/Legal';
 const Help = lazy(() => import('./pages/Help'));
+const PublicProfile = lazy(() => import('./pages/PublicProfile'));
 const Live = lazy(() => import('./pages/Live'));
 const Sports = lazy(() => import('./pages/Sports'));
 const Schedule = lazy(() => import('./pages/Schedule'));
@@ -155,6 +157,7 @@ export default function App() {
         <Route path="/list" element={<MyList key="main" />} />
         <Route path="/person/:id" element={<PersonPage />} />
         <Route path="/account" element={<Account />} />
+        <Route path="/u/:name" element={<PublicProfile />} />
         <Route path="/mood/:id" element={<CinemaMood />} />
         <Route path="/anime/mood/:id" element={<AnimeMood />} />
         <Route path="/manga/mood/:id" element={<MangaMood />} />
@@ -180,6 +183,7 @@ export default function App() {
       <AuthModal />
       <CrossPromo />
       <SportAlerts />
+      <AccountRuntime />
       <ConfirmHost />
       <CookieBanner />
       <Tooltip />

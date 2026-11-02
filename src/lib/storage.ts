@@ -1,5 +1,6 @@
 import type { Media, Session, WatchEntry } from './types';
 import { isSharedKey, sharedGet, sharedSet } from './shared';
+import { markChanged } from './cloudData';
 
 export interface Reminder {
   media: Media;
@@ -25,6 +26,7 @@ function write(key: string, value: unknown) {
     /* storage unavailable: the site still works for this visit */
   }
   if (isSharedKey(key)) sharedSet(key, value === null ? null : JSON.stringify(value));
+  markChanged(key); // account sync (only for the keys that sync)
 }
 
 export const MAX_HISTORY = 30;

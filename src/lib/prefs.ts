@@ -1,3 +1,4 @@
+import { markChanged } from './cloudData';
 import { useEffect, useState } from 'react';
 import { sharedGet, sharedSet } from './shared';
 
@@ -66,7 +67,8 @@ export function setPrefs(next: Partial<Prefs> | null) {
   try {
     localStorage.setItem(KEY, raw);
   } catch { /* storage blocked: still applies for this visit */ }
-  sharedSet(KEY, raw); // same look on cinema, anime and manga
+  sharedSet(KEY, raw);
+  markChanged(KEY); // account sync (the line above keeps cinema, anime and manga looking the same)
   applyPrefs(p);
   window.dispatchEvent(new Event(EVT));
 }
@@ -164,3 +166,6 @@ export function importData(text: string): number {
   }
   return n;
 }
+
+// settings downloaded from the account show up straight away
+if (typeof window !== 'undefined') window.addEventListener('comvie:synced', () => window.dispatchEvent(new Event(EVT)));

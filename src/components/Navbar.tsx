@@ -5,6 +5,8 @@ import { useReminders } from '../lib/reminders';
 import { useNewEpisodes } from '../lib/useNewEpisodes';
 import { useApp } from '../state';
 import Icon from './Icon';
+import Avatar from './Avatar';
+import { useProfile } from '../lib/profile';
 import SearchBox from './SearchBox';
 import SiteSwitch from './SiteSwitch';
 import { SurpriseButton } from './Discover';
@@ -14,6 +16,7 @@ export default function Navbar() {
   const nav = useNavigate();
   const { pathname } = useLocation();
   const { session, openAuth } = useApp();
+  const profile = useProfile();
   const fresh = useNewEpisodes();
   const { due } = useReminders();
   const sec = useSection();
@@ -73,8 +76,8 @@ export default function Navbar() {
           />
           <SurpriseButton />
           {session ? (
-            <Link to="/account" className="avatar" aria-label="Your account" title={session.email}>
-              {session.email.slice(0, 1).toUpperCase()}
+            <Link to="/account" className="avatar nav-me" aria-label="Your account" title={profile?.username ? `@${profile.username}` : session.email}>
+              <Avatar avatar={profile?.avatar} deco={profile?.deco} letter={profile?.username || session.email} size={34} />
             </Link>
           ) : (
             <button className="nav-signin" onClick={openAuth}>Sign in</button>

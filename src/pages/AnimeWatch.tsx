@@ -19,6 +19,7 @@ import ServerPanel from '../components/ServerPanel';
 import { isBad, isGood, scoreOf, useHealth, vote } from '../lib/serverHealth';
 import { recordPlay } from '../lib/popular';
 import { useShortcuts } from '../lib/shortcuts';
+import { markChanged } from '../lib/cloudData';
 import AnimeCast from '../components/AnimeCast';
 import { useEpisodeTitles } from '../lib/episodeTitles';
 
@@ -47,6 +48,7 @@ export default function AnimeWatch() {
   const toggleSkipFiller = () =>
     setSkipFiller((v) => {
       try { localStorage.setItem('comvie.skipfiller', v ? '0' : '1'); } catch { /* storage blocked */ }
+      markChanged('comvie.skipfiller');
       return !v;
     });
   /** the episode the up-next countdown should go to (set further down, once episode names are known) */
