@@ -1633,3 +1633,28 @@ html.light .sv-item { background: rgba(40, 20, 30, .04); }
   .cf { height: 220px; }
   .cf-fan { width: 96px; height: 144px; }
 }
+
+/* ---- Sports: remind-me bell and the "starting now" bar ---- */
+.sp-card { position: relative; }
+.sp-hit { position: absolute; inset: 0; z-index: 1; border: 0; padding: 0; background: transparent; border-radius: inherit; cursor: pointer; }
+.sp-bell { position: absolute; right: 16px; top: 16px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(255, 233, 214, .25); background: rgba(12, 7, 16, .78); color: var(--cream); backdrop-filter: blur(4px); }
+.sp-bell.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink, #1a0d0a); }
+.sport-alert { position: fixed; z-index: 60; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; align-items: center; gap: 12px; width: min(520px, calc(100vw - 24px)); padding: 10px 10px 10px 12px; border-radius: 16px; border: 1px solid rgba(255, 107, 87, .45); background: rgba(24, 15, 30, .96); box-shadow: 0 16px 40px rgba(0, 0, 0, .5); backdrop-filter: blur(10px); animation: sport-in .3s ease; }
+.sport-alert-ic { flex: none; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: rgba(255, 107, 87, .16); color: var(--accent); }
+.sport-alert-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sport-alert-txt b { font-size: 14px; color: var(--cream); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sport-alert-txt small { font-size: 12px; color: var(--muted); }
+.sport-alert-x { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; }
+@keyframes sport-in { from { opacity: 0; transform: translate(-50%, 12px); } }
+@media (max-width: 760px) { .sport-alert { bottom: calc(76px + env(safe-area-inset-bottom)); } }
+
+/* ---- Manga: official reading links, broken page ---- */
+.moff { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; }
+.moff > small { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.moff-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.moff-link { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255, 233, 214, .05); color: var(--cream); font-size: 13px; font-weight: 800; text-decoration: none; }
+.moff-link:hover { border-color: rgba(255, 233, 214, .3); }
+.moff-link i { width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--accent)); }
+.moff-link em { font-style: normal; font-size: 11px; color: var(--muted); }
+.moff-link .ic { transform: rotate(45deg); opacity: .7; }
+.mr-pages img.mr-broken { min-height: 160px; background: var(--surface); border: 1px dashed var(--line); }

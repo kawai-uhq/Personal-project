@@ -5,6 +5,7 @@ import Icon from '../components/Icon';
 import { Status } from '../components/Rows';
 import { usePageTitle } from '../lib/title';
 import { loadSports, stateOf } from '../lib/sports';
+import { toggleSportReminder, useSportReminders } from '../lib/sportsReminders';
 import type { SportEvent, SportState } from '../lib/sports';
 
 const ORDER: Record<SportState, number> = { live: 0, soon: 1, later: 2, ended: 3 };
@@ -56,6 +57,8 @@ export default function Sports() {
     };
   }, []);
 
+  const reminders = useSportReminders();
+  const reminded = new Set(reminders.map((r) => r.id));
   const current = all?.find((e) => e.id === playing) ?? null;
   usePageTitle(current ? `${current.name} · Live` : 'Live Sports');
 
@@ -138,6 +141,9 @@ export default function Sports() {
                   </div>
                   <small>{[current.tag, current.category].filter(Boolean).join(' · ')}</small>
                 </div>
+                {curState !== 'live' && current.start > 0 && (
+                  <button className={`lp-icon ${reminded.has(current.id) ? 'on' : ''}`} onClick={() => toggleSportReminder(current)} aria-pressed={reminded.has(current.id)} aria-label="Remind me when it starts" title={reminded.has(current.id) ? 'Reminder on, tap to cancel' : 'Remind me when it starts'}><Icon name="bell" size={18} /></button>
+                )}
                 <button className="lp-icon" onClick={() => listTop.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} aria-label="Show the event list" title="Event list"><Icon name="grid" size={18} /></button>
                 <a className="lp-icon" href={current.page} target="_blank" rel="noopener noreferrer" aria-label="Open the stream in a new tab" title="Not loading? Open the stream in a new tab"><Icon name="link" size={18} /></a>
                 <button className="lp-icon" onClick={close} aria-label="Close the player" title="Close"><Icon name="x" size={18} /></button>
@@ -191,7 +197,19 @@ export default function Sports() {
                 {shown.map((e) => {
                   const s = stateOf(e, now);
                   return (
-                    <button key={e.id} className={`sp-card ${e.id === playing ? 'on' : ''}`} onClick={() => pick(e)} aria-label={`Watch ${e.name}`}>
+                    <div key={e.id} className={`sp-card ${e.id === playing ? 'on' : ''}`}>
+                      <button className="sp-hit" onClick={() => pick(e)} aria-label={`Watch ${e.name}`} />
+                      {(s === 'soon' || s === 'later') && e.start > 0 && (
+                        <button
+                          className={`sp-bell ${reminded.has(e.id) ? 'on' : ''}`}
+                          onClick={() => toggleSportReminder(e)}
+                          aria-pressed={reminded.has(e.id)}
+                          aria-label={reminded.has(e.id) ? `Cancel the reminder for ${e.name}` : `Remind me when ${e.name} starts`}
+                          title={reminded.has(e.id) ? 'Reminder on, tap to cancel' : 'Remind me when it starts'}
+                        >
+                          <Icon name="bell" size={15} />
+                        </button>
+                      )}
                       <span className="sp-img">
                         {e.poster ? <img src={e.poster} alt="" loading="lazy" referrerPolicy="no-referrer" onError={(ev) => (ev.currentTarget.style.display = 'none')} /> : <Icon name="trophy" size={34} />}
                         <span className={`sp-state ${s}`}>{s === 'live' && <i />}{when(e, s, now)}</span>
@@ -203,7 +221,7 @@ export default function Sports() {
                           <em>{e.category}</em>
                         </span>
                       </span>
-                    </button>
+                    </div>
                   );
                 })}
               </div>

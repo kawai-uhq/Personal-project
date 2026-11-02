@@ -44,7 +44,7 @@ export default function ServerPanel({ items, current, onPick, onReload, worked, 
       <div className="sv-head">
         <div>
           <h2>Servers</h2>
-          <small>{edit ? 'Tap a server to show or hide it' : `${active} active · green = worked before`}</small>
+          <small>{edit ? 'Tap a server to show or hide it' : `${active} active · green = plays for most viewers`}</small>
         </div>
         <button className="sv-icon" onClick={onReload} aria-label="Reload the player" title="Reload the player">
           <Icon name="refresh" size={16} />

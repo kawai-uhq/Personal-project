@@ -109,8 +109,10 @@ export default function MangaDetail() {
   const looking = mdId === undefined || (mdId && chs === null && !chError);
 
   let emptyText = 'No chapters were found for this title.';
-  if (mdId === null) emptyText = "This title couldn't be found on MangaDex, our chapter source.";
+  if (mdId === null) emptyText = "Chapters for this title aren't available here yet.";
   else if (chs && chs.length === 0) emptyText = langs.length > 1 ? `No ${langName(lang)} chapters. Try another language above.` : `No ${langName(lang)} chapters have been uploaded yet.`;
+  // nothing readable here: point to where it's published officially
+  if ((mdId === null || (chs && chs.length === 0)) && m.official.length > 0) emptyText += ` You can read it officially on ${m.official.map((o) => o.site).slice(0, 3).join(', ')} (links above).`;
 
   const share = async () => {
     const url = window.location.href;
@@ -138,6 +140,8 @@ export default function MangaDetail() {
                 <Link className="btn primary" to={readTo(firstReadable)}><Icon name="book" size={16} />Start reading</Link>
               ) : firstOfficial ? (
                 <a className="btn primary" href={firstOfficial.ext!} target="_blank" rel="noopener noreferrer"><Icon name="link" size={16} />Read on {hostOf(firstOfficial.ext!)}</a>
+              ) : !looking && m.official.length > 0 ? (
+                <a className="btn primary" href={m.official[0].url} target="_blank" rel="noopener noreferrer"><Icon name="link" size={16} />Read on {m.official[0].site}</a>
               ) : (
                 <button className="btn ghost" disabled>{looking ? 'Finding chapters…' : 'No chapters yet'}</button>
               )}
@@ -164,6 +168,18 @@ export default function MangaDetail() {
               <div><small>Author</small><strong>{m.creators.length ? m.creators.map((c, i) => <span key={c.id}>{i > 0 && ', '}<Link className="link" to={`/manga/creator/${c.id}`}>{c.name}</Link></span>) : m.authors.join(', ') || '—'}</strong></div>
               <div><small>Readable here</small><strong>{chs ? readable.length : '…'}</strong></div>
             </div>
+            {m.official.length > 0 && (
+              <div className="moff">
+                <small>Read officially</small>
+                <div className="moff-list">
+                  {m.official.map((o) => (
+                    <a key={o.url} className="moff-link" href={o.url} target="_blank" rel="noopener noreferrer" style={o.color ? { ['--c' as any]: o.color } : undefined}>
+                      <i aria-hidden="true" />{o.site}{o.language && o.language !== 'English' ? <em>{o.language}</em> : null}<Icon name="arrowUp" size={12} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>

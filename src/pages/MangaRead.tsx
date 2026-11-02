@@ -127,11 +127,17 @@ export default function MangaRead() {
               loading={i < 3 ? 'eager' : 'lazy'}
               decoding="async"
               onError={(e) => {
-                // a page that fails to load is retried once from the smaller "data saver" copy
-                const alt = pages.saver[i];
-                if (alt && !saver.current.has(src)) {
+                // a page that fails to load moves down its list: data-saver copy, then MangaDex's own server
+                const img = e.currentTarget;
+                const step = Number(img.dataset.try || '0') + 1;
+                const alt = pages.tries[i]?.[step];
+                if (alt) {
+                  img.dataset.try = String(step);
                   saver.current.add(src);
-                  e.currentTarget.src = alt;
+                  img.src = alt;
+                } else {
+                  img.classList.add('mr-broken');
+                  img.alt = `Page ${i + 1} couldn't be loaded`;
                 }
               }}
             />

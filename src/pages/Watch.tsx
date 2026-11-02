@@ -15,6 +15,7 @@ import type { Details, Episode, Media, MediaType } from '../lib/types';
 import { useApp } from '../state';
 import Select from '../components/Select';
 import ServerPanel from '../components/ServerPanel';
+import { isBad, isGood, scoreOf, useHealth, vote } from '../lib/serverHealth';
 
 /** How long a server that normally reports playback may stay silent before we call it broken */
 const QUIET_MS = 25000;
@@ -32,6 +33,8 @@ export default function Watch() {
   const season = Math.max(1, Number(sp.get('s')) || 1);
   const episode = Math.max(1, Number(sp.get('e')) || 1);
   const goodKey = `${t}:${mid}`;
+  // what every visitor's player reported for this title (which servers played, which had to be skipped)
+  const health = useHealth(goodKey);
   // no server in the address: the one that last worked for this title, else the default
   const pid = providerFromParam(sp.get('p') ?? store.getGoodServer(goodKey) ?? serverSlug(defaultProvider)).id;
   const provider = providerById(pid);
@@ -207,18 +210,23 @@ export default function Watch() {
     if (!alive) return;
     store.saveGoodServer(goodKey, serverSlug(pid));
     store.saveWorkedServer('movie', pid);
+    vote(goodKey, pid, true);
     setWorked((w) => (w.has(pid) ? w : new Set(w).add(pid)));
     setQuiet(false);
   }, [alive, goodKey, pid]);
 
-  // The next server to try: the visible ones after this one, servers that worked before first
+  // The next server to try: the visible ones after this one, best first — servers other visitors got to play this
+  // title on, then ones that worked on this device, then the rest, and servers others had to skip last
+  const rank = (id: string) => (isGood(health[id]) ? 0 : worked.has(id) ? 1 : isBad(health[id]) ? 3 : 2);
   const pickNext = (skip: Set<string>) => {
     const vis = providers.filter((p) => !hidden.includes(p.id) || p.id === pid);
     const i = vis.findIndex((p) => p.id === pid);
     const order = vis.map((_, k) => vis[(i + 1 + k) % vis.length]).filter((p) => p.id !== pid && !skip.has(p.id));
-    return order.find((p) => worked.has(p.id)) ?? order[0] ?? null;
+    const best = [...order].sort((a, b) => rank(a.id) - rank(b.id) || (rank(a.id) === 0 ? scoreOf(health[b.id]) - scoreOf(health[a.id]) : 0));
+    return best[0] ?? null;
   };
   const switchAway = (why: string) => {
+    vote(goodKey, pid, false);
     const skip = new Set([...tried, pid]);
     setTried([...skip]);
     const fresh = pickNext(skip);
@@ -229,6 +237,20 @@ export default function Watch() {
     setSwitched(`${provider.name} ${why}, so we switched to ${fresh.name}.`);
     setServer(fresh.id);
   };
+
+  // First visit to this title (no server in the address, none remembered): if other visitors found a server that
+  // plays it and the one we started on isn't one of them, move to the best one before the viewer gets going
+  const healthMoved = useRef<string | null>(null);
+  useEffect(() => {
+    if (healthMoved.current === goodKey || alive || sp.get('p') || store.getGoodServer(goodKey)) return;
+    const good = providers.filter((p) => !hidden.includes(p.id) && isGood(health[p.id])).sort((a, b) => scoreOf(health[b.id]) - scoreOf(health[a.id]));
+    if (!good.length) return;
+    healthMoved.current = goodKey;
+    if (isGood(health[pid])) return;
+    setSwitched(`Most viewers watch this on ${good[0].name}, so we started there.`);
+    setServer(good[0].id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [health, goodKey]);
 
   // Source reliability 1: a server whose page never loads, or that says it has nothing, is swapped at once
   useEffect(() => {
@@ -400,8 +422,8 @@ export default function Watch() {
                 current={pid}
                 onPick={(k) => { setSwitched(null); setServer(k); }}
                 onReload={() => setReload((n) => n + 1)}
-                worked={worked}
-                failed={new Set(tried)}
+                worked={new Set(providers.filter((p) => isGood(health[p.id]) || (worked.has(p.id) && !isBad(health[p.id]))).map((p) => p.id))}
+                failed={new Set([...tried, ...providers.filter((p) => isBad(health[p.id])).map((p) => p.id)])}
                 hidden={hidden}
                 onHidden={(v) => { setHidden(v); store.saveHiddenServers('movie', v); }}
                 autoSwitch={autoSwitch}

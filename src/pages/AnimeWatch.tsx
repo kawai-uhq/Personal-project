@@ -16,6 +16,7 @@ import { store as settings } from '../lib/storage';
 import { reportProgress } from '../lib/anilistAccount';
 import Select from '../components/Select';
 import ServerPanel from '../components/ServerPanel';
+import { isBad, isGood, scoreOf, useHealth, vote } from '../lib/serverHealth';
 import AnimeCast from '../components/AnimeCast';
 import { useEpisodeTitles } from '../lib/episodeTitles';
 
@@ -61,6 +62,8 @@ export default function AnimeWatch() {
   const ep = Math.max(1, Number(sp.get('e')) || 1);
   usePageTitle(a ? `${a.title} Episode ${ep}` : null);
   const goodKey = `anime:${aid}`;
+  // what every visitor's player reported for this anime (which servers played, which had to be skipped)
+  const health = useHealth(goodKey);
   // no server in the address: the one that last worked for this anime, else Server 1
   const server = serverAt(sp.get('p') ?? settings.getGoodServer(goodKey));
   const wanted = sp.get('l') as Lang | null;
@@ -187,6 +190,7 @@ export default function AnimeWatch() {
     const k = String(serverNo(server));
     settings.saveGoodServer(goodKey, k);
     settings.saveWorkedServer('anime', k);
+    vote(goodKey, k, true);
     setWorked((w) => (w.has(k) ? w : new Set(w).add(k)));
     setQuiet(false);
   }, [alive, goodKey, server]);
@@ -201,9 +205,13 @@ export default function AnimeWatch() {
     const order = animeServers
       .map((_, i) => ((cur + i) % animeServers.length) + 1)
       .filter((n) => n !== cur && !skip.has(n) && !hidden.includes(String(n)));
-    return order.find((n) => worked.has(String(n))) ?? order[0] ?? null;
+    // best first: servers other visitors got to play this anime on, then ones that worked on this device,
+    // then the rest, and servers others had to skip last
+    const rank = (n: number) => (isGood(health[n]) ? 0 : worked.has(String(n)) ? 1 : isBad(health[n]) ? 3 : 2);
+    return [...order].sort((a, b) => rank(a) - rank(b) || (rank(a) === 0 ? scoreOf(health[b]) - scoreOf(health[a]) : 0))[0] ?? null;
   };
   const switchAway = (why: string) => {
+    vote(goodKey, String(serverNo(server)), false);
     const skip = new Set([...tried, serverNo(server)]);
     setTried([...skip]);
     const fresh = pickNext(skip);
@@ -214,6 +222,23 @@ export default function AnimeWatch() {
     setSwitched(`${server.name} ${why}, so we switched to ${animeServers[fresh - 1].name}.`);
     pickServer(fresh);
   };
+
+  // first visit to this anime (no server in the address, none remembered): if other visitors found a server that
+  // plays it and the one we started on isn't one of them, move to the best one before the viewer gets going
+  const healthMoved = useRef<string | null>(null);
+  useEffect(() => {
+    if (healthMoved.current === goodKey || alive || sp.get('p') || settings.getGoodServer(goodKey)) return;
+    const good = animeServers
+      .map((_, i) => i + 1)
+      .filter((n) => !hidden.includes(String(n)) && isGood(health[n]))
+      .sort((x, y) => scoreOf(health[y]) - scoreOf(health[x]));
+    if (!good.length) return;
+    healthMoved.current = goodKey;
+    if (isGood(health[serverNo(server)])) return;
+    setSwitched(`Most viewers watch this on ${animeServers[good[0] - 1].name}, so we started there.`);
+    pickServer(good[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [health, goodKey]);
 
   // a server that never loads (or can't play this anime) is swapped for the next untried one
   useEffect(() => {
@@ -403,8 +428,8 @@ export default function AnimeWatch() {
                 current={String(serverNo(server))}
                 onPick={(k) => { setSwitched(null); pickServer(Number(k)); }}
                 onReload={() => setReload((n) => n + 1)}
-                worked={worked}
-                failed={new Set(tried.map(String))}
+                worked={new Set(animeServers.map((_, i) => String(i + 1)).filter((k) => isGood(health[k]) || (worked.has(k) && !isBad(health[k]))))}
+                failed={new Set([...tried.map(String), ...animeServers.map((_, i) => String(i + 1)).filter((k) => isBad(health[k]))])}
                 hidden={hidden}
                 onHidden={(v) => { setHidden(v); settings.saveHiddenServers('anime', v); }}
                 autoSwitch={autoSwitch}

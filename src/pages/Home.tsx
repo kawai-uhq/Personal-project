@@ -5,6 +5,7 @@ import ProviderRow from '../components/ProviderRow';
 import FeedRow from '../components/FeedRow';
 import { ContinueRow, HomeSkeleton, PosterRow, Status } from '../components/Rows';
 import { CollectionsRow, MoodRow } from '../components/Discover';
+import BecauseRows from '../components/BecauseRows';
 import { tmdb } from '../lib/tmdb';
 import type { Media } from '../lib/types';
 import { useNewEpisodes } from '../lib/useNewEpisodes';
@@ -56,6 +57,7 @@ export default function Home() {
       <MoodRow section="cinema" />
       <PosterRow title="My Watchlist" items={favorites} to="/list" fresh={fresh} />
       <PosterRow title="My Favorites" items={loved} to="/list" fresh={fresh} />
+      <BecauseRows history={history} />
       <PosterRow title="Trending Today" items={trending} to="/explore/trending-day" />
       <CollectionsRow />
       {FEED_ORDER.map((f) => (

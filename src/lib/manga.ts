@@ -32,6 +32,8 @@ export interface Manga extends MangaLite {
 export interface MangaFull extends Manga {
   related: { relation: string; item: Manga }[];
   recs: Manga[];
+  /** official places to read it (MANGA Plus, VIZ, Webtoon, …), from AniList */
+  official: { site: string; url: string; color: string | null; language: string | null }[];
 }
 
 /** Manga / Manhwa / Manhua, from where the series comes from. */
@@ -116,6 +118,7 @@ export async function mangaFull(id: number): Promise<MangaFull> {
   const d = await gql(
     `query($id:Int){ Media(id:$id, type:MANGA){ ${MEDIA}
       relations{ edges{ relationType node{ ${LT} type } } }
+      externalLinks{ site url type color language }
       recommendations(perPage:14, sort:RATING_DESC){ nodes{ mediaRecommendation{ ${LT} type } } } } }`,
     { id }
   );
@@ -126,7 +129,11 @@ export async function mangaFull(id: number): Promise<MangaFull> {
     related: ((m.relations?.edges ?? []) as any[])
       .filter((e) => e.node?.type === 'MANGA')
       .map((e) => ({ relation: String(e.relationType).replace(/_/g, ' ').toLowerCase(), item: mapManga(e.node) })),
-    recs: ((m.recommendations?.nodes ?? []) as any[]).map((n) => n.mediaRecommendation).filter((x) => x?.type === 'MANGA').map(mapManga)
+    recs: ((m.recommendations?.nodes ?? []) as any[]).map((n) => n.mediaRecommendation).filter((x) => x?.type === 'MANGA').map(mapManga),
+    // AniList marks reading sites as "STREAMING" links
+    official: ((m.externalLinks ?? []) as any[])
+      .filter((l) => l?.type === 'STREAMING' && typeof l.url === 'string' && /^https:\/\//.test(l.url))
+      .map((l) => ({ site: String(l.site), url: String(l.url), color: l.color ?? null, language: l.language ?? null }))
   };
 }
 
@@ -271,17 +278,36 @@ export const hostOf = (url: string) => {
   }
 };
 
-export interface PageSet { full: string[]; saver: string[] }
+/** Every page, with the addresses to try in order: the assigned image server (full, then data-saver quality),
+ *  then MangaDex's own origin server (full, then data-saver). */
+export interface PageSet { full: string[]; saver: string[]; tries: string[][] }
+
+const ORIGIN = 'https://uploads.mangadex.org';
 
 export async function mdPages(chapterId: string): Promise<PageSet> {
-  const j = await md(`/at-home/server/${chapterId}`, {});
+  let j: any = null;
+  try {
+    j = await md(`/at-home/server/${chapterId}`, {});
+  } catch {
+    // some networks block the image servers' unusual ports: ask for a server on the standard HTTPS port
+    j = await md(`/at-home/server/${chapterId}`, { forcePort443: 'true' });
+  }
   const base: string = j?.baseUrl;
   const ch = j?.chapter;
   if (!base || !ch?.hash) throw new Error("This chapter's pages aren't available right now.");
-  return {
-    full: ((ch.data ?? []) as string[]).map((f) => `${base}/data/${ch.hash}/${f}`),
-    saver: ((ch.dataSaver ?? []) as string[]).map((f) => `${base}/data-saver/${ch.hash}/${f}`)
-  };
+  const data = (ch.data ?? []) as string[];
+  const saverFiles = (ch.dataSaver ?? []) as string[];
+  const full = data.map((f) => `${base}/data/${ch.hash}/${f}`);
+  const saver = saverFiles.map((f) => `${base}/data-saver/${ch.hash}/${f}`);
+  const tries = data.map((f, i) =>
+    [
+      full[i],
+      saver[i],
+      `${ORIGIN}/data/${ch.hash}/${f}`,
+      saverFiles[i] ? `${ORIGIN}/data-saver/${ch.hash}/${saverFiles[i]}` : ''
+    ].filter((u, k, a) => u && a.indexOf(u) === k)
+  );
+  return { full, saver, tries };
 }
 
 export const chapterLabel = (c: Chapter) => (c.num ? `Chapter ${c.num}` : 'Oneshot');

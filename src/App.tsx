@@ -16,6 +16,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { defaultTitle } from './lib/title';
 import Contact from './pages/Contact';
 import Floating from './components/Floating';
+import SportAlerts from './components/SportAlerts';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import { About, Dmca, Privacy, Terms } from './pages/Legal';
@@ -175,6 +176,7 @@ export default function App() {
       {!watching && <Floating />}
       <AuthModal />
       <CrossPromo />
+      <SportAlerts />
       <ConfirmHost />
       <CookieBanner />
       <Tooltip />
