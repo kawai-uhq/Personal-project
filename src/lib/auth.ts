@@ -37,12 +37,12 @@ interface Reply {
   body: any;
 }
 
-async function post(path: string, body: unknown, bearer?: string): Promise<Reply> {
+async function post(path: string, body: unknown, bearer?: string, method = 'POST'): Promise<Reply> {
   if (!authConfigured) throw new AuthError("Sign-in isn't set up yet.");
   let r: Response;
   try {
     r = await fetch(`${BASE}/auth/v1${path}`, {
-      method: 'POST',
+      method,
       headers: {
         apikey: KEY,
         'Content-Type': 'application/json',
@@ -88,6 +88,9 @@ function errorText(reply: Reply, fallback: string): string {
   if (lower.includes('at least') && lower.includes('password')) return 'Password must be at least 6 characters.';
   if (lower.includes('not confirmed')) return 'Confirm your email first: open the link in the email we sent you, then sign in.';
   if (lower.includes('captcha')) return 'The verification check failed or expired. Tick it again and retry.';
+  if (lower.includes('different from the old')) return 'Choose a password different from your old one.';
+  if (lower.includes('expired') || lower.includes('otp') || (lower.includes('token') && lower.includes('invalid')))
+    return 'That code is wrong or has expired.';
   return raw || fallback;
 }
 
@@ -97,6 +100,32 @@ export const turnstileSiteKey = ((import.meta.env.VITE_TURNSTILE_SITE_KEY as str
 
 const withCaptcha = (body: Record<string, unknown>, captcha?: string) =>
   captcha ? { ...body, gotrue_meta_security: { captcha_token: captcha } } : body;
+
+/** "Forgot password": email a one-time sign-in code (only to existing accounts). */
+export async function sendCode(email: string, captcha?: string): Promise<void> {
+  const r = await post('/otp', withCaptcha({ email, create_user: false }, captcha));
+  if (r.code < 200 || r.code > 299) {
+    // Supabase answers "Signups not allowed for otp" when there's no account with this email
+    const raw = JSON.stringify(r.body ?? {});
+    if (/signups? not allowed/i.test(raw)) throw new AuthError('There is no account with this email. Register instead.');
+    throw new AuthError(errorText(r, "Couldn't send the code. Try again."));
+  }
+}
+
+/** Sign in with the emailed code. */
+export async function verifyCode(email: string, code: string): Promise<Session> {
+  const r = await post('/verify', { type: 'email', email, token: code });
+  if (r.code < 200 || r.code > 299) throw new AuthError(errorText(r, "That code didn't work. Try again."));
+  const s = toSession(r.body, email);
+  if (!s) throw new AuthError('Sign-in failed. Please try again.');
+  return s;
+}
+
+/** Set a new password for the signed-in account. */
+export async function updatePassword(accessToken: string, password: string): Promise<void> {
+  const r = await post('/user', { password }, accessToken, 'PUT');
+  if (r.code < 200 || r.code > 299) throw new AuthError(errorText(r, "Couldn't save the new password. Try again."));
+}
 
 /** Email + password sign-in. */
 export async function signInPassword(email: string, password: string, captcha?: string): Promise<Session> {
