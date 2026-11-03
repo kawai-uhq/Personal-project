@@ -18,6 +18,7 @@ import Contact from './pages/Contact';
 import Floating from './components/Floating';
 import SportAlerts from './components/SportAlerts';
 import AccountRuntime from './components/AccountRuntime';
+import { Quiet } from './components/SafeArea';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import { About, Dmca, Privacy, Terms } from './pages/Legal';
@@ -115,7 +116,7 @@ export default function App() {
 
   return (
     <>
-      <Navbar />
+      <Quiet name="top bar"><Navbar /></Quiet>
       <ErrorBoundary resetKey={pathname}>
       <Suspense fallback={<div className="status" style={{ minHeight: '70vh' }}><div className="spinner" aria-label="Loading" /></div>}>
       <Routes location={logical}>
@@ -178,15 +179,15 @@ export default function App() {
       </Routes>
       </Suspense>
       </ErrorBoundary>
-      <Footer />
-      {!watching && <Floating />}
-      <AuthModal />
-      <CrossPromo />
-      <SportAlerts />
-      <AccountRuntime />
-      <ConfirmHost />
-      <CookieBanner />
-      <Tooltip />
+      <Quiet name="footer"><Footer /></Quiet>
+      {!watching && <Quiet name="floating buttons"><Floating /></Quiet>}
+      <Quiet name="sign-in"><AuthModal /></Quiet>
+      <Quiet name="promo"><CrossPromo /></Quiet>
+      <Quiet name="sport alerts"><SportAlerts /></Quiet>
+      <Quiet name="account"><AccountRuntime /></Quiet>
+      <Quiet name="dialogs"><ConfirmHost /></Quiet>
+      <Quiet name="cookie banner"><CookieBanner /></Quiet>
+      <Quiet name="tooltip"><Tooltip /></Quiet>
     </>
   );
 }

@@ -8,14 +8,23 @@ import { importMigration } from './lib/site';
 import { applyPrefs, watchSharedPrefs } from './lib/prefs';
 import { seedShared } from './lib/shared';
 import { autoImport, captureAniListReturn } from './lib/anilistAccount';
+import { RootSafe } from './components/SafeArea';
 import './styles.css';
 
-importMigration();
-void captureAniListReturn().then(autoImport);
-seedShared();
-applyPrefs();
-watchSharedPrefs();
-applySmooth();
+const safely = (name: string, f: () => unknown) => {
+  try {
+    const r = f();
+    if (r instanceof Promise) r.catch((e) => console.error(`[comvie] start-up: ${name}`, e));
+  } catch (e) {
+    console.error(`[comvie] start-up: ${name}`, e);
+  }
+};
+safely('migration', importMigration);
+safely('AniList return', () => captureAniListReturn().then(autoImport));
+safely('shared settings', seedShared);
+safely('settings', applyPrefs);
+safely('settings watch', watchSharedPrefs);
+safely('smooth scroll', applySmooth);
 
 // No "save image" / right-click menu or dragging pictures out (typing fields keep their normal menu)
 const typing = (t: EventTarget | null) => t instanceof Element && !!t.closest('input, textarea, [contenteditable="true"], .selectable');
@@ -24,10 +33,12 @@ document.addEventListener('dragstart', (e) => !typing(e.target) && e.preventDefa
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <AppProvider>
-        <App />
-      </AppProvider>
-    </BrowserRouter>
+    <RootSafe>
+      <BrowserRouter>
+        <AppProvider>
+          <App />
+        </AppProvider>
+      </BrowserRouter>
+    </RootSafe>
   </React.StrictMode>
 );

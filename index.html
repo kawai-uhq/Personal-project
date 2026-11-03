@@ -28,6 +28,33 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Fallback for when the site's code can't even start: show what happened instead of a white page.
+      (function () {
+        var last = '';
+        window.addEventListener('error', function (e) { last = (e && (e.message || (e.target && e.target.src))) || last; }, true);
+        window.addEventListener('unhandledrejection', function (e) { last = String((e && e.reason && e.reason.message) || e.reason || last); });
+        setTimeout(function () {
+          var root = document.getElementById('root');
+          if (!root || root.childElementCount) return;
+          try { if (!sessionStorage.getItem('cv.boot')) { sessionStorage.setItem('cv.boot', '1'); location.reload(); return; } } catch (x) {}
+          document.body.style.background = '#120C18';
+          root.innerHTML = '<div style="max-width:520px;margin:12vh auto;padding:24px;font:16px/1.5 system-ui,sans-serif;color:#f6ece3;text-align:center">' +
+            '<div style="font-size:42px">:(</div><h1 style="font-size:22px">Comvie couldn\'t start</h1>' +
+            '<p style="opacity:.75">Reload first. If it keeps happening, reset this site\'s saved data on this device: your account, lists and progress come back after signing in.</p>' +
+            '<p><button id="cv-r1" style="padding:10px 18px;border-radius:999px;border:0;background:#ff9a2e;font-weight:800">Reload</button> ' +
+            '<button id="cv-r2" style="padding:10px 18px;border-radius:999px;border:1px solid #555;background:none;color:#f6ece3;font-weight:800">Reset saved data</button></p>' +
+            '<pre id="cv-err" style="white-space:pre-wrap;opacity:.6;font-size:12px"></pre></div>';
+          document.getElementById('cv-err').textContent = last;
+          document.getElementById('cv-r1').onclick = function () { location.reload(); };
+          document.getElementById('cv-r2').onclick = function () {
+            try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('comvie.') === 0 && k !== 'comvie.session') localStorage.removeItem(k); }); sessionStorage.clear(); } catch (x) {}
+            location.replace('/');
+          };
+        }, 6000);
+        window.addEventListener('load', function () { setTimeout(function () { try { if (document.getElementById('root').childElementCount) sessionStorage.removeItem('cv.boot'); } catch (x) {} }, 7000); });
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -100,6 +100,13 @@ export async function syncLibrary(): Promise<void> {
     })();
     const cloudAt = c ? Date.parse(c.updated_at) || 0 : 0;
     if (c && cloudAt > localAt) {
+      // a setting removed on another device arrives as an empty list: never let it replace a different kind of value here
+      const local = (() => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } })();
+      const emptyList = Array.isArray(c.value) && c.value.length === 0;
+      if (emptyList && local !== null && !Array.isArray(local)) {
+        writeStamp(key, cloudAt);
+        continue;
+      }
       try { localStorage.setItem(key, JSON.stringify(c.value)); } catch { /* ignore */ }
       writeStamp(key, cloudAt);
       changed = true;
