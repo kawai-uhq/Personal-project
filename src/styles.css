@@ -1730,51 +1730,29 @@ html.light .sv-item { background: rgba(40, 20, 30, .04); }
 .auth-info { margin-top: 14px; text-align: left; }
 .auth-go:disabled { opacity: .55; box-shadow: none; }
 
-/* ---- Avatars, frames, nameplates, profile effects ---- */
+/* ---- Avatars, decorations, nameplates, profile effects ----
+   The artwork lives in public/deco and is drawn by scripts/decorations/build.py (run it after changing a design). */
 .av { position: relative; display: inline-block; flex: none; border-radius: 50%; vertical-align: middle; }
 .av-img { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; max-width: none; border-radius: 50%; object-fit: cover; object-position: center 20%; display: grid; place-items: center; color: #1a0d0a; font-weight: 900; overflow: hidden; }
-.av-deco { position: absolute; z-index: 3; width: 120%; height: 120%; left: -10%; top: -10%; pointer-events: none; }
-/* frames: a ring drawn just outside the picture */
-.av-frame::before { content: ''; position: absolute; z-index: 0; inset: calc(var(--av) * -0.09); border-radius: 50%; }
-.av-frame::after { content: ''; position: absolute; z-index: 2; inset: calc(var(--av) * -0.02); border-radius: 50%; pointer-events: none; }
-@keyframes av-spin { to { transform: rotate(360deg); } }
-@keyframes av-pulse { 50% { opacity: .55; transform: scale(1.04); } }
-.f-sakura::before { background: conic-gradient(#ffd1e3, #ff8fb8, #fff0f6, #ff6fa5, #ffd1e3); animation: av-spin 9s linear infinite; }
-.f-sakura::after { background: radial-gradient(circle at 14% 22%, #fff 0 4%, transparent 5%), radial-gradient(circle at 86% 30%, #ffc2d9 0 5%, transparent 6%), radial-gradient(circle at 70% 92%, #fff 0 4%, transparent 5%); }
-.f-chakra::before { background: conic-gradient(from 0deg, #0b5cff, #6fe3ff, #0b5cff 40%, #b5f0ff, #0b5cff); animation: av-spin 2.4s linear infinite; box-shadow: 0 0 calc(var(--av) * .18) #3fb6ff; }
-.f-spirit::before { background: conic-gradient(#7cffd4, #2a9df4, #b77cff, #7cffd4); filter: blur(1px); animation: av-spin 3.5s linear infinite; box-shadow: 0 0 calc(var(--av) * .2) rgba(124, 255, 212, .6); }
-.f-film::before { background: repeating-conic-gradient(#f1f1f1 0 6deg, #111 6deg 15deg); animation: av-spin 14s linear infinite; }
-.f-spotlight::before { background: radial-gradient(circle, #fff7c2 55%, #ffd34d 70%, rgba(255, 211, 77, 0) 74%); animation: av-pulse 2.6s ease-in-out infinite; }
-.f-premiere::before { background: conic-gradient(#b3001b, #ff2d4b, #ffd36b 25%, #b3001b 50%, #ff2d4b, #ffd36b 75%, #b3001b); }
-.f-neon::before { background: conic-gradient(#00f0ff, #ff2bd6, #00f0ff); box-shadow: 0 0 calc(var(--av) * .22) #ff2bd6, 0 0 calc(var(--av) * .12) #00f0ff; animation: av-spin 6s linear infinite; }
-.f-gold::before { background: conic-gradient(#8a6a1f, #ffe08a, #b8892a, #fff3c4, #8a6a1f); }
-.f-galaxy::before { background: conic-gradient(#1b0b4d, #6b2bd9, #2a6df4, #e05bff, #1b0b4d); animation: av-spin 7s linear infinite; }
-.f-galaxy::after { background: radial-gradient(circle at 20% 15%, #fff 0 2.5%, transparent 3%), radial-gradient(circle at 88% 60%, #fff 0 2%, transparent 2.5%), radial-gradient(circle at 40% 95%, #fff 0 2%, transparent 2.5%); }
-@media (prefers-reduced-motion: reduce) { .av-frame::before { animation: none !important; } }
+/* a decoration is drawn at 120% of the picture, centred on it (the same proportions Discord uses) */
+.av-deco { position: absolute; z-index: 3; width: 120%; height: 120%; max-width: none; left: -10%; top: -10%; pointer-events: none; }
 
-/* nameplates: a background behind the name */
+/* nameplates: an illustrated scene behind the name, fitted to the header's height; the rest is filled with the scene's edge colour */
 .np { border-radius: 14px; background: var(--surface); }
-.np-sakura { background: linear-gradient(120deg, #3a1027, #7a2a52 45%, #f08cb4); }
-.np-twilight { background: linear-gradient(120deg, #1c1640, #6a2d6e 55%, #ff9c5b); }
-.np-noir { background: repeating-linear-gradient(115deg, #0d0d0d 0 18px, #1d1d1d 18px 36px); }
-.np-marquee { background: radial-gradient(circle, #ffe08a 0 2px, transparent 3px) 0 0 / 14px 14px, linear-gradient(120deg, #4a0d16, #8f1d2c); }
-.np-ocean { background: linear-gradient(120deg, #06283d, #1363df 60%, #47b5ff); }
-.np-aurora { background: linear-gradient(120deg, #0b1d2c, #11998e, #38ef7d, #6a3093); background-size: 300% 300%; animation: np-move 10s ease infinite; }
-.np-ember { background: linear-gradient(120deg, #1f0a05, #8a1f0b 55%, #ff7a2f); }
-@keyframes np-move { 50% { background-position: 100% 50%; } }
+.np-sakura { background: #1C0A1D url(/deco/nameplates/sakura.svg) right center / auto 100% no-repeat; }
+.np-twilight { background: #0E0A22 url(/deco/nameplates/twilight.svg) right center / auto 100% no-repeat; }
+.np-noir { background: #0A0A0C url(/deco/nameplates/noir.svg) right center / auto 100% no-repeat; }
+.np-marquee { background: #2A040B url(/deco/nameplates/marquee.svg) right center / auto 100% no-repeat; }
+.np-ocean { background: #030A1C url(/deco/nameplates/ocean.svg) right center / auto 100% no-repeat; }
+.np-aurora { background: #020611 url(/deco/nameplates/aurora.svg) right center / auto 100% no-repeat; }
+.np-ember { background: #0B0505 url(/deco/nameplates/ember.svg) right center / auto 100% no-repeat; }
 
-/* profile effects: drifting particles over a profile header */
-.fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: inherit; }
-.fx::before, .fx::after { content: ''; position: absolute; inset: -100% 0 0 0; background-repeat: repeat; animation: fx-fall 12s linear infinite; }
-.fx::after { animation-duration: 18s; opacity: .7; }
-@keyframes fx-fall { to { transform: translateY(50%); } }
-.fx-petals::before, .fx-petals::after { background-image: radial-gradient(ellipse 5px 3px at 20% 30%, #ffc2d9 60%, transparent 62%), radial-gradient(ellipse 4px 3px at 70% 60%, #ffd9e8 60%, transparent 62%); background-size: 120px 140px; }
-.fx-sparkles::before, .fx-sparkles::after { background-image: radial-gradient(circle at 30% 40%, #fff 0 1.5px, transparent 2px), radial-gradient(circle at 75% 75%, #ffe08a 0 1.5px, transparent 2px); background-size: 90px 110px; animation-name: fx-twinkle; }
-@keyframes fx-twinkle { 50% { opacity: .25; } }
-.fx-stars::before, .fx-stars::after { background-image: radial-gradient(circle at 10% 20%, #fff 0 1px, transparent 1.5px), radial-gradient(circle at 60% 80%, #cfe3ff 0 1px, transparent 1.5px), radial-gradient(circle at 85% 35%, #fff 0 1.5px, transparent 2px); background-size: 70px 70px; animation-duration: 40s; }
-.fx-embers::before, .fx-embers::after { inset: 0 0 -100% 0; background-image: radial-gradient(circle at 25% 50%, #ff9a2e 0 1.5px, transparent 2.5px), radial-gradient(circle at 70% 20%, #ff5b2e 0 1.5px, transparent 2.5px); background-size: 100px 120px; animation-name: fx-rise; }
-@keyframes fx-rise { to { transform: translateY(-50%); } }
-@media (prefers-reduced-motion: reduce) { .fx::before, .fx::after, .np-aurora { animation: none; } }
+/* profile effects: an animated layer over a profile header */
+.fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: inherit; background: center / cover no-repeat; }
+.fx-petals { background-image: url(/deco/effects/petals.svg); }
+.fx-sparkles { background-image: url(/deco/effects/sparkles.svg); }
+.fx-stars { background-image: url(/deco/effects/stars.svg); }
+.fx-embers { background-image: url(/deco/effects/embers.svg); }
 /* the top-bar profile picture draws its own circle (and frame) */
 .nav .avatar.nav-me { background: transparent; overflow: visible; margin: 0 4px; }
 .auth-social { display: grid; gap: 10px; margin-top: 18px; }
@@ -1826,7 +1804,8 @@ html.light .sv-item { background: rgba(40, 20, 30, .04); }
 .pe-none { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; border: 1px dashed var(--line); color: var(--muted); }
 .pe-swatch { position: relative; display: block; width: 100%; height: 46px; border-radius: 8px; overflow: hidden; }
 .pe-swatch.pe-fx { background: #15121a; }
-.pe-theme { position: absolute; top: 4px; right: 6px; font-size: 9px; font-style: normal; font-weight: 800; text-transform: uppercase; color: var(--muted); }
+.pe-theme { position: absolute; z-index: 5; top: 4px; right: 5px; padding: 1px 5px; border-radius: 6px; background: rgba(18, 12, 24, .78); font-size: 9px; font-style: normal; font-weight: 800; text-transform: uppercase; color: var(--muted); }
+.pe-theme:empty { display: none; }
 .pe-check { display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; font-size: 14px; cursor: pointer; }
 .pe-check input { margin-top: 3px; accent-color: var(--accent); }
 .pp-hero { padding: 30px 22px; }
@@ -1851,5 +1830,4 @@ html.light .acct-panel, html.light .pe-block { background: rgba(255, 255, 255, .
 .np-media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10, 6, 14, .7), rgba(10, 6, 14, .25) 55%, rgba(10, 6, 14, .05)); }
 .pe-dplate { background: #15121a; }
 .pe-dplate img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.pe-grid-discord { margin-bottom: 8px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
 .t-discord { color: #8f96ff; }

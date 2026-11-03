@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import Avatar from '../Avatar';
 import Icon from '../Icon';
 import { buildPublicData } from '../AccountRuntime';
@@ -112,20 +113,29 @@ export default function ProfileEditor() {
   };
 
   const setAvatar = (a: AvatarData) => void save({ avatar: a });
-  const setDeco = (d: Deco) => void save({ deco: { ...profile.deco, ...d, ...('nameplate' in d && !('dplate' in d) ? { dplate: '' } : {}) } });
+  // one avatar decoration and one nameplate at a time: picking one of ours replaces the Discord one, and the other way round
+  const setDeco = (d: Deco) => {
+    const next: Deco = { ...profile.deco, ...d };
+    if ('frame' in d && !('discord' in d)) next.discord = '';
+    if (d.discord) next.frame = '';
+    if ('nameplate' in d && !('dplate' in d)) next.dplate = '';
+    if (d.dplate) next.nameplate = '';
+    void save({ deco: next });
+  };
   const letter = profile.username || session.email;
   const publicUrl = `${onProd() ? CINEMA_ORIGIN : location.origin}/u/${profile.username ?? ''}`;
 
-  const decoGrid = (items: DecoItem[], current: string | undefined, key: 'frame' | 'nameplate' | 'effect') => (
+  const decoGrid = (items: DecoItem[], current: string | undefined, key: 'frame' | 'nameplate' | 'effect', extra?: ReactNode) => (
     <div className="pe-grid">
       <button type="button" className={`pe-opt ${!current ? 'on' : ''}`} disabled={busy} onClick={() => setDeco({ [key]: '' })}>
         <span className="pe-none"><Icon name="x" size={16} /></span>
         <small>None</small>
       </button>
+      {extra}
       {items.map((it) => (
         <button key={it.id} type="button" className={`pe-opt ${current === it.id ? 'on' : ''}`} disabled={busy} onClick={() => setDeco({ [key]: it.id })} title={it.name}>
           {key === 'frame' ? (
-            <Avatar avatar={profile.avatar} deco={{ frame: it.id, discord: profile.deco.discord }} letter={letter} size={46} />
+            <Avatar avatar={profile.avatar} deco={{ frame: it.id }} letter={letter} size={46} />
           ) : (
             <span className={`pe-swatch ${key === 'nameplate' ? `np-${it.id}` : 'pe-fx'}`}>{key === 'effect' && <span className={`fx fx-${it.id}`} />}</span>
           )}
@@ -200,34 +210,35 @@ export default function ProfileEditor() {
       </div>
 
       <div className="pe-block">
-        <h3>Avatar frame</h3>
-        {decoGrid(FRAMES, profile.deco.frame, 'frame')}
-        {discord?.decoration && (
-          <label className="pe-check">
-            <input type="checkbox" checked={!!profile.deco.discord} disabled={busy} onChange={(e) => setDeco({ discord: e.target.checked ? discord.decoration! : '' })} />
-            Show my Discord avatar decoration
-          </label>
+        <h3>Avatar decoration</h3>
+        {decoGrid(
+          FRAMES,
+          profile.deco.discord ? '__discord' : profile.deco.frame,
+          'frame',
+          discord?.decoration ? (
+            <button type="button" className={`pe-opt ${profile.deco.discord ? 'on' : ''}`} disabled={busy} title="My Discord decoration" onClick={() => setDeco({ discord: discord.decoration! })}>
+              <Avatar avatar={profile.avatar} deco={{ discord: discord.decoration }} letter={letter} size={46} />
+              <small>My Discord decoration</small>
+              <em className="pe-theme t-discord">Discord</em>
+            </button>
+          ) : null
         )}
       </div>
 
       <div className="pe-block">
         <h3>Nameplate</h3>
-        {discord?.nameplate && (
-          <div className="pe-grid pe-grid-discord">
-            <button
-              type="button"
-              className={`pe-opt ${profile.deco.dplate ? 'on' : ''}`}
-              disabled={busy}
-              title="My Discord nameplate"
-              onClick={() => setDeco({ nameplate: '', dplate: discord.nameplate!.asset })}
-            >
+        {decoGrid(
+          NAMEPLATES,
+          profile.deco.dplate ? '__discord' : profile.deco.nameplate,
+          'nameplate',
+          discord?.nameplate ? (
+            <button type="button" className={`pe-opt ${profile.deco.dplate ? 'on' : ''}`} disabled={busy} title="My Discord nameplate" onClick={() => setDeco({ dplate: discord.nameplate!.asset })}>
               <span className="pe-swatch pe-dplate"><img src={discordPlate(discord.nameplate.asset).img} alt="" referrerPolicy="no-referrer" /></span>
               <small>My Discord nameplate</small>
               <em className="pe-theme t-discord">Discord</em>
             </button>
-          </div>
+          ) : null
         )}
-        {decoGrid(NAMEPLATES, profile.deco.dplate ? '__discord' : profile.deco.nameplate, 'nameplate')}
       </div>
 
       <div className="pe-block">

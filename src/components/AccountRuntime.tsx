@@ -67,7 +67,7 @@ async function finishDiscord(token: string) {
         if (avatar?.url?.startsWith('https://cdn.discordapp.com/avatars/') && j.avatar) avatar = { url: j.avatar };
         // first time we see a Discord nameplate / decoration: switch it on, unless one of ours is already chosen
         if (plate && !before?.nameplate && !deco.nameplate && !deco.dplate) deco.dplate = plate.asset;
-        if (j.decoration && !before?.decoration && !deco.discord) deco.discord = j.decoration;
+        if (j.decoration && !before?.decoration && !deco.discord && !deco.frame) deco.discord = j.decoration;
       }
       if (JSON.stringify(deco) !== JSON.stringify(p.deco) || JSON.stringify(avatar) !== JSON.stringify(p.avatar)) {
         await saveProfile(token, { avatar, deco }).catch((e) => console.error('[discord] keeping Discord items', e));

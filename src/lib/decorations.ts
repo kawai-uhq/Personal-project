@@ -1,4 +1,4 @@
-/** Profile decorations, all drawn with CSS (no outside images): avatar frames, nameplates and profile effects. */
+/** Profile collectibles: avatar decorations, nameplates and profile effects. Their artwork is in public/deco (drawn by scripts/decorations/build.py). */
 export interface DecoItem {
   id: string;
   name: string;
