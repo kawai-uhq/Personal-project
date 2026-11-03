@@ -209,7 +209,7 @@ def frame_sakura():
     def br(t):
         return 114 + 3.2 * math.sin(t * math.pi * 2.2), 160 + 132 * t
     pts = [pol(*br(i / 44)) for i in range(45)]
-    b.append(f'<path d="{tapered(pts, 12.5, 2.6)}" fill="url(#bark)" stroke="#20110C" stroke-opacity=".5" stroke-width=".8"/>')
+    b.append(f'<path d="{ribbon(pts, 12.5, 2.2)}" fill="url(#bark)" stroke="#20110C" stroke-opacity=".5" stroke-width=".8"/>')
     hl = [pol(br(i / 44)[0] + 1.8, br(i / 44)[1]) for i in range(2, 38)]
     b.append(f'<path d="M{"L".join(P(p) for p in hl)}" fill="none" stroke="#C48B6E" stroke-opacity=".55" stroke-width="1" stroke-linecap="round"/>')
 
@@ -223,7 +223,7 @@ def frame_sakura():
         p = [base, add(add(base, d, L * .5), perp, bend), add(base, d, L)]
         return p, tapered(p, w0, 1.1)
     ends = {}
-    for key, t, L, bend in [('a', .33, 19, 2), ('b', .6, 21, -2.5), ('c', .82, 15, 2), ('d', .1, 14, -1.5)]:
+    for key, t, L, bend in [('a', .33, 19, 2), ('b', .6, 21, -2.5), ('c', .82, 12, 2), ('d', .1, 8, -1.5)]:
         p, d = twig(t, L, bend, 4.2)
         ends[key] = p[-1]
         b.append(f'<path d="{d}" fill="url(#bark)" stroke="#20110C" stroke-opacity=".45" stroke-width=".6"/>')
@@ -234,17 +234,20 @@ def frame_sakura():
     blossoms = [(pol(br(.37)[0] + 9, br(.37)[1]), 13.5, -8), (pol(br(.55)[0] + 7, br(.55)[1]), 13, 22), (ends['b'], 13.5, -20),
                 (pol(br(.45)[0] + 2, br(.45)[1]), 19, 12), (pol(br(.19)[0] + 4, br(.19)[1]), 15, 30), (ends['a'], 11, 5),
                 (pol(br(.95)[0] + 2, br(.95)[1]), 12, 40), (ends['c'], 10, -15), (pol(br(.27)[0] + 1, br(.27)[1]), 9, 50)]
+    def inside(x, y, s):
+        m = s * 1.05 + 1.5
+        return min(max(x, m), 240 - m), min(max(y, m), 240 - m)
     for (x, y), s, rot in blossoms:
-        b.append(flower(x, y, s, rot, rnd))
-    b.append(bud(*ends['d'], 7, 200))
+        b.append(flower(*inside(x, y, s), s, rot, rnd))
+    b.append(bud(*inside(*ends['d'], 8), 7, 200))
     b.append(bud(*pol(br(.7)[0] + 3, br(.7)[1]), 6.5, 250))
     # the small sprig at the bottom right
     sp = [pol(113 + 2 * math.sin(i / 10 * math.pi), 8 + 62 * i / 10) for i in range(11)]
     b.append(f'<path d="{tapered(sp, 7, 1.8)}" fill="url(#bark)" stroke="#20110C" stroke-opacity=".45" stroke-width=".6"/>')
     b.append(f'<path d="{leaf_d(14, 5.4)}" transform="translate({P(pol(114, 26))}) rotate(120)" fill="url(#leaf)" stroke="#2F5A1A" stroke-opacity=".5" stroke-width=".5"/>')
-    b.append(flower(*pol(117, 14), 10.5, 40, rnd))
-    b.append(flower(*pol(116, 42), 15, 18, rnd))
-    b.append(bud(*pol(116, 70), 7.5, 150))
+    b.append(flower(*inside(*pol(117, 14), 10.5), 10.5, 40, rnd))
+    b.append(flower(*inside(*pol(116, 42), 15), 15, 18, rnd))
+    b.append(bud(*inside(*pol(116, 70), 8), 7.5, 150))
     # petals drifting down
     falls = ''
     for i, ((x, y), cls) in enumerate([((178, 168), 'fa'), ((36, 150), 'fb'), ((205, 128), 'fc'), ((60, 196), 'fd')]):
