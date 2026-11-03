@@ -11,7 +11,7 @@ import { earnedBadges } from '../../lib/badges';
 import { watchStats } from '../../lib/stats';
 import ProfileFrame from '../ProfileFrame';
 import type { DecoItem } from '../../lib/decorations';
-import { USERNAME_RE, cleanUsername, discordInfo, discordPlate, saveProfile, usernameFree, useProfile } from '../../lib/profile';
+import { USERNAME_RE, cleanUsername, discordInfo, hasDiscord, discordPlate, saveProfile, usernameFree, useProfile } from '../../lib/profile';
 import type { Avatar as AvatarData, Deco } from '../../lib/profile';
 import { CINEMA_ORIGIN, onProd } from '../../lib/site';
 import { useApp } from '../../state';
@@ -258,12 +258,12 @@ export default function ProfileEditor() {
     </div>
   );
   const previewDeco = peek ?? profile.deco;
-  const myBadges = earnedBadges(stats, { joined: profile.created_at, discord: !!discord });
+  const myBadges = earnedBadges(stats, { joined: profile.created_at, discord: hasDiscord() });
 
   return (
     <div className="pe">
       <div className="pe-preview" aria-live="polite">
-        <ProfileCard avatar={profile.avatar} deco={previewDeco} name={profile.username ? `@${profile.username}` : letter.split('@')[0]} badges={myBadges} size={60}>
+        <ProfileCard avatar={profile.avatar} deco={previewDeco} name={profile.username ? `@${profile.username}` : letter.split('@')[0]} badges={myBadges} size={76}>
           <p className="muted small">{peek ? 'Preview: tap to wear it' : 'Your profile card'}</p>
         </ProfileCard>
       </div>

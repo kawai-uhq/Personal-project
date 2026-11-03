@@ -186,6 +186,25 @@ export const discordInfo = (): DiscordInfo | null => {
     return null;
   }
 };
+/** Sign-in methods linked to the account (e.g. ["email", "discord"]), as the account itself reports them */
+const LINKED = 'comvie.linked';
+export const saveLinked = (providers: string[]) => {
+  try {
+    localStorage.setItem(LINKED, JSON.stringify(providers));
+  } catch {
+    /* storage blocked */
+  }
+};
+/** Is Discord linked to this account? (checked against the account, not just this browser) */
+export const hasDiscord = (): boolean => {
+  try {
+    if ((JSON.parse(localStorage.getItem(LINKED) || '[]') as string[]).includes('discord')) return true;
+  } catch {
+    /* ignore */
+  }
+  return !!discordInfo();
+};
+
 export const saveDiscordInfo = (d: DiscordInfo) => {
   try {
     localStorage.setItem(DISCORD, JSON.stringify(d));

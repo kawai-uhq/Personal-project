@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { askConfirm } from './Confirm';
 import { animeStore } from '../lib/animeStore';
-import { DPLATE_RE, currentProfile, discordInfo, loadProfile, saveDiscordInfo, saveProfile, useProfile } from '../lib/profile';
+import { DPLATE_RE, currentProfile, discordInfo, hasDiscord, loadProfile, saveDiscordInfo, saveLinked, saveProfile, useProfile } from '../lib/profile';
+import { getUser } from '../lib/auth';
 import type { PublicData } from '../lib/profile';
 import { watchStats } from '../lib/stats';
 import { earnedBadges } from '../lib/badges';
@@ -18,7 +19,7 @@ export function buildPublicData(favorites: { id: number; type: string; title: st
     favorites: favorites.slice(0, 12).map((m) => ({ id: m.id, type: m.type, title: m.title, poster: m.poster })),
     watching: history.slice(0, 8).map((h) => ({ id: h.media.id, type: h.media.type, title: h.media.title, poster: h.media.poster, label: h.media.type === 'tv' && h.season && h.episode ? `S${h.season} · E${h.episode}` : 'Movie' })),
     anime: animeStore.loved().slice(0, 12).map((a) => ({ id: a.id, title: a.title, cover: a.cover })),
-    badges: earnedBadges(s, { joined: currentProfile()?.created_at, discord: !!discordInfo() }),
+    badges: earnedBadges(s, { joined: currentProfile()?.created_at, discord: hasDiscord() }),
     updated: Date.now()
   };
 }
@@ -105,6 +106,12 @@ export default function AccountRuntime() {
       const token = await getToken();
       if (!token || !live) return;
       await loadProfile(token);
+      // which sign-in methods the account has (so e.g. the Discord badge shows on every device and sub-domain)
+      const u = await getUser(token);
+      if (u && live) {
+        saveLinked(u.providers);
+        window.dispatchEvent(new Event('comvie:linked'));
+      }
       // record / refresh this device every few hours
       try {
         const last = JSON.parse(localStorage.getItem(PING) || '{}');
@@ -133,14 +140,22 @@ export default function AccountRuntime() {
   // a public profile shows fresh lists: update it at most once an hour
   useEffect(() => {
     if (!session || !profile?.is_public) return;
-    const last = profile.public_data?.updated ?? 0;
-    const now = earnedBadges(watchStats(), { joined: profile.created_at, discord: !!discordInfo() });
-    const same = JSON.stringify(now) === JSON.stringify(profile.public_data?.badges ?? null);
-    if (same && Date.now() - last < 3600 * 1000) return;
-    void (async () => {
-      const token = await getToken();
-      if (token) await saveProfile(token, { public_data: buildPublicData(loved, history) }).catch(() => undefined);
-    })();
+    const check = () => {
+      const p = currentProfile();
+      if (!p?.is_public) return;
+      const last = p.public_data?.updated ?? 0;
+      const now = earnedBadges(watchStats(), { joined: p.created_at, discord: hasDiscord() });
+      const same = JSON.stringify(now) === JSON.stringify(p.public_data?.badges ?? null);
+      if (same && Date.now() - last < 3600 * 1000) return;
+      void (async () => {
+        const token = await getToken();
+        if (token) await saveProfile(token, { public_data: buildPublicData(loved, history) }).catch(() => undefined);
+      })();
+    };
+    check();
+    // once the account says which sign-ins it has, check again (the Discord badge depends on it)
+    window.addEventListener('comvie:linked', check);
+    return () => window.removeEventListener('comvie:linked', check);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.email, profile?.is_public]);
 

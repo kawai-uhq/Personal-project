@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon';
 import { askConfirm } from '../components/Confirm';
@@ -15,7 +15,7 @@ import ProfileEditor from '../components/account/ProfileEditor';
 import AccountDetails from '../components/account/AccountDetails';
 import Devices from '../components/account/Devices';
 import StatsGrid from '../components/account/StatsGrid';
-import { discordInfo, useProfile } from '../lib/profile';
+import { hasDiscord, useProfile } from '../lib/profile';
 import { watchStats } from '../lib/stats';
 import { useApp } from '../state';
 
@@ -29,6 +29,13 @@ export default function Account() {
     if (hash === '#settings') window.setTimeout(() => document.getElementById('settings')?.scrollIntoView({ behavior: 'smooth' }), 60);
   }, [hash]);
   const profile = useProfile();
+  // redraw once the account reports its linked sign-ins (the Discord badge depends on it)
+  const [, bump] = useState(0);
+  useEffect(() => {
+    const f = () => bump((n) => n + 1);
+    window.addEventListener('comvie:linked', f);
+    return () => window.removeEventListener('comvie:linked', f);
+  }, []);
   const libraryLink = section === 'anime' ? P('/anime/library') : section === 'manga' ? P('/manga/library') : '/list';
 
   if (!session) {
@@ -50,7 +57,7 @@ export default function Account() {
   const name = profile?.username || session.email.split('@')[0];
   const deco = profile?.deco ?? {};
   const ws = watchStats();
-  const myBadges = earnedBadges(ws, { joined: profile?.created_at, discord: !!discordInfo() });
+  const myBadges = earnedBadges(ws, { joined: profile?.created_at, discord: hasDiscord() });
 
   const deleteAccount = async () => {
     const yes = await askConfirm({

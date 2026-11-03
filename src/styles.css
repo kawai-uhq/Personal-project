@@ -1876,11 +1876,7 @@ html.light .acct-panel, html.light .pe-block { background: rgba(255, 255, 255, .
 .badge { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; color: var(--b); background: color-mix(in srgb, var(--b) 20%, #120c18); border: 1px solid color-mix(in srgb, var(--b) 55%, transparent); }
 
 /* ---- editor: live preview, sets, name styles, banners, locks ---- */
-.pe-preview { position: sticky; top: calc(var(--nav-h, 76px) + 6px); z-index: 6; padding: 4px 0 6px; background: linear-gradient(var(--bg, #120C18) 85%, transparent); }
 .pe-preview .pf-wrap.has-pf { margin: 22px 0 30px; }
-.pe-preview .pframe { --pf: 112px; }
-.pe-preview .acct-hero { padding: 16px 18px; }
-.pe-preview .acct-name { font-size: 20px; }
 .pe-note { color: var(--accent); }
 .pe-sub0 { margin: -4px 0 10px; }
 .pe-h3b { margin-top: 18px !important; }
@@ -1901,8 +1897,6 @@ html.light .acct-panel, html.light .pe-block { background: rgba(255, 255, 255, .
 .share-card { display: grid; gap: 10px; margin: -6px 0 18px; }
 .share-card > .btn { justify-self: start; }
 .sc-out img { width: 100%; max-width: 560px; border-radius: 12px; border: 1px solid var(--line); }
-.pe-preview .pc-banner { height: 64px; }
-@media (max-width: 600px) { .pe-preview .pc-banner { height: 44px; } .pe-preview .pframe { --pf: 84px; } }
 /* badges: tap for what they mean */
 button.badge { padding: 0; cursor: pointer; font: inherit; transition: transform .15s; }
 button.badge:hover, button.badge.on { transform: translateY(-1px); box-shadow: 0 0 0 2px color-mix(in srgb, var(--b) 45%, transparent); }
@@ -1919,3 +1913,6 @@ button.badge:focus-visible { outline: 2px solid var(--b); outline-offset: 2px; }
 .bp-list li > span:nth-child(2) { display: grid; flex: 1; min-width: 0; }
 .bp-list li b { font-size: 13px; }
 .bp-list li > svg { color: var(--good, #3ddc97); }
+/* the editor's live preview is the same size as the main card; it stays pinned while scrolling only on big screens */
+.pe-preview { padding: 4px 0 6px; }
+@media (min-width: 900px) and (min-height: 820px) { .pe-preview { position: sticky; top: calc(var(--nav-h, 76px) + 6px); z-index: 6; background: linear-gradient(#120C18 88%, transparent); } }
