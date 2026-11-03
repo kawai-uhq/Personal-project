@@ -4,7 +4,8 @@ import Avatar from '../Avatar';
 import Icon from '../Icon';
 import { buildPublicData } from '../AccountRuntime';
 import { gql } from '../../lib/anilist';
-import { AVATAR_COLORS, EFFECTS, FRAMES, NAMEPLATES } from '../../lib/decorations';
+import { AVATAR_COLORS, EFFECTS, FRAMES, NAMEPLATES, PFRAMES } from '../../lib/decorations';
+import ProfileFrame from '../ProfileFrame';
 import type { DecoItem } from '../../lib/decorations';
 import { USERNAME_RE, cleanUsername, discordInfo, discordPlate, saveProfile, usernameFree, useProfile } from '../../lib/profile';
 import type { Avatar as AvatarData, Deco } from '../../lib/profile';
@@ -125,7 +126,7 @@ export default function ProfileEditor() {
   const letter = profile.username || session.email;
   const publicUrl = `${onProd() ? CINEMA_ORIGIN : location.origin}/u/${profile.username ?? ''}`;
 
-  const decoGrid = (items: DecoItem[], current: string | undefined, key: 'frame' | 'nameplate' | 'effect', extra?: ReactNode) => (
+  const decoGrid = (items: DecoItem[], current: string | undefined, key: 'frame' | 'nameplate' | 'effect' | 'pframe', extra?: ReactNode) => (
     <div className="pe-grid">
       <button type="button" className={`pe-opt ${!current ? 'on' : ''}`} disabled={busy} onClick={() => setDeco({ [key]: '' })}>
         <span className="pe-none"><Icon name="x" size={16} /></span>
@@ -136,6 +137,8 @@ export default function ProfileEditor() {
         <button key={it.id} type="button" className={`pe-opt ${current === it.id ? 'on' : ''}`} disabled={busy} onClick={() => setDeco({ [key]: it.id })} title={it.name}>
           {key === 'frame' ? (
             <Avatar avatar={profile.avatar} deco={{ frame: it.id }} letter={letter} size={46} />
+          ) : key === 'pframe' ? (
+            <span className="pe-mini pf-wrap has-pf"><span className="pe-mini-card" /><ProfileFrame id={it.id} /></span>
           ) : (
             <span className={`pe-swatch ${key === 'nameplate' ? `np-${it.id}` : 'pe-fx'}`}>{key === 'effect' && <span className={`fx fx-${it.id}`} />}</span>
           )}
@@ -226,6 +229,11 @@ export default function ProfileEditor() {
       </div>
 
       <div className="pe-block">
+        <h3>Profile frame</h3>
+        {decoGrid(PFRAMES, profile.deco.pframe, 'pframe')}
+      </div>
+
+      <div className="pe-block">
         <h3>Nameplate</h3>
         {decoGrid(
           NAMEPLATES,
@@ -242,9 +250,9 @@ export default function ProfileEditor() {
       </div>
 
       <div className="pe-block">
-        <h3>Profile effect</h3>
+        <h3>Profile decoration</h3>
         {decoGrid(EFFECTS, profile.deco.effect, 'effect')}
-        {discord && <p className="muted small pe-sub">Discord doesn't share profile effects with other sites, so pick one of ours here.</p>}
+        {discord && <p className="muted small pe-sub">Discord doesn't share profile decorations with other sites, so pick one of ours here.</p>}
       </div>
 
       <div className="pe-block">

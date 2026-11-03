@@ -10,6 +10,7 @@ import { useSection } from '../lib/section';
 import { toPublic as P } from '../lib/site';
 import Avatar from '../components/Avatar';
 import { NameplateMedia, nameplateClass } from '../components/Nameplate';
+import ProfileFrame from '../components/ProfileFrame';
 import ProfileEditor from '../components/account/ProfileEditor';
 import AccountDetails from '../components/account/AccountDetails';
 import Devices from '../components/account/Devices';
@@ -85,17 +86,20 @@ export default function Account() {
   return (
     <main className="page pad-top">
       <div className="container mid acct">
-        <div className={`acct-card acct-hero ${nameplateClass(deco)}`}>
-          <NameplateMedia deco={deco} />
-          {deco.effect && <span className={`fx fx-${deco.effect}`} />}
-          <div className="acct-top">
-            <Avatar avatar={profile?.avatar} deco={deco} letter={name} size={76} />
-            <div>
-              <h1 className="acct-name">{profile?.username ? `@${name}` : name}</h1>
-              <p className="muted"><Icon name="mail" size={14} /> {session.email}</p>
-              <span className="acct-badge"><Icon name="check" size={13} />Signed in · synced to your account</span>
+        <div className={`pf-wrap ${deco.pframe ? 'has-pf' : ''}`}>
+          <div className={`acct-card acct-hero ${nameplateClass(deco)}`}>
+            <NameplateMedia deco={deco} />
+            {deco.effect && <span className={`fx fx-${deco.effect}`} />}
+            <div className="acct-top">
+              <Avatar avatar={profile?.avatar} deco={deco} letter={name} size={76} />
+              <div>
+                <h1 className="acct-name">{profile?.username ? `@${name}` : name}</h1>
+                <p className="muted"><Icon name="mail" size={14} /> {session.email}</p>
+                <span className="acct-badge"><Icon name="check" size={13} />Signed in · synced to your account</span>
+              </div>
             </div>
           </div>
+          <ProfileFrame id={deco.pframe} />
         </div>
 
         <h2 className="section">Your stats</h2>

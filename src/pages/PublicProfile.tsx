@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Avatar from '../components/Avatar';
 import { NameplateMedia, nameplateClass } from '../components/Nameplate';
+import ProfileFrame from '../components/ProfileFrame';
 import Icon from '../components/Icon';
 import StatsGrid from '../components/account/StatsGrid';
 import { publicProfile } from '../lib/profile';
@@ -68,16 +69,19 @@ export default function PublicProfile() {
   return (
     <main className="page pad-top">
       <div className="container mid acct">
-        <div className={`acct-card acct-hero pp-hero ${nameplateClass(deco)}`}>
-          <NameplateMedia deco={deco} />
-          {deco.effect && <span className={`fx fx-${deco.effect}`} />}
-          <div className="acct-top">
-            <Avatar avatar={p.avatar} deco={deco} letter={p.username || '?'} size={92} />
-            <div>
-              <h1 className="acct-name">@{p.username}</h1>
-              <p className="muted"><Icon name="calendar" size={14} /> Joined {joined}</p>
+        <div className={`pf-wrap ${deco.pframe ? 'has-pf' : ''}`}>
+          <div className={`acct-card acct-hero pp-hero ${nameplateClass(deco)}`}>
+            <NameplateMedia deco={deco} />
+            {deco.effect && <span className={`fx fx-${deco.effect}`} />}
+            <div className="acct-top">
+              <Avatar avatar={p.avatar} deco={deco} letter={p.username || '?'} size={92} />
+              <div>
+                <h1 className="acct-name">@{p.username}</h1>
+                <p className="muted"><Icon name="calendar" size={14} /> Joined {joined}</p>
+              </div>
             </div>
           </div>
+          <ProfileFrame id={deco.pframe} />
         </div>
 
         {d.stats && (

@@ -1831,3 +1831,30 @@ html.light .acct-panel, html.light .pe-block { background: rgba(255, 255, 255, .
 .pe-dplate { background: #15121a; }
 .pe-dplate img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .t-discord { color: #8f96ff; }
+
+/* ---- profile frames: art around the whole profile card ---- */
+.pf-wrap { position: relative; }
+.pf-wrap > .acct-card { margin-bottom: 0; }
+.pf-wrap.has-pf { margin: 30px 0 44px; }
+.pf-wrap:not(.has-pf) { margin-bottom: 22px; }
+.pframe { --pf: 150px; --pfo: calc(var(--pf) * -.2); position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: 18px; }
+.pframe::before { content: ''; position: absolute; inset: -3px; border-radius: 21px; padding: 3px; background: var(--pfb, #fff);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.pframe::after { content: ''; position: absolute; inset: -3px; border-radius: 21px; box-shadow: 0 0 18px var(--pfg, transparent); }
+.pf-c { position: absolute; width: var(--pf); height: var(--pf); max-width: none; }
+.pf-tl { left: var(--pfo); top: var(--pfo); }
+.pf-tr { right: var(--pfo); top: var(--pfo); }
+.pf-bl { left: var(--pfo); bottom: var(--pfo); }
+.pf-br { right: var(--pfo); bottom: var(--pfo); }
+@media (max-width: 600px) { .pframe { --pf: 110px; } .pf-wrap.has-pf { margin: 24px 0 36px; } }
+.pf-galaxy { --pfb: linear-gradient(135deg, #E4D9FF, #7B55F0 45%, #FF8AD8); --pfg: rgba(140, 100, 255, .45); }
+.pf-sakura { --pfb: linear-gradient(135deg, #FFE1EC, #F27BA6 50%, #B9665C); --pfg: rgba(255, 140, 180, .35); }
+.pf-neon { --pfb: linear-gradient(135deg, #FF4FD8, #8A4BFF 50%, #2EE6FF); --pfg: rgba(255, 79, 216, .5); }
+.pf-gilded { --pfb: linear-gradient(135deg, #FFF8D8, #C8902C 35%, #FFE9A8 60%, #7A4F12); --pfg: rgba(242, 193, 78, .35); }
+.pf-premiere { --pfb: linear-gradient(135deg, #F5C447, #C8243C 50%, #F5C447); --pfg: rgba(200, 36, 60, .35); }
+.pf-spirit { --pfb: linear-gradient(180deg, #9CFFF2, #14A7C7 60%, #065676); --pfg: rgba(43, 224, 210, .45); }
+/* the little card shown in the editor's frame tiles */
+.pe-mini { display: block; width: 76px; height: 46px; margin: 6px 4px 2px; }
+.pe-mini-card { position: absolute; inset: 0; border-radius: 10px; background: #2a2032; }
+.pe-mini .pframe { --pf: 44px; border-radius: 10px; }
+.pe-mini .pframe::before, .pe-mini .pframe::after { border-radius: 12px; }

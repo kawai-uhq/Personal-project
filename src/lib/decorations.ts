@@ -14,7 +14,22 @@ export const FRAMES: DecoItem[] = [
   { id: 'premiere', name: 'Red Carpet', theme: 'movie' },
   { id: 'neon', name: 'Neon', theme: 'classic' },
   { id: 'gold', name: 'Gold', theme: 'classic' },
-  { id: 'galaxy', name: 'Galaxy', theme: 'classic' }
+  { id: 'galaxy', name: 'Galaxy', theme: 'classic' },
+  { id: 'lantern', name: 'Lantern Festival', theme: 'anime' },
+  { id: 'ramen', name: 'Ramen Steam', theme: 'anime' },
+  { id: 'popcorn', name: 'Popcorn Night', theme: 'movie' },
+  { id: 'ticket', name: 'Golden Ticket', theme: 'movie' },
+  { id: 'portal', name: 'Galaxy Portal', theme: 'classic' }
+];
+
+/** Profile frames: art around the whole profile card (four corner pieces in public/deco/pframes, plus a border) */
+export const PFRAMES: DecoItem[] = [
+  { id: 'sakura', name: 'Sakura Bough', theme: 'anime' },
+  { id: 'spirit', name: 'Spirit Fire', theme: 'anime' },
+  { id: 'premiere', name: 'Premiere Night', theme: 'movie' },
+  { id: 'galaxy', name: 'Galaxy Drift', theme: 'classic' },
+  { id: 'neon', name: 'Neon Arcade', theme: 'classic' },
+  { id: 'gilded', name: 'Gilded Deco', theme: 'classic' }
 ];
 
 export const NAMEPLATES: DecoItem[] = [

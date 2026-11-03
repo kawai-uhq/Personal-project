@@ -13,6 +13,7 @@ export interface Deco {
   effect?: string;
   discord?: string; // the person's own Discord avatar decoration
   dplate?: string; // the person's own Discord nameplate (asset path, e.g. "nameplates/nameplates/twilight/")
+  pframe?: string; // profile frame: art around the whole profile card
 }
 
 /** Picture and looping video of a Discord nameplate */

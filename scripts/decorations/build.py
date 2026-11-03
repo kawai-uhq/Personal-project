@@ -74,6 +74,17 @@ def np_svg(name, color, defs, style, body):
     return svg(W, H, defs, style, body + f'<rect width="{W}" height="{H}" fill="url(#edge)"/>')
 
 
+FIT = {'chakra': .955, 'premiere': .965, 'neon': .955, 'gold': .965, 'galaxy': .97, 'ramen': .965, 'popcorn': .965, 'portal': .96}
+
+
+def fit(name, text):
+    k = FIT.get(name)
+    if not k:
+        return text
+    a = text.index('</style>') + len('</style>')
+    return text[:a] + f'<g transform="translate(120 120) scale({k}) translate(-120 -120)">' + text[a:-len('</svg>')] + '</g></svg>'
+
+
 def svg(w, h, defs, style, body):
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}">'
             f'<defs>{defs}</defs><style>{style}{REDUCE}</style>{body}</svg>')
@@ -207,9 +218,9 @@ def frame_sakura():
     b.append('<circle cx="120" cy="120" r="107.3" fill="none" stroke="#7A2E3A" stroke-opacity=".35" stroke-width=".7"/>')
 
     def br(t):
-        return 114 + 3.2 * math.sin(t * math.pi * 2.2), 160 + 132 * t
+        return 109 + 2.4 * math.sin(t * math.pi * 2.2), 160 + 132 * t
     pts = [pol(*br(i / 44)) for i in range(45)]
-    b.append(f'<path d="{ribbon(pts, 12.5, 2.2)}" fill="url(#bark)" stroke="#20110C" stroke-opacity=".5" stroke-width=".8"/>')
+    b.append(f'<path d="{ribbon(pts, 10.5, 2.2)}" fill="url(#bark)" stroke="#20110C" stroke-opacity=".5" stroke-width=".8"/>')
     hl = [pol(br(i / 44)[0] + 1.8, br(i / 44)[1]) for i in range(2, 38)]
     b.append(f'<path d="M{"L".join(P(p) for p in hl)}" fill="none" stroke="#C48B6E" stroke-opacity=".55" stroke-width="1" stroke-linecap="round"/>')
 
@@ -228,14 +239,14 @@ def frame_sakura():
         ends[key] = p[-1]
         b.append(f'<path d="{d}" fill="url(#bark)" stroke="#20110C" stroke-opacity=".45" stroke-width=".6"/>')
     # a couple of fresh leaves
-    for (x, y), rot, L in [(pol(118, 196), 205, 13), (pol(121, 262), 300, 11)]:
+    for (x, y), rot, L in [(pol(108, 200), 215, 12), (pol(110, 258), 300, 10)]:
         b.append(f'<path d="{leaf_d(L, L * .38)}" transform="translate({f(x)} {f(y)}) rotate({f(rot)})" fill="url(#leaf)" stroke="#2F5A1A" stroke-opacity=".5" stroke-width=".5"/>')
     # blossoms and buds along the branch
     blossoms = [(pol(br(.37)[0] + 9, br(.37)[1]), 13.5, -8), (pol(br(.55)[0] + 7, br(.55)[1]), 13, 22), (ends['b'], 13.5, -20),
                 (pol(br(.45)[0] + 2, br(.45)[1]), 19, 12), (pol(br(.19)[0] + 4, br(.19)[1]), 15, 30), (ends['a'], 11, 5),
                 (pol(br(.95)[0] + 2, br(.95)[1]), 12, 40), (ends['c'], 10, -15), (pol(br(.27)[0] + 1, br(.27)[1]), 9, 50)]
     def inside(x, y, s):
-        m = s * 1.05 + 1.5
+        m = s * 1.25 + 5
         return min(max(x, m), 240 - m), min(max(y, m), 240 - m)
     for (x, y), s, rot in blossoms:
         b.append(flower(*inside(x, y, s), s, rot, rnd))
@@ -667,14 +678,14 @@ def frame_galaxy():
             + lin('ringp', [(0, '#FFE6F8'), (.5, '#C59BFF'), (1, '#7E6BFF')], 0, 0, 1, 0)
             + rad('comet', [(0, '#FFFFFF'), (.4, '#C9F1FF', .9), (1, '#6FD1FF', 0)])
             + '<clipPath id="pc"><circle cx="193.3" cy="32.7" r="17"/></clipPath>')
-    b = ['<circle cx="120" cy="120" r="109" fill="none" stroke="#150F3A" stroke-opacity=".7" stroke-width="18"/>']
+    b = ['<circle cx="120" cy="120" r="108" fill="none" stroke="#150F3A" stroke-opacity=".7" stroke-width="15"/>']
     blobs = ''
     for i in range(26):
         a = i * 360 / 26 + rnd.uniform(-6, 6)
-        r = rnd.uniform(103, 115)
+        r = rnd.uniform(102, 109)
         x, y = pol(r, a)
         g = rnd.choice(['neb1', 'neb1', 'neb2', 'neb3', 'neb4'])
-        blobs += f'<circle cx="{f(x)}" cy="{f(y)}" r="{f(rnd.uniform(8, 15))}" fill="url(#{g})"/>'
+        blobs += f'<circle cx="{f(x)}" cy="{f(y)}" r="{f(rnd.uniform(7, 10.5))}" fill="url(#{g})"/>'
     b.append(blobs)
     dots = ''
     for i in range(44):
@@ -685,10 +696,10 @@ def frame_galaxy():
     b.append('<circle cx="120" cy="120" r="101.3" fill="none" stroke="#E4DCFF" stroke-opacity=".75" stroke-width="1"/>')
     b.append('<ellipse cx="120" cy="120" rx="119" ry="119" fill="none" stroke="#B9A6FF" stroke-opacity=".28" stroke-width=".6" stroke-dasharray="2 4"/>')
     # comet on its orbit
-    tail = [pol(118.5, -22 + 22 * i / 16) for i in range(17)]
+    tail = [pol(115, -22 + 22 * i / 16) for i in range(17)]
     b.append(f'<g class="orbit"><path d="{tapered(tail, .4, 4.2)}" fill="#9FE3FF" opacity=".55"/>'
-             f'<circle cx="{f(pol(118.5, 0)[0])}" cy="{f(pol(118.5, 0)[1])}" r="5.5" fill="url(#comet)"/>'
-             f'<circle cx="{f(pol(118.5, 0)[0])}" cy="{f(pol(118.5, 0)[1])}" r="1.8" fill="#fff"/></g>')
+             f'<circle cx="{f(pol(115, 0)[0])}" cy="{f(pol(115, 0)[1])}" r="5.5" fill="url(#comet)"/>'
+             f'<circle cx="{f(pol(115, 0)[0])}" cy="{f(pol(115, 0)[1])}" r="1.8" fill="#fff"/></g>')
     # moon, bottom left
     mx, my = pol(113, 138)
     b.append(f'<circle cx="{f(mx)}" cy="{f(my)}" r="10" fill="url(#moon)" stroke="#4B4380" stroke-opacity=".6" stroke-width=".6"/>'
@@ -719,8 +730,198 @@ def frame_galaxy():
     return svg(240, 240, defs, style, ''.join(b))
 
 
+def frame_portal():
+    rnd = random.Random(101)
+    defs = (rad('vort', [(0, '#B98CFF', 0), (.8, '#B98CFF', 0), (.84, '#E3CCFF', .9), (.92, '#7B4DFF', .55), (1, '#3A1E9E', 0)], 120, 120, 126, user=True)
+            + rad('pl1', [(0, '#FFE3F4'), (.5, '#FF7AC8'), (1, '#8E1F6E')], .5, .5, .5, .32, .28)
+            + rad('pl2', [(0, '#E6FFF6'), (.5, '#4BE3B8'), (1, '#0E6B5A')], .5, .5, .5, .32, .28)
+            + rad('pl3', [(0, '#FFF5D6'), (.5, '#FFB84D'), (1, '#9A5210')], .5, .5, .5, .32, .28)
+            + lin('rim', [(0, '#F4E9FF'), (.5, '#A47BFF'), (1, '#4B2BB8')], 0, 0, 1, 1) + BEHIND)
+
+    def arms(n, r0, r1, span, w, seed):
+        r = random.Random(seed)
+        d = ''
+        for i in range(n):
+            a0 = i * 360 / n + r.uniform(-6, 6)
+            pts = [pol(r0 + (r1 - r0) * k / 24, a0 + span * (k / 24) ** .8) for k in range(25)]
+            d += ribbon(pts, w * r.uniform(.8, 1.2))
+        return d
+    b = [f'<g mask="url(#soft)"><g mask="url(#behind)"><circle cx="120" cy="120" r="126" fill="url(#vort)"/>'
+         f'<g class="sp1"><path d="{arms(9, 100, 122, 120, 9, 1)}" fill="#5B33E0" opacity=".75"/></g>'
+         f'<g class="sp2"><path d="{arms(9, 100, 120, -110, 6, 2)}" fill="#C08CFF" opacity=".7"/></g>'
+         f'<g class="sp1"><path d="{arms(12, 100, 116, 90, 2.4, 3)}" fill="#F4E9FF" opacity=".85"/></g></g></g>']
+    b.append('<circle cx="120" cy="120" r="102" fill="none" stroke="url(#rim)" stroke-width="3.4"/>')
+    b.append('<circle cx="120" cy="120" r="100.8" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width=".8"/>')
+    dots = ''
+    for i in range(30):
+        x, y = pol(rnd.uniform(103, 117), rnd.uniform(0, 360))
+        dots += f'<circle cx="{f(x)}" cy="{f(y)}" r="{f(rnd.uniform(.4, 1.1))}"/>'
+    b.append(f'<g fill="#fff" opacity=".9">{dots}</g>')
+    planets = ''
+    for k, (g, r, a) in enumerate([('pl1', 7.5, -60), ('pl2', 5.5, 70), ('pl3', 6.5, 190)]):
+        x, y = pol(113, a)
+        planets += f'<circle cx="{f(x)}" cy="{f(y)}" r="{r + 3}" fill="#C08CFF" opacity=".25"/><circle cx="{f(x)}" cy="{f(y)}" r="{r}" fill="url(#{g})"/>'
+        if k == 0:
+            planets += f'<ellipse cx="{f(x)}" cy="{f(y)}" rx="{r * 1.9}" ry="{r * .5}" fill="none" stroke="#FFD9F2" stroke-width="1.4" transform="rotate(-20 {f(x)} {f(y)})"/>'
+    b.append(f'<g class="orbit">{planets}</g>')
+    tw = ''
+    for (x, y, r, dl) in [(28, 34, 6, 0), (214, 210, 5.5, -1.3), (220, 40, 4.5, -2.1), (24, 196, 4.5, -.7)]:
+        tw += (f'<g class="tw" style="animation-delay:{dl}s;transform-origin:{x}px {y}px">'
+               f'<circle cx="{x}" cy="{y}" r="{f(r * .9)}" fill="#C9B6FF" opacity=".35"/><path d="{star4(x, y, r, .15)}" fill="#fff"/></g>')
+    b.append(tw)
+    style = (SPIN + TWINKLE + '.sp1{transform-origin:120px 120px;animation:spin 9s linear infinite}'
+             '.sp2{transform-origin:120px 120px;animation:spin 13s linear infinite reverse}'
+             '.orbit{transform-origin:120px 120px;animation:spin 18s linear infinite}.tw{animation:tw 2.8s ease-in-out infinite}')
+    return svg(240, 240, defs, style, ''.join(b))
+
+
+def frame_ramen():
+    defs = (lin('ring', [(0, '#FFB4A2'), (.5, '#E5484D'), (1, '#8E1B24')], 0, 0, 1, 1)
+            + lin('bowl', [(0, '#F04A4A'), (.6, '#B71C1C'), (1, '#6E0E12')], 0, 0, 0, 1)
+            + lin('broth', [(0, '#F7C77A'), (1, '#D9893A')], 0, 0, 0, 1)
+            + lin('chop', [(0, '#E9C08A'), (1, '#9C6B34')], 0, 0, 1, 0)
+            + rad('yolk', [(0, '#FFD27A'), (.7, '#F59E0B'), (1, '#C2410C')])
+            + lin('steam', [(0, '#FFFFFF', 0), (.4, '#FFFFFF', .55), (1, '#FFFFFF', 0)], 0, 1, 0, 0))
+    b = ['<circle cx="120" cy="120" r="104" fill="none" stroke="#3A0A0E" stroke-opacity=".35" stroke-width="7"/>',
+         '<circle cx="120" cy="120" r="104" fill="none" stroke="url(#ring)" stroke-width="4"/>']
+    waves = ''
+    for k in range(24):
+        x, y = pol(104, k * 15)
+        waves += f'<circle cx="{f(x)}" cy="{f(y)}" r="1.1"/>'
+    b.append(f'<g fill="#FFE8D6" opacity=".9">{waves}</g>')
+    b.append('<circle cx="120" cy="120" r="101.2" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width=".7"/>')
+    # steam rising on both sides
+    steam = ''
+    for k, (x, y, dl) in enumerate([(26, 120, 0), (40, 92, -1.6), (212, 118, -.8), (200, 88, -2.4)]):
+        steam += (f'<path class="st" style="animation-delay:{dl}s" d="M{x},{y}c-7,-10 7,-16 0,-26s7,-16 0,-26" fill="none" stroke="url(#steam)" '
+                  f'stroke-width="5" stroke-linecap="round"/>')
+    b.append(steam)
+    # chopsticks behind the bowl
+    b.append('<path d="M150,236L232,150" stroke="#5A3A16" stroke-width="5.2" stroke-linecap="round"/><path d="M150,236L232,150" stroke="url(#chop)" stroke-width="3.6" stroke-linecap="round"/>'
+             '<path d="M160,238L236,164" stroke="#5A3A16" stroke-width="5.2" stroke-linecap="round"/><path d="M160,238L236,164" stroke="url(#chop)" stroke-width="3.6" stroke-linecap="round"/>')
+    # the bowl
+    b.append('<ellipse cx="120" cy="206" rx="54" ry="10" fill="url(#broth)" stroke="#7A3A12" stroke-opacity=".5" stroke-width=".8"/>')
+    noodles = ''.join(f'<path d="M{80 + k * 9},{204 + (k % 2) * 2}q4,-7 8,0t8,0" fill="none" stroke="#FFE6A6" stroke-width="2.2" stroke-linecap="round"/>' for k in range(8))
+    b.append(noodles)
+    b.append('<ellipse cx="146" cy="203" rx="9" ry="6" fill="#FFFDF5" stroke="#E2D6C0" stroke-width=".6"/><circle cx="146" cy="203" r="3.6" fill="url(#yolk)"/>'
+             '<ellipse cx="98" cy="203" rx="8" ry="5.4" fill="#FFF7FA" stroke="#E8C9D3" stroke-width=".6"/><path d="M95,203q3,-3 6,0t-3,2" fill="none" stroke="#F06292" stroke-width="1.3"/>'
+             '<path d="M116,198l8,-6l4,6z" fill="#3E7B2E"/><path d="M121,197l6,-7l3,7z" fill="#5AA43C"/>')
+    b.append('<path d="M66,206Q70,240 120,240Q170,240 174,206Z" fill="url(#bowl)" stroke="#4A080C" stroke-opacity=".6" stroke-width=".9"/>'
+             '<path d="M70,214Q120,226 170,214" fill="none" stroke="#FFE8D6" stroke-width="2.2" stroke-dasharray="6 4" opacity=".85"/>'
+             '<path d="M74,210Q78,232 104,237" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2" stroke-linecap="round"/>')
+    style = ('.st{animation:st 3.2s ease-in-out infinite;opacity:0}'
+             '@keyframes st{0%{opacity:0;transform:translateY(8px)}35%{opacity:1}100%{opacity:0;transform:translateY(-16px)}}')
+    return svg(240, 240, defs, style, ''.join(b))
+
+
+def frame_popcorn():
+    rnd = random.Random(103)
+    defs = (lin('ring', [(0, '#FFF3B0'), (.5, '#F5B82E'), (1, '#9A6410')], 0, 0, 1, 1)
+            + rad('kern', [(0, '#FFFFFF'), (.55, '#FFF4D6'), (1, '#F2C66B')], .5, .5, .5, .38, .32)
+            + lin('box', [(0, '#F44A4A'), (1, '#B4161E')], 0, 0, 1, 0))
+    b = ['<circle cx="120" cy="120" r="104" fill="none" stroke="#3A2408" stroke-opacity=".35" stroke-width="7"/>',
+         '<circle cx="120" cy="120" r="104" fill="none" stroke="url(#ring)" stroke-width="4.2"/>',
+         '<circle cx="120" cy="120" r="101.2" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width=".7"/>']
+
+    def kernel(x, y, s):
+        d = ''
+        for k in range(5):
+            cx, cy = pol(s * .45, k * 72 + rnd.uniform(-10, 10), x, y)
+            d += f'<circle cx="{f(cx)}" cy="{f(cy)}" r="{f(s * .55)}" fill="url(#kern)" stroke="#C99A3A" stroke-opacity=".5" stroke-width=".5"/>'
+        return d + f'<circle cx="{f(x)}" cy="{f(y)}" r="{f(s * .45)}" fill="url(#kern)"/>'
+    # heap of popcorn over the box
+    heap = ''
+    for i in range(16):
+        heap += kernel(rnd.uniform(166, 222), rnd.uniform(150, 182), rnd.uniform(6, 8.5))
+    b.append(heap)
+    # striped box
+    box = '<path d="M164,178L228,170L220,238L172,240Z" fill="#fff" stroke="#7A0E14" stroke-width="1"/>'
+    stripes = ''
+    for k in range(4):
+        x0 = 168 + k * 16
+        stripes += f'<path d="M{x0},{177.5 - k * 2}L{x0 + 8},{176.5 - k * 2}L{x0 + 6},{239.5 - k * .5}L{x0 - 1},{240 - k * .5}Z"/>'
+    b.append(box + f'<g fill="url(#box)">{stripes}</g>')
+    b.append('<path d="M164,178L228,170" stroke="#FFE3A3" stroke-width="3" stroke-linecap="round"/>'
+             f'<path d="{star5(196, 207, 9, .45)}" fill="#FFD34D" stroke="#9A6410" stroke-width=".8" stroke-linejoin="round"/>')
+    # kernels popping up
+    pops = ''
+    for k, (x, dl) in enumerate([(176, 0), (198, -.8), (214, -1.6), (188, -2.3)]):
+        pops += f'<g class="pop" style="animation-delay:{dl}s">{kernel(x, 160, 5.5)}</g>'
+    b.append(pops)
+    # a few kernels around the ring
+    for (x, y, s) in [(30, 60, 6), (60, 22, 5), (20, 150, 5.5)]:
+        b.append(kernel(x, y, s))
+    style = ('.pop{animation:pop 2.4s ease-out infinite;opacity:0}'
+             '@keyframes pop{0%{opacity:0;transform:translate(0,0)}15%{opacity:1}60%{transform:translate(-14px,-58px)}90%{opacity:1}100%{opacity:0;transform:translate(-20px,-40px)}}')
+    return svg(240, 240, defs, style, ''.join(b))
+
+
+def frame_lantern():
+    defs = (lin('ring', [(0, '#FFE0A8'), (.5, '#E8892B'), (1, '#8A3F0C')], 0, 0, 1, 1)
+            + rad('lan', [(0, '#FFF1C2'), (.45, '#FF7A3A'), (1, '#B3170F')], .5, .5, .55, .4, .35)
+            + rad('glow', [(0, '#FFB45A', .7), (1, '#FF7A2A', 0)])
+            + lin('cap', [(0, '#FFE7A1'), (1, '#9A6410')], 0, 0, 0, 1))
+    b = ['<circle cx="120" cy="120" r="104" fill="none" stroke="#3A1606" stroke-opacity=".35" stroke-width="7"/>',
+         '<circle cx="120" cy="120" r="104" fill="none" stroke="url(#ring)" stroke-width="3.6"/>',
+         '<circle cx="120" cy="120" r="101.3" fill="none" stroke="#FFF1D6" stroke-opacity=".55" stroke-width=".7"/>']
+    # the string across the top
+    b.append('<path d="M6,70Q120,-4 234,70" fill="none" stroke="#3A2414" stroke-width="1.6"/>')
+
+    def lantern(x, y, s, cls, dl):
+        ribs = ''.join(f'<path d="M{f(x + k * s * .3)},{f(y - s * .95)}Q{f(x + k * s * .55)},{f(y)} {f(x + k * s * .3)},{f(y + s * .95)}" fill="none" stroke="#8E120C" stroke-opacity=".55" stroke-width=".7"/>' for k in (-2, -1, 0, 1, 2))
+        return (f'<g class="sw {cls}" style="transform-origin:{f(x)}px {f(y - s * 1.6)}px;animation-delay:{dl}s">'
+                f'<path d="M{f(x)},{f(y - s * 1.6)}V{f(y - s)}" stroke="#3A2414" stroke-width="1"/>'
+                f'<circle cx="{f(x)}" cy="{f(y)}" r="{f(s * 2)}" fill="url(#glow)"/>'
+                f'<ellipse cx="{f(x)}" cy="{f(y)}" rx="{f(s * .85)}" ry="{f(s)}" fill="url(#lan)" stroke="#6E0E0A" stroke-width=".8"/>{ribs}'
+                f'<rect x="{f(x - s * .45)}" y="{f(y - s * 1.08)}" width="{f(s * .9)}" height="{f(s * .22)}" rx="1" fill="url(#cap)"/>'
+                f'<rect x="{f(x - s * .45)}" y="{f(y + s * .88)}" width="{f(s * .9)}" height="{f(s * .22)}" rx="1" fill="url(#cap)"/>'
+                f'<path d="M{f(x)},{f(y + s * 1.1)}v{f(s * .7)}" stroke="#E8B04A" stroke-width="1.6"/>'
+                f'<ellipse cx="{f(x - s * .3)}" cy="{f(y - s * .35)}" rx="{f(s * .18)}" ry="{f(s * .35)}" fill="#fff" opacity=".35"/></g>')
+    for (x, y, s, dl) in [(28, 74, 11, 0), (70, 40, 9, -1.1), (120, 34, 10, -.5), (170, 40, 9, -1.7), (212, 74, 11, -.9)]:
+        b.append(lantern(x, y + 4, s, '', dl))
+    # a sky lantern floating up on the lower left
+    b.append('<g class="fly"><circle cx="34" cy="196" r="15" fill="url(#glow)"/>'
+             '<path d="M27,190L41,190L39,206L29,206Z" fill="url(#lan)" stroke="#6E0E0A" stroke-width=".7"/><rect x="29" y="205" width="10" height="2.2" fill="url(#cap)"/></g>')
+    style = ('.sw{animation:sw 3s ease-in-out infinite alternate}@keyframes sw{from{transform:rotate(-6deg)}to{transform:rotate(6deg)}}'
+             '.fly{animation:fly 5s ease-in-out infinite alternate}@keyframes fly{from{transform:translate(0,4px)}to{transform:translate(4px,-8px)}}')
+    return svg(240, 240, defs, style, ''.join(b))
+
+
+def frame_ticket():
+    defs = (gold_ring_defs()
+            + lin('tk', [(0, '#FFF3C4'), (.45, '#F2C24E'), (1, '#B07A1E')], 0, 0, 1, 1)
+            + lin('tk2', [(0, '#FFE3E8'), (.5, '#F0506A'), (1, '#9E1C33')], 0, 0, 1, 1)
+            + rad('flash', [(0, '#FFFFFF'), (1, '#FFFFFF', 0)])
+            + '<clipPath id="tc"><rect x="-26" y="-14" width="52" height="28" rx="3"/></clipPath>')
+    b = ['<circle cx="120" cy="120" r="104" fill="none" stroke="#3A2408" stroke-opacity=".4" stroke-width="8"/>',
+         '<circle cx="120" cy="120" r="104" fill="none" stroke="url(#gold)" stroke-width="5"/>',
+         '<circle cx="120" cy="120" r="101.2" fill="none" stroke="#FFF4C8" stroke-opacity=".55" stroke-width=".6"/>']
+    studs = ''.join(f'<circle cx="{f(pol(104, k * 30)[0])}" cy="{f(pol(104, k * 30)[1])}" r="1.6" fill="#FFF8DC"/>' for k in range(12))
+    b.append(studs)
+
+    def ticket(x, y, rot, grad):
+        notch = '<circle cx="-26" cy="0" r="4" fill="#000"/><circle cx="26" cy="0" r="4" fill="#000"/>'
+        return (f'<g transform="translate({x} {y}) rotate({rot})">'
+                f'<mask id="m{x}" maskUnits="userSpaceOnUse" x="-30" y="-20" width="60" height="40"><rect x="-30" y="-20" width="60" height="40" fill="#fff"/>{notch}</mask>'
+                f'<g mask="url(#m{x})"><rect x="-26" y="-14" width="52" height="28" rx="3" fill="#2A1404" opacity=".35" transform="translate(1.5 2)"/>'
+                f'<rect x="-26" y="-14" width="52" height="28" rx="3" fill="url(#{grad})" stroke="#6B4510" stroke-width=".9"/>'
+                f'<rect x="-21" y="-9.5" width="42" height="19" rx="2" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width=".8" stroke-dasharray="2 1.6"/>'
+                f'<path d="M12,-14V14" stroke="#6B4510" stroke-opacity=".6" stroke-width=".8" stroke-dasharray="2 2"/>'
+                f'<path d="{star5(-4, 0, 7, .45)}" fill="#fff" opacity=".9"/>'
+                f'<path d="M16,-6h6M16,-2h6M16,2h6M16,6h4" stroke="#6B4510" stroke-opacity=".6" stroke-width="1.1"/>'
+                f'<g clip-path="url(#tc)"><rect class="shine" x="-60" y="-20" width="12" height="40" fill="#fff" opacity=".5" transform="skewX(-20)"/></g></g></g>')
+    b.append(ticket(44, 206, -28, 'tk2') + ticket(196, 206, 24, 'tk'))
+    for (x, y, r, dl) in [(120, 12, 7, 0), (24, 70, 5, -1.2), (216, 72, 5.5, -2.1)]:
+        b.append(f'<g class="gl" style="animation-delay:{dl}s;transform-origin:{x}px {y}px"><circle cx="{x}" cy="{y}" r="{f(r)}" fill="url(#flash)" opacity=".7"/>'
+                 f'<path d="{star4(x, y, r, .14)}" fill="#FFFDF0"/></g>')
+    style = ('.shine{animation:shine 3.4s ease-in-out infinite}@keyframes shine{0%,55%{transform:skewX(-20deg) translateX(0)}100%{transform:skewX(-20deg) translateX(110px)}}'
+             '.gl{opacity:0;animation:gl 3.8s ease-in-out infinite}'
+             '@keyframes gl{0%,62%,100%{opacity:0;transform:scale(.2) rotate(0)}75%{opacity:1;transform:scale(1) rotate(45deg)}88%{opacity:0;transform:scale(.3) rotate(90deg)}}')
+    return svg(240, 240, defs, style, ''.join(b))
+
+
 FRAMES = {'sakura': frame_sakura, 'chakra': frame_chakra, 'spirit': frame_spirit, 'film': frame_film, 'spotlight': frame_spotlight,
-          'premiere': frame_premiere, 'neon': frame_neon, 'gold': frame_gold, 'galaxy': frame_galaxy}
+          'premiere': frame_premiere, 'neon': frame_neon, 'gold': frame_gold, 'galaxy': frame_galaxy, 'portal': frame_portal, 'ramen': frame_ramen, 'popcorn': frame_popcorn, 'lantern': frame_lantern, 'ticket': frame_ticket}
 
 
 # ================================================================================================ NAMEPLATES (1200 x 220)
@@ -1226,12 +1427,243 @@ def fx_embers():
 EFFECTS = {'petals': fx_petals, 'sparkles': fx_sparkles, 'stars': fx_stars, 'embers': fx_embers}
 
 
+
+# ================================================================================================ PROFILE FRAMES
+# A profile frame wraps the whole profile card: four corner pieces (160 x 160 each) placed on the card's corners,
+# with the card's corner point at (32,32) top-left, (128,32) top-right, (32,128) bottom-left, (128,128) bottom-right.
+# Art may poke out past the card (towards the image edge) and run along its edges; the border itself is CSS.
+PF = 160
+CORNER = {'tl': (32, 32, 1, 1), 'tr': (128, 32, -1, 1), 'bl': (32, 128, 1, -1), 'br': (128, 128, -1, -1)}
+
+
+def pf_svg(defs, style, body):
+    return svg(PF, PF, defs, style, body)
+
+
+def cloud(x, y, s, grad='cl', hi='#FFFFFF'):
+    puffs = [(0, 0, 1), (-.9, .25, .72), (.9, .2, .78), (-.45, -.45, .7), (.45, -.5, .8), (1.55, .45, .5), (-1.5, .5, .5)]
+    out = ''
+    for dx, dy, r in puffs:
+        out += f'<circle cx="{f(x + dx * s)}" cy="{f(y + dy * s)}" r="{f(r * s)}" fill="url(#{grad})"/>'
+    out += f'<ellipse cx="{f(x - s * .3)}" cy="{f(y - s * .55)}" rx="{f(s * .45)}" ry="{f(s * .18)}" fill="{hi}" opacity=".45"/>'
+    return out
+
+
+def pf_galaxy(corner):
+    rnd = random.Random(hash(corner) % 1000)
+    cx, cy, ix, iy = CORNER[corner]
+    defs = (rad('cl', [(0, '#F3ECFF'), (.55, '#C4A6FF', .95), (1, '#7B55F0', .0)], .5, .5, .5, .4, .35)
+            + rad('pl', [(0, '#E6F4FF'), (.35, '#9CC0FF'), (.75, '#6A54E0'), (1, '#2B1A72')], .5, .5, .5, .32, .28)
+            + rad('pl2', [(0, '#FFE6F6'), (.45, '#FF8AD0'), (1, '#7A1F66')], .5, .5, .5, .32, .28)
+            + rad('moon', [(0, '#FBF9FF'), (.6, '#B9B2E6'), (1, '#6C64A6')], .5, .5, .5, .35, .3)
+            + lin('ring', [(0, '#FFE6F8'), (.5, '#C59BFF'), (1, '#7E6BFF')], 0, 0, 1, 0))
+    b = []
+    if corner == 'tr':
+        b.append(cloud(cx - 46, cy - 6, 13) + cloud(cx + 4, cy + 14, 10))
+        px, py = cx - 6, cy - 4
+        b.append(f'<g class="bob"><g transform="rotate(-18 {px} {py})"><path d="M{px - 40},{py}A40,10 0 0 1 {px + 40},{py}" fill="none" stroke="url(#ring)" stroke-width="4" opacity=".75"/></g>'
+                 f'<circle cx="{px}" cy="{py}" r="22" fill="url(#pl)"/><circle cx="{px + 9}" cy="{py + 10}" r="21" fill="#1A0F4A" opacity=".35"/>'
+                 f'<g transform="rotate(-18 {px} {py})"><path d="M{px - 40},{py}A40,10 0 0 0 {px + 40},{py}" fill="none" stroke="url(#ring)" stroke-width="4.4"/></g></g>')
+    elif corner == 'tl':
+        b.append(cloud(cx + 6, cy + 2, 14) + cloud(cx + 52, cy - 8, 9))
+        mx, my = cx - 2, cy - 12
+        b.append(f'<g class="bob b2"><circle cx="{mx}" cy="{my}" r="11" fill="url(#moon)"/><circle cx="{mx + 3}" cy="{my + 2}" r="2.4" fill="#8E86C4" opacity=".7"/><circle cx="{mx - 4}" cy="{my + 4}" r="1.4" fill="#8E86C4" opacity=".7"/></g>')
+    elif corner == 'br':
+        b.append(cloud(cx - 20, cy + 6, 11) + cloud(cx + 6, cy - 20, 8))
+        b.append(f'<g class="bob"><circle cx="{cx + 4}" cy="{cy + 4}" r="11" fill="url(#pl2)"/></g>')
+    else:
+        b.append(cloud(cx + 14, cy + 6, 10))
+    tw = ''
+    for i in range(5):
+        x = cx + ix * rnd.uniform(-18, 90)
+        y = cy + iy * rnd.uniform(-18, 50)
+        r = rnd.uniform(3, 6)
+        tw += (f'<g class="tw" style="animation-delay:-{f(rnd.uniform(0, 3))}s;transform-origin:{f(x)}px {f(y)}px">'
+               f'<path d="{star4(x, y, r, .15)}" fill="#fff"/></g>')
+    b.append(tw)
+    style = (TWINKLE + '.tw{animation:tw 2.8s ease-in-out infinite}'
+             '.bob{animation:bob 4s ease-in-out infinite alternate}.b2{animation-delay:-2s}'
+             '@keyframes bob{from{transform:translateY(-2.5px)}to{transform:translateY(2.5px)}}')
+    return pf_svg(defs, style, ''.join(b))
+
+
+def pf_sakura(corner):
+    rnd = random.Random(7 + len(corner) * 3 + ord(corner[1]))
+    cx, cy, ix, iy = CORNER[corner]
+    defs = (lin('petal', [(0, '#EC5F93'), (.42, '#FFB3CB'), (1, '#FFF5F8')], 0, 1, 0, 0)
+            + lin('petal2', [(0, '#F58AB0'), (1, '#FFE6EF')], 0, 1, 0, 0)
+            + lin('bud', [(0, '#D93D78'), (1, '#FFB0CA')], 0, 1, 0, 0)
+            + lin('bark', [(0, '#86523E'), (.5, '#5A3428'), (1, '#33201A')], 0, 0, 1, 1)
+            + lin('leaf', [(0, '#C9EE7E'), (1, '#4F8D30')], 0, 0, 1, 1))
+    b = []
+    if corner in ('tl', 'br'):
+        # a branch running along the horizontal edge from the corner
+        pts = [(cx - ix * 22 + ix * 130 * t, cy - iy * 4 + iy * (6 * math.sin(t * 5)) - iy * 8 * t) for t in [i / 30 for i in range(31)]]
+        b.append(f'<path d="{ribbon(pts, 9, 2)}" fill="url(#bark)" stroke="#20110C" stroke-opacity=".45" stroke-width=".7"/>')
+        tw = [(cx + ix * 40, cy - iy * 2), (cx + ix * 78, cy - iy * 8)]
+        for (x0, y0) in tw:
+            p2 = [(x0 + ix * 14 * t, y0 - iy * 16 * t) for t in [i / 8 for i in range(9)]]
+            b.append(f'<path d="{tapered(p2, 3.4, 1)}" fill="url(#bark)"/>')
+        for (x, y, s) in [(cx + ix * 4, cy - iy * 4, 15), (cx + ix * 26, cy + iy * 6, 11), (cx + ix * 54, cy - iy * 18, 11),
+                          (cx - ix * 12, cy + iy * 14, 10), (cx + ix * 92, cy - iy * 22, 9), (cx + ix * 112, cy - iy * 10, 8)]:
+            b.append(flower(x, y, s, rnd.uniform(0, 70), rnd))
+        b.append(bud(cx + ix * 70, cy + iy * 4, 6, 180 if iy > 0 else 0))
+        b.append(f'<path d="{leaf_d(12, 4.6)}" transform="translate({cx + ix * 36} {cy - iy * 12}) rotate({-60 * ix if iy > 0 else 120 * ix})" fill="url(#leaf)"/>')
+    else:
+        b.append(flower(cx + ix * 2, cy + iy * 2, 11, 20, rnd))
+        b.append(bud(cx + ix * 20, cy - iy * 4, 5.5, 90 * ix))
+    falls = ''
+    for i, (dx, dy, dl) in enumerate([(30, 14, 0), (70, 20, -2.4), (12, 50, -4.1)]):
+        x, y = cx + ix * dx, cy + iy * dy
+        falls += (f'<g transform="translate({f(x)} {f(y)})"><g class="fall" style="animation-delay:{dl}s"><g class="tum">'
+                  f'<path d="{petal_d(8, 7.4)}" fill="url(#petal2)"/></g></g></g>')
+    b.append(falls)
+    style = ('.fall{animation:fall 6.5s linear infinite}'
+             '@keyframes fall{0%{transform:translate(0,0);opacity:0}12%{opacity:1}80%{opacity:1}100%{transform:translate(14px,44px);opacity:0}}'
+             '.tum{transform-box:fill-box;transform-origin:50% 50%;animation:tum 1.8s ease-in-out infinite alternate}'
+             '@keyframes tum{from{transform:rotate(-40deg) scale(1,1)}to{transform:rotate(50deg) scale(.45,1)}}')
+    return pf_svg(defs, style, ''.join(b))
+
+
+def pf_neon(corner):
+    cx, cy, ix, iy = CORNER[corner]
+    col, core = ('#FF4FD8', '#FFE6FA') if corner in ('tl', 'br') else ('#2EE6FF', '#E6FDFF')
+    defs = '<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>'
+    o = 7
+    x0, y0 = cx - ix * o, cy - iy * o
+    path = f'M{x0},{y0 + iy * 70}V{y0 + iy * 14}Q{x0},{y0} {x0 + ix * 14},{y0}H{x0 + ix * 110}'
+    b = [f'<g class="hum"><path d="{path}" fill="none" stroke="{col}" stroke-width="10" stroke-linecap="round" filter="url(#glow)"/></g>',
+         f'<path d="{path}" fill="none" stroke="{col}" stroke-width="4" stroke-linecap="round"/>',
+         f'<path d="{path}" fill="none" stroke="{core}" stroke-width="1.5" stroke-linecap="round"/>']
+    for (x, y) in [(x0, y0 + iy * 70), (x0 + ix * 110, y0)]:
+        b.append(f'<circle cx="{x}" cy="{y}" r="3.2" fill="#2B2E36" stroke="#0D0E11" stroke-width=".6"/>')
+    if corner == 'tl':
+        st = star5(cx + 26, cy - 20, 11, .48)
+        b.append(f'<g class="flick"><path d="{st}" fill="none" stroke="#FFE45C" stroke-width="6" filter="url(#glow)"/><path d="{st}" fill="none" stroke="#FFF08A" stroke-width="2.4" stroke-linejoin="round"/><path d="{st}" fill="none" stroke="#FFFDE8" stroke-width=".9"/></g>')
+    if corner == 'br':
+        hx, hy = cx - 30, cy + 20
+        heart = (f'M{hx},{hy + 9}C{hx - 3},{hy + 6} {hx - 11},{hy + 2} {hx - 11},{hy - 4}C{hx - 11},{hy - 9} {hx - 5},{hy - 11} {hx},{hy - 6}'
+                 f'C{hx + 5},{hy - 11} {hx + 11},{hy - 9} {hx + 11},{hy - 4}C{hx + 11},{hy + 2} {hx + 3},{hy + 6} {hx},{hy + 9}Z')
+        b.append(f'<g class="flick f2"><path d="{heart}" fill="none" stroke="#2EE6FF" stroke-width="6" filter="url(#glow)"/><path d="{heart}" fill="none" stroke="#7CF4FF" stroke-width="2.4"/><path d="{heart}" fill="none" stroke="#F0FFFF" stroke-width=".9"/></g>')
+    style = ('.hum{animation:hum 3s ease-in-out infinite alternate}@keyframes hum{from{opacity:.6}to{opacity:1}}'
+             '.flick{animation:flick 5s linear infinite}.f2{animation-delay:-2.2s}'
+             '@keyframes flick{0%,40%,45%,47%,100%{opacity:1}42%,46%{opacity:.15}43%{opacity:.8}}')
+    return pf_svg(defs, style, ''.join(b))
+
+
+def pf_gilded(corner):
+    cx, cy, ix, iy = CORNER[corner]
+    defs = (gold_ring_defs() + rad('gem', [(0, '#E6F2FF'), (.45, '#4D86F0'), (1, '#0F2A7A')], .5, .5, .5, .35, .3)
+            + rad('flash', [(0, '#FFFFFF'), (1, '#FFFFFF', 0)]))
+    # everything is drawn for the top-left corner, then mirrored
+    tl = []
+    # fan behind the corner
+    fan = ''
+    for k in range(7):
+        a0, a1 = 180 + k * 90 / 7 + 2, 180 + (k + 1) * 90 / 7 - 2
+        fan += f'M32,32L{P(pol(30, a0, 32, 32))}L{P(pol(30, a1, 32, 32))}Z'
+    tl.append(f'<path d="{fan}" fill="url(#gold)" stroke="#6B4510" stroke-width=".6"/>')
+    tl.append('<path d="M32,2A30,30 0 0 0 2,32" fill="none" stroke="#FFF4C8" stroke-width="1.2"/>')
+    # stepped brackets along both edges
+    tl.append('<path d="M24,24H118V30H32V100H24Z" fill="url(#gold)" stroke="#6B4510" stroke-width=".8"/>'
+              '<path d="M38,38H92V42H42V80H38Z" fill="url(#gold)" stroke="#6B4510" stroke-width=".6" opacity=".9"/>'
+              '<path d="M118,24L126,27L118,30Z M24,100L27,108L30,100Z" fill="url(#gold)"/>')
+    tl.append('<path d="M32,18L40,26L32,34L24,26Z" fill="url(#gem)" stroke="#0A1C55" stroke-width=".7" transform="translate(-6 -6)"/>'
+              '<circle cx="62" cy="27" r="2.2" fill="#FFF8DC"/><circle cx="27" cy="62" r="2.2" fill="#FFF8DC"/>')
+    tl.append('<g class="gl" style="transform-origin:14px 14px"><circle cx="14" cy="14" r="7" fill="url(#flash)" opacity=".7"/><path d="' + star4(14, 14, 7, .14) + '" fill="#FFFDF0"/></g>')
+    t = {'tl': '', 'tr': 'translate(160 0) scale(-1 1)', 'bl': 'translate(0 160) scale(1 -1)', 'br': 'translate(160 160) scale(-1 -1)'}[corner]
+    body = f'<g transform="{t}">{"".join(tl)}</g>' if t else ''.join(tl)
+    style = ('.gl{opacity:0;animation:gl 4s ease-in-out infinite}'
+             '@keyframes gl{0%,62%,100%{opacity:0;transform:scale(.2) rotate(0)}75%{opacity:1;transform:scale(1) rotate(45deg)}88%{opacity:0;transform:scale(.3) rotate(90deg)}}')
+    return pf_svg(defs, style + ('' if corner == 'tl' else f'.gl{{animation-delay:-{"1.3" if corner == "tr" else "2.6" if corner == "br" else ".7"}s}}'), body)
+
+
+def pf_premiere(corner):
+    cx, cy, ix, iy = CORNER[corner]
+    defs = (lin('reel', [(0, '#F4F7FA'), (.45, '#AEB8C3'), (1, '#55606C')], 0, 0, 1, 1)
+            + lin('face', [(0, '#D7DEE5'), (1, '#7D8995')], 0, 0, 1, 1)
+            + rad('hole', [(0, '#3A3540'), (1, '#121116')])
+            + lin('starg', [(0, '#FFF6D2'), (.5, '#F5C447'), (1, '#B3781C')], 0, 0, 1, 1))
+    b = []
+    if corner == 'tl':
+        # film strip along the top edge
+        b.append('<rect x="34" y="16" width="126" height="18" fill="#18171D"/>')
+        holes = ''.join(f'<rect x="{38 + k * 9}" y="18.5" width="4.4" height="3" rx=".7"/><rect x="{38 + k * 9}" y="28.5" width="4.4" height="3" rx=".7"/>' for k in range(14))
+        cells = ''.join(f'<rect x="{37 + k * 26}" y="22.5" width="22" height="5" fill="#5A3F28"/>' for k in range(5))
+        b.append(cells + f'<g fill="#F2E2C2">{holes}</g>')
+        rx, ry = 26, 26
+        reel = [f'<circle cx="{rx}" cy="{ry}" r="24" fill="url(#reel)" stroke="#20242B" stroke-width=".9"/>', f'<circle cx="{rx}" cy="{ry}" r="21" fill="url(#face)"/>']
+        for k in range(5):
+            x, y = pol(11.5, k * 72 - 90, rx, ry)
+            reel.append(f'<circle cx="{f(x)}" cy="{f(y)}" r="5.4" fill="url(#hole)"/>')
+        reel.append(f'<circle cx="{rx}" cy="{ry}" r="4.4" fill="#454E5A"/><circle cx="{rx}" cy="{ry}" r="1.6" fill="#C9D1D9"/>')
+        b.append(f'<g class="reel">{"".join(reel)}</g>')
+    elif corner == 'br':
+        # clapperboard
+        b.append('<g transform="translate(118 116) rotate(-8)">'
+                 '<rect x="-30" y="-10" width="56" height="34" rx="3" fill="#1D1C22" stroke="#0A0A0C" stroke-width="1"/>'
+                 '<path d="M-24,0H20M-24,8H20M-24,16H10" stroke="#fff" stroke-opacity=".35" stroke-width="1.4"/>'
+                 '<g class="clap"><rect x="-30" y="-22" width="56" height="10" rx="2" fill="#F4F4F6" stroke="#0A0A0C" stroke-width="1"/>'
+                 '<path d="M-22,-22L-14,-12M-6,-22L2,-12M10,-22L18,-12" stroke="#1D1C22" stroke-width="4.4"/></g></g>')
+    for (x, y, r, dl) in ([(cx + ix * 70, cy - iy * 14, 8, 0)] if corner in ('tr', 'bl') else [(cx + ix * 76, cy + iy * 2, 6, -1.5)]):
+        b.append(f'<g class="gl" style="animation-delay:{dl}s;transform-origin:{x}px {y}px"><path d="{star5(x, y, r, .46)}" fill="url(#starg)" stroke="#7A4F12" stroke-width=".7" stroke-linejoin="round"/></g>')
+    if corner in ('tr', 'bl'):
+        b.append(f'<path d="{star5(cx + ix * 4, cy + iy * 2, 12, .46)}" fill="url(#starg)" stroke="#7A4F12" stroke-width=".9" stroke-linejoin="round"/>')
+    style = (SPIN + '.reel{transform-origin:26px 26px;animation:spin 5s linear infinite}'
+             '.clap{transform-origin:-30px -12px;animation:clap 3s ease-in-out infinite}'
+             '@keyframes clap{0%,70%,100%{transform:rotate(0)}80%{transform:rotate(-22deg)}88%{transform:rotate(0)}}'
+             '.gl{animation:gl 3.4s ease-in-out infinite}@keyframes gl{0%,100%{transform:scale(.8);opacity:.7}50%{transform:scale(1.15);opacity:1}}')
+    return pf_svg(defs, style, ''.join(b))
+
+
+def pf_spirit(corner):
+    cx, cy, ix, iy = CORNER[corner]
+    defs = (rad('wisp', [(0, '#F2FFFD'), (.3, '#9FFFF2', .9), (1, '#20C9D4', 0)])
+            + lin('wf', [(0, '#1FB6D0'), (1, '#9CFFF2')], 0, 1, 0, 0))
+    b = []
+    if corner in ('bl', 'br'):
+        for k in range(3):
+            r = random.Random(k + (10 if corner == 'br' else 0))
+            o = m = c = ''
+            # flames rising from the bottom corner, up the side and along the bottom edge
+            spots = [(cx - ix * 6, cy - 6 - j * 12) for j in range(5)] + [(cx + ix * (8 + j * 15), cy + 6) for j in range(6)]
+            for j, (x, y) in enumerate(spots):
+                h = (34 - j * 4.5 if j < 5 else 30 - (j - 5) * 4.5) * r.uniform(.7, 1.05)
+                w = 7 + h * .2
+                curl = r.uniform(-1, 1) * h * .25
+                def fl(hh, ww, cc):
+                    return (f'M{f(x - ww)},{f(y)}C{f(x - ww)},{f(y - hh * .45)} {f(x + cc - ww * .3)},{f(y - hh * .7)} {f(x + cc)},{f(y - hh)}'
+                            f'C{f(x + cc + ww * .2)},{f(y - hh * .65)} {f(x + ww)},{f(y - hh * .45)} {f(x + ww)},{f(y)}Z')
+                o += fl(h, w, curl)
+                m += fl(h * .68, w * .62, curl * .8)
+                c += fl(h * .38, w * .32, curl * .5)
+            b.append(f'<g class="fl f{k}"><path d="{o}" fill="#14A7C7" stroke="#065676" stroke-opacity=".5" stroke-width=".7"/><path d="{m}" fill="#68EFE5"/><path d="{c}" fill="#F0FFFD"/></g>')
+    else:
+        x, y, s = cx + ix * 10, cy - iy * 6, 8
+        body = (f'M{f(x)},{f(y + s)}C{f(x - s * .8)},{f(y + s * .45)} {f(x - s * .55)},{f(y - s * .45)} {f(x + s * .1)},{f(y - s * 1.7)}'
+                f'C{f(x + s * .2)},{f(y - s * .7)} {f(x + s * .8)},{f(y - s * .1)} {f(x + s * .7)},{f(y + s * .4)}C{f(x + s * .6)},{f(y + s * .85)} {f(x + s * .3)},{f(y + s)} {f(x)},{f(y + s)}Z')
+        b.append(f'<g class="bob"><circle cx="{f(x)}" cy="{f(y)}" r="{f(s * 2.2)}" fill="url(#wisp)" opacity=".6"/><path d="{body}" fill="url(#wf)"/>'
+                 f'<circle cx="{f(x)}" cy="{f(y + s * .25)}" r="{f(s * .42)}" fill="#F4FFFD"/></g>')
+    style = ('.fl{animation:fl 1.35s linear infinite;opacity:0}.f1{animation-delay:-.45s}.f2{animation-delay:-.9s}'
+             '@keyframes fl{0%,28%{opacity:1}36%,92%{opacity:0}100%{opacity:1}}'
+             '.bob{animation:bob 2.6s ease-in-out infinite alternate}@keyframes bob{from{transform:translateY(-3px)}to{transform:translateY(3.5px)}}')
+    return pf_svg(defs, style, ''.join(b))
+
+
+PFRAMES = {'galaxy': pf_galaxy, 'sakura': pf_sakura, 'neon': pf_neon, 'gilded': pf_gilded, 'premiere': pf_premiere, 'spirit': pf_spirit}
+
+
 if __name__ == '__main__':
     for kind, items in (('frames', FRAMES), ('nameplates', NAMEPLATES), ('effects', EFFECTS)):
         for name, make in items.items():
             text = make()
+            if kind == 'frames':
+                text = fit(name, text)
             write(kind, name, text)
             print(f'{kind}/{name}.svg  {len(text) / 1024:.1f} KB')
+    for name, make in PFRAMES.items():
+        for corner in ('tl', 'tr', 'bl', 'br'):
+            write('pframes', f'{name}-{corner}', make(corner))
     # the nameplate background colours, for src/styles.css
     for name, color in EDGE.items():
         print(f'.np-{name} {{ background: {color} url(/deco/nameplates/{name}.svg) right center / auto 100% no-repeat; }}')
