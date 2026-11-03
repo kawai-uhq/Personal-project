@@ -63,9 +63,9 @@ async function imageRelay(req, res) {
   const u = String(req.query.u || '');
   if (!IMG_RE.test(u)) return res.status(400).end();
   try {
-    const r = await fetch(u, { headers: { Accept: 'image/*' } });
+    const r = await fetch(u, { headers: { Accept: "image/*,video/*" } });
     const type = r.headers.get('content-type') || '';
-    if (!r.ok || !type.startsWith('image/')) {
+    if (!r.ok || !/^(image|video)\//.test(type)) {
       console.error('[account img]', r.status, u);
       return res.status(404).end();
     }

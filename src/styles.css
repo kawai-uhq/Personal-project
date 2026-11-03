@@ -1925,6 +1925,12 @@ button.badge:focus-visible { outline: 2px solid var(--b); outline-offset: 2px; }
 .acct-sec > .section:first-child { margin-top: 18px; }
 .acct-sec > .settings:first-child { margin-top: 16px; }
 html.light .acct-tabs { background: rgba(255, 255, 255, .85); }
+/* site / profile switch inside Appearance */
+.acct-subtabs { display: inline-flex; gap: 4px; margin: 16px 0 4px; padding: 4px; border-radius: 13px; border: 1px solid var(--line); background: rgba(255, 233, 214, .04); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.acct-subtabs::-webkit-scrollbar { display: none; }
+.acct-subtabs button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 13px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.acct-subtabs button.on { background: rgba(255, 233, 214, .12); color: var(--text); box-shadow: inset 0 0 0 1px var(--accent); }
+.acct-sec > .acct-subtabs + .settings { margin-top: 12px; }
 .conn .acct-line > div { flex: 1; }
 .conn-ico { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; flex: none; color: #fff; }
 .conn-ico.discord { background: #5865F2; }

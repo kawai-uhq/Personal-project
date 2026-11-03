@@ -21,11 +21,11 @@ import { hasDiscord, useProfile } from '../lib/profile';
 import { watchStats } from '../lib/stats';
 import { useApp } from '../state';
 
-type Tab = 'general' | 'site' | 'profile' | 'connections' | 'security' | 'data';
+type Tab = 'general' | 'appearance' | 'connections' | 'security' | 'data';
+type Look = 'site' | 'profile';
 const TABS: [Tab, string, IconName][] = [
   ['general', 'General', 'settings'],
-  ['site', 'Site appearance', 'sparkles'],
-  ['profile', 'Profile appearance', 'user'],
+  ['appearance', 'Appearance', 'sparkles'],
   ['connections', 'Connections', 'link'],
   ['security', 'Security', 'shield'],
   ['data', 'Data', 'database']
@@ -37,17 +37,28 @@ export default function Account() {
   const section = useSection();
   const nav = useNavigate();
   const { hash } = useLocation();
-  const fromHash = (h: string): Tab => (h === '#settings' ? 'general' : h === '#appearance' ? 'site' : (TABS.find(([id]) => `#${id}` === h)?.[0] ?? 'general'));
+  // #appearance opens site appearance, #appearance-profile opens profile appearance
+  const fromHash = (h: string): Tab =>
+    h === '#settings' ? 'general' : h.startsWith('#appearance') ? 'appearance' : (TABS.find(([id]) => `#${id}` === h)?.[0] ?? 'general');
   const [tab, setTab] = useState<Tab>(() => fromHash(hash));
+  const [look, setLook] = useState<Look>(() => (hash === '#appearance-profile' ? 'profile' : 'site'));
   useEffect(() => {
     if (!hash) return;
     setTab(fromHash(hash));
+    if (hash.startsWith('#appearance')) setLook(hash === '#appearance-profile' ? 'profile' : 'site');
     window.setTimeout(() => document.querySelector('.acct-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hash]);
+  const setHash = (h: string) => {
+    try { history.replaceState(history.state, '', `${location.pathname}${location.search}#${h}`); } catch { /* ignore */ }
+  };
   const openTab = (t: Tab) => {
     setTab(t);
-    try { history.replaceState(history.state, '', `${location.pathname}${location.search}#${t}`); } catch { /* ignore */ }
+    setHash(t === 'appearance' && look === 'profile' ? 'appearance-profile' : t);
+  };
+  const openLook = (l: Look) => {
+    setLook(l);
+    setHash(l === 'profile' ? 'appearance-profile' : 'appearance');
   };
   const profile = useProfile();
   // redraw once the account reports its linked sign-ins (the Discord badge depends on it)
@@ -139,15 +150,17 @@ export default function Account() {
           </section>
         )}
 
-        {tab === 'site' && (
+        {tab === 'appearance' && (
           <section className="acct-sec">
-            <SettingsPanel part="appearance" />
-          </section>
-        )}
-
-        {tab === 'profile' && (
-          <section className="acct-sec">
-            <ProfileEditor />
+            <div className="acct-subtabs" role="tablist" aria-label="Appearance">
+              <button type="button" role="tab" aria-selected={look === 'site'} className={look === 'site' ? 'on' : ''} onClick={() => openLook('site')}>
+                <Icon name="sparkles" size={14} />Site appearance
+              </button>
+              <button type="button" role="tab" aria-selected={look === 'profile'} className={look === 'profile' ? 'on' : ''} onClick={() => openLook('profile')}>
+                <Icon name="user" size={14} />Profile appearance
+              </button>
+            </div>
+            {look === 'site' ? <SettingsPanel part="appearance" /> : <ProfileEditor />}
           </section>
         )}
 
