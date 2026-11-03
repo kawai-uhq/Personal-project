@@ -177,6 +177,13 @@ create table if not exists public.profiles (
   )
 );
 
+-- Discord nameplate: only a real Discord nameplate path (e.g. "nameplates/nameplates/twilight/")
+alter table public.profiles drop constraint if exists discord_nameplate_ok;
+alter table public.profiles add constraint discord_nameplate_ok check (
+  coalesce(deco->>'dplate', '') = ''
+  or deco->>'dplate' ~ '^nameplates/[A-Za-z0-9_/-]+/$'
+);
+
 alter table public.profiles enable row level security;
 
 drop policy if exists "read own or public profiles" on public.profiles;

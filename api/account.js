@@ -169,11 +169,15 @@ export default async function handler(req, res) {
         if (joined === 'failed') console.error('[account] discord join failed', j.status, await j.text().catch(() => ''));
       }
       const ext = du.avatar && String(du.avatar).startsWith('a_') ? 'gif' : 'png';
+      // Discord nameplate (a path like "nameplates/nameplates/twilight/"); Discord doesn't share profile effects with sites
+      const plate = du.collectibles?.nameplate;
+      const plateAsset = plate && /^nameplates\/[A-Za-z0-9_\/-]+\/$/.test(String(plate.asset || '')) ? String(plate.asset) : null;
       return res.status(200).json({
         joined,
         name: du.global_name || du.username,
         avatar: du.avatar ? `https://cdn.discordapp.com/avatars/${du.id}/${du.avatar}.${ext}?size=256` : null,
-        decoration: du.avatar_decoration_data?.asset ? `https://cdn.discordapp.com/avatar-decoration-presets/${du.avatar_decoration_data.asset}.png?size=240&passthrough=true` : null
+        decoration: du.avatar_decoration_data?.asset ? `https://cdn.discordapp.com/avatar-decoration-presets/${du.avatar_decoration_data.asset}.png?size=240&passthrough=true` : null,
+        nameplate: plateAsset ? { asset: plateAsset, palette: String(plate.palette || '') } : null
       });
     }
   } catch (e) {

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { askConfirm } from './Confirm';
 import { animeStore } from '../lib/animeStore';
-import { loadProfile, saveDiscordInfo, saveProfile, useProfile } from '../lib/profile';
+import { DPLATE_RE, discordInfo, loadProfile, saveDiscordInfo, saveProfile, useProfile } from '../lib/profile';
 import type { PublicData } from '../lib/profile';
 import { watchStats } from '../lib/stats';
 import { useApp } from '../state';
@@ -47,11 +47,31 @@ async function finishDiscord(token: string) {
       void askConfirm({ title: 'Signed in with Discord', text: "You're signed in, but we couldn't add you to the Discord server this time. You can join from the Discord button at the bottom of the page.", ok: 'OK', cancel: 'Close', icon: 'info' });
       return;
     }
-    saveDiscordInfo({ name: j.name || '', avatar: j.avatar || null, decoration: j.decoration || null });
-    // a profile without a picture takes the Discord picture (and decoration) to start with
+    const plate = j.nameplate && DPLATE_RE.test(String(j.nameplate.asset || '')) ? { asset: String(j.nameplate.asset), palette: String(j.nameplate.palette || '') } : null;
+    const before = discordInfo(); // what this device knew from the last Discord sign-in
+    saveDiscordInfo({ name: j.name || '', avatar: j.avatar || null, decoration: j.decoration || null, nameplate: plate });
     const p = await loadProfile(token);
-    if (p && !p.avatar?.url && (j.avatar || j.decoration)) {
-      await saveProfile(token, { avatar: j.avatar ? { url: j.avatar } : p.avatar, deco: j.decoration ? { ...p.deco, discord: j.decoration } : p.deco }).catch(() => undefined);
+    if (p) {
+      const deco = { ...p.deco };
+      let avatar = p.avatar;
+      const fresh = !p.avatar?.url && !p.deco?.frame && !p.deco?.nameplate && !p.deco?.dplate && !p.deco?.discord;
+      // a new profile starts with the Discord picture, decoration and nameplate
+      if (fresh) {
+        if (j.avatar) avatar = { url: j.avatar };
+        if (j.decoration) deco.discord = j.decoration;
+        if (plate) deco.dplate = plate.asset;
+      } else {
+        // Discord items already in use follow what's on Discord now (changed or removed there)
+        if (deco.discord) deco.discord = j.decoration || '';
+        if (deco.dplate) deco.dplate = plate?.asset || '';
+        if (avatar?.url?.startsWith('https://cdn.discordapp.com/avatars/') && j.avatar) avatar = { url: j.avatar };
+        // first time we see a Discord nameplate / decoration: switch it on, unless one of ours is already chosen
+        if (plate && !before?.nameplate && !deco.nameplate && !deco.dplate) deco.dplate = plate.asset;
+        if (j.decoration && !before?.decoration && !deco.discord) deco.discord = j.decoration;
+      }
+      if (JSON.stringify(deco) !== JSON.stringify(p.deco) || JSON.stringify(avatar) !== JSON.stringify(p.avatar)) {
+        await saveProfile(token, { avatar, deco }).catch((e) => console.error('[discord] keeping Discord items', e));
+      }
     }
     const who = j.name ? ` as ${j.name}` : '';
     const text =
@@ -62,7 +82,7 @@ async function finishDiscord(token: string) {
           : j.joined === 'failed'
             ? `Signed in with Discord${who}. We couldn't add you to the Discord server this time. You can join from the Discord button at the bottom of the page.`
             : `Signed in with Discord${who}.`;
-    void askConfirm({ title: j.joined === 'joined' ? 'Welcome to the Discord server!' : 'Discord connected', text: text + ' Your Discord picture is now in Account → Profile → Picture.', ok: 'Nice', cancel: 'Close', icon: 'check' });
+    void askConfirm({ title: j.joined === 'joined' ? 'Welcome to the Discord server!' : 'Discord connected', text: text + ' Your Discord picture, decoration and nameplate are in Account → Profile.', ok: 'Nice', cancel: 'Close', icon: 'check' });
     window.dispatchEvent(new Event('comvie:profile'));
   } catch (e) {
     console.error('[discord] finish sign-in', e);

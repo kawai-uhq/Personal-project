@@ -5,7 +5,7 @@ import { buildPublicData } from '../AccountRuntime';
 import { gql } from '../../lib/anilist';
 import { AVATAR_COLORS, EFFECTS, FRAMES, NAMEPLATES } from '../../lib/decorations';
 import type { DecoItem } from '../../lib/decorations';
-import { USERNAME_RE, cleanUsername, discordInfo, saveProfile, usernameFree, useProfile } from '../../lib/profile';
+import { USERNAME_RE, cleanUsername, discordInfo, discordPlate, saveProfile, usernameFree, useProfile } from '../../lib/profile';
 import type { Avatar as AvatarData, Deco } from '../../lib/profile';
 import { CINEMA_ORIGIN, onProd } from '../../lib/site';
 import { useApp } from '../../state';
@@ -112,7 +112,7 @@ export default function ProfileEditor() {
   };
 
   const setAvatar = (a: AvatarData) => void save({ avatar: a });
-  const setDeco = (d: Deco) => void save({ deco: { ...profile.deco, ...d } });
+  const setDeco = (d: Deco) => void save({ deco: { ...profile.deco, ...d, ...('nameplate' in d && !('dplate' in d) ? { dplate: '' } : {}) } });
   const letter = profile.username || session.email;
   const publicUrl = `${onProd() ? CINEMA_ORIGIN : location.origin}/u/${profile.username ?? ''}`;
 
@@ -125,7 +125,7 @@ export default function ProfileEditor() {
       {items.map((it) => (
         <button key={it.id} type="button" className={`pe-opt ${current === it.id ? 'on' : ''}`} disabled={busy} onClick={() => setDeco({ [key]: it.id })} title={it.name}>
           {key === 'frame' ? (
-            <Avatar avatar={profile.avatar} deco={{ frame: it.id }} letter={letter} size={46} />
+            <Avatar avatar={profile.avatar} deco={{ frame: it.id, discord: profile.deco.discord }} letter={letter} size={46} />
           ) : (
             <span className={`pe-swatch ${key === 'nameplate' ? `np-${it.id}` : 'pe-fx'}`}>{key === 'effect' && <span className={`fx fx-${it.id}`} />}</span>
           )}
@@ -212,12 +212,28 @@ export default function ProfileEditor() {
 
       <div className="pe-block">
         <h3>Nameplate</h3>
-        {decoGrid(NAMEPLATES, profile.deco.nameplate, 'nameplate')}
+        {discord?.nameplate && (
+          <div className="pe-grid pe-grid-discord">
+            <button
+              type="button"
+              className={`pe-opt ${profile.deco.dplate ? 'on' : ''}`}
+              disabled={busy}
+              title="My Discord nameplate"
+              onClick={() => setDeco({ nameplate: '', dplate: discord.nameplate!.asset })}
+            >
+              <span className="pe-swatch pe-dplate"><img src={discordPlate(discord.nameplate.asset).img} alt="" referrerPolicy="no-referrer" /></span>
+              <small>My Discord nameplate</small>
+              <em className="pe-theme t-discord">Discord</em>
+            </button>
+          </div>
+        )}
+        {decoGrid(NAMEPLATES, profile.deco.dplate ? '__discord' : profile.deco.nameplate, 'nameplate')}
       </div>
 
       <div className="pe-block">
         <h3>Profile effect</h3>
         {decoGrid(EFFECTS, profile.deco.effect, 'effect')}
+        {discord && <p className="muted small pe-sub">Discord doesn't share profile effects with other sites, so pick one of ours here.</p>}
       </div>
 
       <div className="pe-block">

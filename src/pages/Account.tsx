@@ -9,6 +9,7 @@ import { mangaStore } from '../lib/mangaStore';
 import { useSection } from '../lib/section';
 import { toPublic as P } from '../lib/site';
 import Avatar from '../components/Avatar';
+import { NameplateMedia, nameplateClass } from '../components/Nameplate';
 import ProfileEditor from '../components/account/ProfileEditor';
 import AccountDetails from '../components/account/AccountDetails';
 import Devices from '../components/account/Devices';
@@ -84,7 +85,8 @@ export default function Account() {
   return (
     <main className="page pad-top">
       <div className="container mid acct">
-        <div className={`acct-card acct-hero ${deco.nameplate ? `np-${deco.nameplate}` : ''}`}>
+        <div className={`acct-card acct-hero ${nameplateClass(deco)}`}>
+          <NameplateMedia deco={deco} />
           {deco.effect && <span className={`fx fx-${deco.effect}`} />}
           <div className="acct-top">
             <Avatar avatar={profile?.avatar} deco={deco} letter={name} size={76} />

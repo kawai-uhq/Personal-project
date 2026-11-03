@@ -12,7 +12,15 @@ export interface Deco {
   nameplate?: string;
   effect?: string;
   discord?: string; // the person's own Discord avatar decoration
+  dplate?: string; // the person's own Discord nameplate (asset path, e.g. "nameplates/nameplates/twilight/")
 }
+
+/** Picture and looping video of a Discord nameplate */
+export const discordPlate = (asset: string) => ({
+  img: `https://cdn.discordapp.com/assets/collectibles/${asset}static.png`,
+  video: `https://cdn.discordapp.com/assets/collectibles/${asset}asset.webm`
+});
+export const DPLATE_RE = /^nameplates\/[A-Za-z0-9_/-]+\/$/;
 export interface PublicData {
   stats?: Record<string, number>;
   favorites?: { id: number; type: string; title: string; poster: string | null }[];
@@ -121,6 +129,7 @@ export async function saveProfile(token: string, patch: Partial<Pick<Profile, 'u
     if (/profiles_username_key|duplicate/i.test(msg)) throw new Error('That username is taken. Try another.');
     if (/username/i.test(msg)) throw new Error('Usernames use 3 to 20 lowercase letters, numbers or underscores.');
     if (/avatar_url_ok|discord_deco_ok/i.test(msg)) throw new Error("That picture can't be used.");
+    if (/discord_nameplate_ok/i.test(msg)) throw new Error("That nameplate can't be used.");
     throw new Error("Couldn't save. Try again.");
   }
   const p = ((await r.json()) as Profile[])[0];
@@ -159,6 +168,7 @@ export interface DiscordInfo {
   name: string;
   avatar: string | null;
   decoration: string | null;
+  nameplate?: { asset: string; palette: string } | null;
 }
 export const discordInfo = (): DiscordInfo | null => {
   try {

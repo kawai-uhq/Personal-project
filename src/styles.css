@@ -1843,3 +1843,13 @@ html.light .acct-panel, html.light .pe-block { background: rgba(255, 255, 255, .
 
 /* Bumped when a stale cached copy of this stylesheet needs to be retired: any change gives the built file a new name. */
 :root { --cv-styles: 2; }
+
+/* Discord nameplate behind a profile header (its looping video, darkened on the left so the name stays readable) */
+.np-discord { background: #15121a; }
+.np-media { position: absolute; inset: 0; z-index: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.np-media video, .np-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.np-media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10, 6, 14, .7), rgba(10, 6, 14, .25) 55%, rgba(10, 6, 14, .05)); }
+.pe-dplate { background: #15121a; }
+.pe-dplate img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pe-grid-discord { margin-bottom: 8px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.t-discord { color: #8f96ff; }
