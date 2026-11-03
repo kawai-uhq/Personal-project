@@ -12,6 +12,8 @@ export interface WatchStats {
   streak: number; // days in a row with something watched or read, up to today
   activeThisMonth: number; // days this month with something watched or read
   titles: number; // different movies, shows and anime started
+  bestStreak: number; // longest run of days in a row, ever
+  nightWatches: number; // things watched between midnight and 4 am
 }
 
 const read = <T,>(k: string, fb: T): T => {
@@ -49,6 +51,19 @@ export function watchStats(): WatchStats {
     streak++;
     cur.setDate(cur.getDate() - 1);
   }
+  // longest run ever (never goes down, so unlocks stay unlocked)
+  const sorted = [...days].map((k) => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m, d).getTime(); }).sort((a, b) => a - b);
+  let best = 0;
+  let run = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    run = i > 0 && Math.round((sorted[i] - sorted[i - 1]) / 86400000) === 1 ? run + 1 : 1;
+    best = Math.max(best, run);
+  }
+  let saved = 0;
+  try { saved = Number(localStorage.getItem('comvie.beststreak') || 0); } catch { /* ignore */ }
+  const bestStreak = Math.max(best, streak, saved);
+  if (bestStreak > saved) { try { localStorage.setItem('comvie.beststreak', String(bestStreak)); } catch { /* ignore */ } }
+  const nightWatches = times.filter((t) => new Date(t).getHours() < 4).length;
   const now = new Date();
   const monthDays = new Set(times.filter((t) => { const d = new Date(t); return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth(); }).map(day));
   const titles = new Set([
@@ -57,5 +72,5 @@ export function watchStats(): WatchStats {
     ...animeHist.map((a) => `a:${a.id}`),
     ...Object.keys(animeSeen).filter((id) => (animeSeen[id] ?? []).length).map((id) => `a:${id}`)
   ]).size;
-  return { movies, episodes, animeEpisodes, chapters, hours, streak, activeThisMonth: monthDays.size, titles };
+  return { movies, episodes, animeEpisodes, chapters, hours, streak, activeThisMonth: monthDays.size, titles, bestStreak, nightWatches };
 }

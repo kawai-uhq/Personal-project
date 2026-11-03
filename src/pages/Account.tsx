@@ -8,14 +8,14 @@ import { animeStore } from '../lib/animeStore';
 import { mangaStore } from '../lib/mangaStore';
 import { useSection } from '../lib/section';
 import { toPublic as P } from '../lib/site';
-import Avatar from '../components/Avatar';
-import { NameplateMedia, nameplateClass } from '../components/Nameplate';
-import ProfileFrame from '../components/ProfileFrame';
+import ProfileCard from '../components/ProfileCard';
+import ShareCard from '../components/account/ShareCard';
+import { earnedBadges } from '../lib/badges';
 import ProfileEditor from '../components/account/ProfileEditor';
 import AccountDetails from '../components/account/AccountDetails';
 import Devices from '../components/account/Devices';
 import StatsGrid from '../components/account/StatsGrid';
-import { useProfile } from '../lib/profile';
+import { discordInfo, useProfile } from '../lib/profile';
 import { watchStats } from '../lib/stats';
 import { useApp } from '../state';
 
@@ -50,6 +50,7 @@ export default function Account() {
   const name = profile?.username || session.email.split('@')[0];
   const deco = profile?.deco ?? {};
   const ws = watchStats();
+  const myBadges = earnedBadges(ws, { joined: profile?.created_at, discord: !!discordInfo() });
 
   const deleteAccount = async () => {
     const yes = await askConfirm({
@@ -86,21 +87,11 @@ export default function Account() {
   return (
     <main className="page pad-top">
       <div className="container mid acct">
-        <div className={`pf-wrap ${deco.pframe ? 'has-pf' : ''}`}>
-          <div className={`acct-card acct-hero ${nameplateClass(deco)}`}>
-            <NameplateMedia deco={deco} />
-            {deco.effect && <span className={`fx fx-${deco.effect}`} />}
-            <div className="acct-top">
-              <Avatar avatar={profile?.avatar} deco={deco} letter={name} size={76} />
-              <div>
-                <h1 className="acct-name">{profile?.username ? `@${name}` : name}</h1>
-                <p className="muted"><Icon name="mail" size={14} /> {session.email}</p>
-                <span className="acct-badge"><Icon name="check" size={13} />Signed in · synced to your account</span>
-              </div>
-            </div>
-          </div>
-          <ProfileFrame id={deco.pframe} />
-        </div>
+        <ProfileCard avatar={profile?.avatar} deco={deco} name={profile?.username ? `@${name}` : name} badges={myBadges}>
+          <p className="muted"><Icon name="mail" size={14} /> {session.email}</p>
+          <span className="acct-badge"><Icon name="check" size={13} />Signed in · synced to your account</span>
+        </ProfileCard>
+        <ShareCard profile={profile} name={name} stats={ws} badges={myBadges} />
 
         <h2 className="section">Your stats</h2>
         <StatsGrid stats={ws} />

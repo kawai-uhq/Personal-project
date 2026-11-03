@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
 import { askConfirm } from './Confirm';
 import { animeStore } from '../lib/animeStore';
-import { DPLATE_RE, discordInfo, loadProfile, saveDiscordInfo, saveProfile, useProfile } from '../lib/profile';
+import { DPLATE_RE, currentProfile, discordInfo, loadProfile, saveDiscordInfo, saveProfile, useProfile } from '../lib/profile';
 import type { PublicData } from '../lib/profile';
 import { watchStats } from '../lib/stats';
+import { earnedBadges } from '../lib/badges';
 import { useApp } from '../state';
 
 const PING = 'comvie.devping';
@@ -13,10 +14,11 @@ const SIX_HOURS = 6 * 3600 * 1000;
 export function buildPublicData(favorites: { id: number; type: string; title: string; poster: string | null }[], history: { media: { id: number; type: string; title: string; poster: string | null }; season: number | null; episode: number | null }[]): PublicData {
   const s = watchStats();
   return {
-    stats: { hours: s.hours, movies: s.movies, episodes: s.episodes, animeEpisodes: s.animeEpisodes, chapters: s.chapters, streak: s.streak },
+    stats: { hours: s.hours, movies: s.movies, episodes: s.episodes, animeEpisodes: s.animeEpisodes, chapters: s.chapters, streak: s.streak, bestStreak: s.bestStreak },
     favorites: favorites.slice(0, 12).map((m) => ({ id: m.id, type: m.type, title: m.title, poster: m.poster })),
     watching: history.slice(0, 8).map((h) => ({ id: h.media.id, type: h.media.type, title: h.media.title, poster: h.media.poster, label: h.media.type === 'tv' && h.season && h.episode ? `S${h.season} · E${h.episode}` : 'Movie' })),
     anime: animeStore.loved().slice(0, 12).map((a) => ({ id: a.id, title: a.title, cover: a.cover })),
+    badges: earnedBadges(s, { joined: currentProfile()?.created_at, discord: !!discordInfo() }),
     updated: Date.now()
   };
 }
@@ -49,7 +51,7 @@ async function finishDiscord(token: string) {
     }
     const plate = j.nameplate && DPLATE_RE.test(String(j.nameplate.asset || '')) ? { asset: String(j.nameplate.asset), palette: String(j.nameplate.palette || '') } : null;
     const before = discordInfo(); // what this device knew from the last Discord sign-in
-    saveDiscordInfo({ name: j.name || '', avatar: j.avatar || null, decoration: j.decoration || null, nameplate: plate });
+    saveDiscordInfo({ name: j.name || '', avatar: j.avatar || null, decoration: j.decoration || null, nameplate: plate, banner: typeof j.banner === 'string' && j.banner.startsWith('https://cdn.discordapp.com/banners/') ? j.banner : null });
     const p = await loadProfile(token);
     if (p) {
       const deco = { ...p.deco };

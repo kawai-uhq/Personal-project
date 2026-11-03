@@ -14,7 +14,11 @@ export interface Deco {
   discord?: string; // the person's own Discord avatar decoration
   dplate?: string; // the person's own Discord nameplate (asset path, e.g. "nameplates/nameplates/twilight/")
   pframe?: string; // profile frame: art around the whole profile card
+  nameColor?: string; // username colour (NAME_COLORS)
+  nameFont?: string; // username font (NAME_FONTS)
+  banner?: string; // banner picture at the top of the profile (TMDB / AniList / Discord image)
 }
+export const BANNER_RE = /^https:\/\/(image\.tmdb\.org|s4\.anilist\.co|cdn\.discordapp\.com)\//;
 
 /** Picture and looping video of a Discord nameplate */
 export const discordPlate = (asset: string) => ({
@@ -27,6 +31,7 @@ export interface PublicData {
   favorites?: { id: number; type: string; title: string; poster: string | null }[];
   watching?: { id: number; type: string; title: string; poster: string | null; label: string }[];
   anime?: { id: number; title: string; cover: string }[];
+  badges?: string[];
   updated?: number;
 }
 export interface Profile {
@@ -131,6 +136,7 @@ export async function saveProfile(token: string, patch: Partial<Pick<Profile, 'u
     if (/username/i.test(msg)) throw new Error('Usernames use 3 to 20 lowercase letters, numbers or underscores.');
     if (/avatar_url_ok|discord_deco_ok/i.test(msg)) throw new Error("That picture can't be used.");
     if (/discord_nameplate_ok/i.test(msg)) throw new Error("That nameplate can't be used.");
+    if (/banner_ok/i.test(msg)) throw new Error("That banner can't be used.");
     throw new Error("Couldn't save. Try again.");
   }
   const p = ((await r.json()) as Profile[])[0];
@@ -139,6 +145,7 @@ export async function saveProfile(token: string, patch: Partial<Pick<Profile, 'u
 }
 
 export const clearProfile = () => set(null);
+export const currentProfile = () => current;
 
 /** The signed-in person's profile, kept in step everywhere it's shown */
 export function useProfile(): Profile | null {
@@ -170,6 +177,7 @@ export interface DiscordInfo {
   avatar: string | null;
   decoration: string | null;
   nameplate?: { asset: string; palette: string } | null;
+  banner?: string | null;
 }
 export const discordInfo = (): DiscordInfo | null => {
   try {

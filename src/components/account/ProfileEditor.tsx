@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import Avatar from '../Avatar';
 import Icon from '../Icon';
 import { buildPublicData } from '../AccountRuntime';
 import { gql } from '../../lib/anilist';
-import { AVATAR_COLORS, EFFECTS, FRAMES, NAMEPLATES, PFRAMES } from '../../lib/decorations';
+import { AVATAR_COLORS, BUNDLES, EFFECTS, FRAMES, NAME_COLORS, NAME_FONTS, NAMEPLATES, PFRAMES, bundleItems, isUnlocked, unlockProgress, unlockText } from '../../lib/decorations';
+import type { Bundle, NameFont, NameStyle } from '../../lib/decorations';
+import ProfileCard, { loadNameFont } from '../ProfileCard';
+import { earnedBadges } from '../../lib/badges';
+import { watchStats } from '../../lib/stats';
 import ProfileFrame from '../ProfileFrame';
 import type { DecoItem } from '../../lib/decorations';
 import { USERNAME_RE, cleanUsername, discordInfo, discordPlate, saveProfile, usernameFree, useProfile } from '../../lib/profile';
@@ -28,6 +32,20 @@ async function searchStars(q: string): Promise<Pic[]> {
   return ((j?.results ?? []) as any[]).filter((p) => p.profile_path && !p.adult).slice(0, 24).map((p) => ({ url: `https://image.tmdb.org/t/p/w185${p.profile_path}`, name: p.name }));
 }
 
+interface Banner { url: string; name: string }
+async function bannersTmdb(q: string): Promise<Banner[]> {
+  const path = q ? `/search/multi?query=${encodeURIComponent(q)}&include_adult=false&language=en-US&page=1` : '/trending/all/week?language=en-US';
+  const r = await fetch('/api/tmdb?path=' + encodeURIComponent(path));
+  const j = r.ok ? await r.json() : null;
+  return ((j?.results ?? []) as any[]).filter((m) => m.backdrop_path).slice(0, 18).map((m) => ({ url: `https://image.tmdb.org/t/p/w780${m.backdrop_path}`, name: m.title || m.name || '' }));
+}
+async function bannersAnime(q: string): Promise<Banner[]> {
+  const d = q
+    ? await gql(`query($s:String){ Page(perPage:30){ media(search:$s, type:ANIME, sort:POPULARITY_DESC){ bannerImage title{ english romaji } } } }`, { s: q })
+    : await gql(`query{ Page(perPage:30){ media(type:ANIME, sort:TRENDING_DESC){ bannerImage title{ english romaji } } } }`, {});
+  return ((d?.Page?.media ?? []) as any[]).filter((m) => m.bannerImage).slice(0, 18).map((m) => ({ url: m.bannerImage, name: m.title?.english || m.title?.romaji || '' }));
+}
+
 /** Username, picture, decorations and the public profile switch. */
 export default function ProfileEditor() {
   const { session, getToken, loved, history } = useApp();
@@ -42,6 +60,33 @@ export default function ProfileEditor() {
   const [round, setRound] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const discord = discordInfo();
+  const stats = useMemo(() => watchStats(), []);
+  const [peek, setPeek] = useState<Deco | null>(null); // what the live preview shows while hovering an item
+  const [btab, setBtab] = useState<'tmdb' | 'anime' | 'discord'>('tmdb');
+  const [bq, setBq] = useState('');
+  const [banners, setBanners] = useState<Banner[] | null>(null);
+  const [bshown, setBshown] = useState('');
+  const [bround, setBround] = useState(0);
+  const [note, setNote] = useState<string | null>(null);
+
+  // banner tabs: popular backdrops / banners straight away
+  useEffect(() => {
+    if (btab === 'discord') return;
+    let live = true;
+    setBanners(null);
+    setBshown('');
+    (btab === 'tmdb' ? bannersTmdb('') : bannersAnime(''))
+      .then((x) => live && setBanners(x))
+      .catch((e) => {
+        console.error('[profile] banners', e);
+        if (live) setBanners([]);
+      });
+    return () => {
+      live = false;
+    };
+  }, [btab, bround]);
+  // show every name font in the pickers
+  useEffect(() => NAME_FONTS.forEach((f) => loadNameFont(f.id)), []);
 
   useEffect(() => setName(profile?.username ?? ''), [profile?.username]);
 
@@ -113,45 +158,138 @@ export default function ProfileEditor() {
     }
   };
 
+  const searchBanners = async () => {
+    const t = bq.trim();
+    if (t.length < 2) return;
+    setBanners(null);
+    setBshown(t);
+    try {
+      setBanners(btab === 'tmdb' ? await bannersTmdb(t) : await bannersAnime(t));
+    } catch (e) {
+      console.error('[profile] banner search', e);
+      setBanners([]);
+    }
+  };
+
   const setAvatar = (a: AvatarData) => void save({ avatar: a });
   // one avatar decoration and one nameplate at a time: picking one of ours replaces the Discord one, and the other way round
-  const setDeco = (d: Deco) => {
+  const merge = (d: Deco): Deco => {
     const next: Deco = { ...profile.deco, ...d };
     if ('frame' in d && !('discord' in d)) next.discord = '';
     if (d.discord) next.frame = '';
     if ('nameplate' in d && !('dplate' in d)) next.dplate = '';
     if (d.dplate) next.nameplate = '';
-    void save({ deco: next });
+    return next;
+  };
+  const setDeco = (d: Deco) => {
+    setPeek(null);
+    void save({ deco: merge(d) });
+  };
+  // hovering (or focusing) an item shows it on the preview card
+  const peekProps = (d: Deco) => ({
+    onMouseEnter: () => setPeek(merge(d)),
+    onMouseLeave: () => setPeek(null),
+    onFocus: () => setPeek(merge(d)),
+    onBlur: () => setPeek(null)
+  });
+  const tryItem = (it: DecoItem, d: Deco) => {
+    if (!isUnlocked(it, stats)) {
+      setNote(`${it.name} is locked: ${unlockText(it.unlock!)} (${unlockProgress(it.unlock!, stats)}).`);
+      return;
+    }
+    setNote(null);
+    setDeco(d);
+  };
+  const wearSet = (b: Bundle) => {
+    const items = bundleItems(b);
+    const locked = items.filter((x) => !isUnlocked(x.item, stats));
+    const d: Deco = { discord: '', dplate: '' };
+    const map: Record<string, keyof Deco> = { 'Avatar decoration': 'frame', 'Profile frame': 'pframe', Nameplate: 'nameplate', 'Profile decoration': 'effect', 'Name colour': 'nameColor', 'Name font': 'nameFont' };
+    for (const x of items) if (isUnlocked(x.item, stats)) (d as any)[map[x.kind]] = x.item!.id;
+    setNote(locked.length ? `Wearing ${b.name}. Still locked: ${locked.map((x) => `${x.item!.name} (${unlockText(x.item!.unlock!)})`).join(', ')}.` : `Wearing the full ${b.name} set.`);
+    setPeek(null);
+    void save({ deco: { ...profile.deco, ...d } });
   };
   const letter = profile.username || session.email;
   const publicUrl = `${onProd() ? CINEMA_ORIGIN : location.origin}/u/${profile.username ?? ''}`;
 
-  const decoGrid = (items: DecoItem[], current: string | undefined, key: 'frame' | 'nameplate' | 'effect' | 'pframe', extra?: ReactNode) => (
+  type Key = 'frame' | 'nameplate' | 'effect' | 'pframe' | 'nameColor' | 'nameFont';
+  const decoGrid = (items: DecoItem[], current: string | undefined, key: Key, extra?: ReactNode) => (
     <div className="pe-grid">
-      <button type="button" className={`pe-opt ${!current ? 'on' : ''}`} disabled={busy} onClick={() => setDeco({ [key]: '' })}>
+      <button type="button" className={`pe-opt ${!current ? 'on' : ''}`} disabled={busy} onClick={() => setDeco({ [key]: '' })} {...peekProps({ [key]: '' })}>
         <span className="pe-none"><Icon name="x" size={16} /></span>
         <small>None</small>
       </button>
       {extra}
-      {items.map((it) => (
-        <button key={it.id} type="button" className={`pe-opt ${current === it.id ? 'on' : ''}`} disabled={busy} onClick={() => setDeco({ [key]: it.id })} title={it.name}>
-          {key === 'frame' ? (
-            <Avatar avatar={profile.avatar} deco={{ frame: it.id }} letter={letter} size={46} />
-          ) : key === 'pframe' ? (
-            <span className="pe-mini pf-wrap has-pf"><span className="pe-mini-card" /><ProfileFrame id={it.id} /></span>
-          ) : (
-            <span className={`pe-swatch ${key === 'nameplate' ? `np-${it.id}` : 'pe-fx'}`}>{key === 'effect' && <span className={`fx fx-${it.id}`} />}</span>
-          )}
-          <small>{it.name}</small>
-          <em className={`pe-theme t-${it.theme}`}>{it.theme === 'anime' ? 'Anime' : it.theme === 'movie' ? 'Movie' : ''}</em>
-        </button>
-      ))}
+      {items.map((it) => {
+        const locked = !isUnlocked(it, stats);
+        return (
+          <button
+            key={it.id}
+            type="button"
+            className={`pe-opt ${current === it.id ? 'on' : ''} ${locked ? 'locked' : ''}`}
+            disabled={busy}
+            onClick={() => tryItem(it, { [key]: it.id })}
+            title={locked ? `${it.name}: ${unlockText(it.unlock!)}` : it.name}
+            {...peekProps({ [key]: it.id })}
+          >
+            {key === 'frame' ? (
+              <Avatar avatar={profile.avatar} deco={{ frame: it.id }} letter={letter} size={46} />
+            ) : key === 'pframe' ? (
+              <span className="pe-mini pf-wrap has-pf"><span className="pe-mini-card" /><ProfileFrame id={it.id} /></span>
+            ) : key === 'nameColor' ? (
+              <span className={`pe-namesw sname sname-c sname-${it.id}`} style={{ backgroundImage: (it as NameStyle).css }}>Aa</span>
+            ) : key === 'nameFont' ? (
+              <span className="pe-namesw" style={{ fontFamily: (it as NameFont).family }}>Aa</span>
+            ) : (
+              <span className={`pe-swatch ${key === 'nameplate' ? `np-${it.id}` : 'pe-fx'}`}>{key === 'effect' && <span className={`fx fx-${it.id}`} />}</span>
+            )}
+            <small>{it.name}</small>
+            {locked ? (
+              <em className="pe-lock"><Icon name="lock" size={11} />{unlockProgress(it.unlock!, stats)}</em>
+            ) : (
+              <em className={`pe-theme t-${it.theme}`}>{it.theme === 'anime' ? 'Anime' : it.theme === 'movie' ? 'Movie' : ''}</em>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
+  const previewDeco = peek ?? profile.deco;
+  const myBadges = earnedBadges(stats, { joined: profile.created_at, discord: !!discord });
 
   return (
     <div className="pe">
+      <div className="pe-preview" aria-live="polite">
+        <ProfileCard avatar={profile.avatar} deco={previewDeco} name={profile.username ? `@${profile.username}` : letter.split('@')[0]} badges={myBadges} size={60}>
+          <p className="muted small">{peek ? 'Preview: tap to wear it' : 'Your profile card'}</p>
+        </ProfileCard>
+      </div>
       {error && <p className="error">{error}</p>}
+      {note && <p className="small pe-note">{note}</p>}
+
+      <div className="pe-block">
+        <h3>Sets</h3>
+        <p className="muted small pe-sub0">Wear every matching piece in one tap. Locked pieces unlock as you watch.</p>
+        <div className="pe-grid pe-sets">
+          {BUNDLES.map((bd) => {
+            const items = bundleItems(bd);
+            const open = items.filter((x) => isUnlocked(x.item, stats)).length;
+            const color = NAME_COLORS.find((x) => x.id === bd.deco.nameColor);
+            const font = NAME_FONTS.find((x) => x.id === bd.deco.nameFont);
+            return (
+              <button key={bd.id} type="button" className="pe-opt pe-set" disabled={busy} onClick={() => wearSet(bd)} {...peekProps({ ...bd.deco, discord: '', dplate: '' })}>
+                <span className={`pe-setbg np-${bd.deco.nameplate}`}>
+                  <Avatar avatar={profile.avatar} deco={{ frame: bd.deco.frame }} letter={letter} size={34} />
+                  <span className={`sname ${color ? `sname-c sname-${color.id}` : ''}`} style={{ backgroundImage: color?.css, fontFamily: font?.family }}>{profile.username || 'you'}</span>
+                </span>
+                <small>{bd.name}</small>
+                <em className={`pe-theme ${open < items.length ? 'pe-part' : ''}`}>{open}/{items.length}</em>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="pe-block">
         <h3>Username</h3>
@@ -219,12 +357,60 @@ export default function ProfileEditor() {
           profile.deco.discord ? '__discord' : profile.deco.frame,
           'frame',
           discord?.decoration ? (
-            <button type="button" className={`pe-opt ${profile.deco.discord ? 'on' : ''}`} disabled={busy} title="My Discord decoration" onClick={() => setDeco({ discord: discord.decoration! })}>
+            <button type="button" className={`pe-opt ${profile.deco.discord ? 'on' : ''}`} disabled={busy} title="My Discord decoration" onClick={() => setDeco({ discord: discord.decoration! })} {...peekProps({ discord: discord.decoration! })}>
               <Avatar avatar={profile.avatar} deco={{ discord: discord.decoration }} letter={letter} size={46} />
               <small>My Discord decoration</small>
               <em className="pe-theme t-discord">Discord</em>
             </button>
           ) : null
+        )}
+      </div>
+
+      <div className="pe-block">
+        <h3>Name colour</h3>
+        {decoGrid(NAME_COLORS, profile.deco.nameColor, 'nameColor')}
+        <h3 className="pe-h3b">Name font</h3>
+        {decoGrid(NAME_FONTS, profile.deco.nameFont, 'nameFont')}
+      </div>
+
+      <div className="pe-block">
+        <h3>Profile banner</h3>
+        <div className="seg pe-tabs" role="tablist">
+          {(['tmdb', 'anime', ...(discord?.banner ? ['discord'] : [])] as ('tmdb' | 'anime' | 'discord')[]).map((t) => (
+            <button key={t} type="button" role="tab" aria-selected={btab === t} className={btab === t ? 'on' : ''} onClick={() => { setBtab(t); setBq(''); }}>
+              {t === 'tmdb' ? 'Movies & TV' : t === 'anime' ? 'Anime' : 'Discord'}
+            </button>
+          ))}
+        </div>
+        {btab !== 'discord' ? (
+          <>
+            <form className="pe-row" onSubmit={(e) => { e.preventDefault(); void searchBanners(); }}>
+              <span className="auth-input"><Icon name="search" size={16} /><input value={bq} onChange={(e) => setBq(e.target.value)} placeholder={btab === 'tmdb' ? 'Search a movie or show (e.g. Dune)' : 'Search an anime (e.g. Frieren)'} /></span>
+              <button className="btn" type="submit">Search</button>
+            </form>
+            <p className="muted small pe-sub">
+              {bshown ? <>Results for “{bshown}” · <button type="button" className="link" onClick={() => { setBq(''); setBround((n) => n + 1); }}>show trending</button></> : 'Trending now'}
+              {profile.deco.banner && <> · <button type="button" className="link" onClick={() => setDeco({ banner: '' })}>remove my banner</button></>}
+            </p>
+            {!banners && <div className="pe-banners">{Array.from({ length: 6 }, (_, i) => <span key={i} className="pe-ban skel" />)}</div>}
+            {banners && (banners.length === 0 ? <p className="muted small">Nothing found. Try another title.</p> : (
+              <div className="pe-banners">
+                {banners.map((bn) => (
+                  <button key={bn.url} type="button" className={`pe-ban ${profile.deco.banner === bn.url ? 'on' : ''}`} disabled={busy} title={bn.name} onClick={() => setDeco({ banner: bn.url })} {...peekProps({ banner: bn.url })}>
+                    <img src={bn.url} alt={bn.name} loading="lazy" referrerPolicy="no-referrer" />
+                  </button>
+                ))}
+              </div>
+            ))}
+          </>
+        ) : (
+          discord?.banner && (
+            <div className="pe-banners">
+              <button type="button" className={`pe-ban ${profile.deco.banner === discord.banner ? 'on' : ''}`} disabled={busy} onClick={() => setDeco({ banner: discord.banner! })} {...peekProps({ banner: discord.banner })}>
+                <img src={discord.banner} alt="My Discord banner" referrerPolicy="no-referrer" />
+              </button>
+            </div>
+          )
         )}
       </div>
 
@@ -240,7 +426,7 @@ export default function ProfileEditor() {
           profile.deco.dplate ? '__discord' : profile.deco.nameplate,
           'nameplate',
           discord?.nameplate ? (
-            <button type="button" className={`pe-opt ${profile.deco.dplate ? 'on' : ''}`} disabled={busy} title="My Discord nameplate" onClick={() => setDeco({ dplate: discord.nameplate!.asset })}>
+            <button type="button" className={`pe-opt ${profile.deco.dplate ? 'on' : ''}`} disabled={busy} title="My Discord nameplate" onClick={() => setDeco({ dplate: discord.nameplate!.asset })} {...peekProps({ dplate: discord.nameplate!.asset })}>
               <span className="pe-swatch pe-dplate"><img src={discordPlate(discord.nameplate.asset).img} alt="" referrerPolicy="no-referrer" /></span>
               <small>My Discord nameplate</small>
               <em className="pe-theme t-discord">Discord</em>

@@ -177,7 +177,8 @@ export default async function handler(req, res) {
         name: du.global_name || du.username,
         avatar: du.avatar ? `https://cdn.discordapp.com/avatars/${du.id}/${du.avatar}.${ext}?size=256` : null,
         decoration: du.avatar_decoration_data?.asset ? `https://cdn.discordapp.com/avatar-decoration-presets/${du.avatar_decoration_data.asset}.png?size=240&passthrough=true` : null,
-        nameplate: plateAsset ? { asset: plateAsset, palette: String(plate.palette || '') } : null
+        nameplate: plateAsset ? { asset: plateAsset, palette: String(plate.palette || '') } : null,
+        banner: du.banner ? `https://cdn.discordapp.com/banners/${du.id}/${du.banner}.${String(du.banner).startsWith('a_') ? 'gif' : 'png'}?size=600` : null
       });
     }
   } catch (e) {

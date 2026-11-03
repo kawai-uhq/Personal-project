@@ -1834,7 +1834,7 @@ html.light .acct-panel, html.light .pe-block { background: rgba(255, 255, 255, .
 
 /* ---- profile frames: art around the whole profile card ---- */
 .pf-wrap { position: relative; }
-.pf-wrap > .acct-card { margin-bottom: 0; }
+.pf-wrap > .acct-card, .pcard > .acct-card { margin-bottom: 0; }
 .pf-wrap.has-pf { margin: 30px 0 44px; }
 .pf-wrap:not(.has-pf) { margin-bottom: 22px; }
 .pframe { --pf: 150px; --pfo: calc(var(--pf) * -.2); position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: 18px; }
@@ -1858,3 +1858,48 @@ html.light .acct-panel, html.light .pe-block { background: rgba(255, 255, 255, .
 .pe-mini-card { position: absolute; inset: 0; border-radius: 10px; background: #2a2032; }
 .pe-mini .pframe { --pf: 44px; border-radius: 10px; }
 .pe-mini .pframe::before, .pe-mini .pframe::after { border-radius: 12px; }
+
+/* ---- profile card: banner, styled name, badges ---- */
+.pcard { position: relative; }
+.pc-banner { height: 130px; border-radius: 18px 18px 0 0; border: 1px solid var(--line); border-bottom: 0; background: #1d1424 center / cover no-repeat; }
+.pcard.has-banner > .acct-hero { border-top-left-radius: 0; border-top-right-radius: 0; }
+.pf-wrap:not(.has-pf) > .pcard { margin-bottom: 0; }
+@media (max-width: 600px) { .pc-banner { height: 92px; } }
+.pc-text { min-width: 0; }
+.pc-name { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 2px; }
+.pc-name .acct-name { margin: 0; }
+.sname-c { background-size: 100% 100%; -webkit-background-clip: text; background-clip: text; color: transparent !important; -webkit-text-fill-color: transparent; text-shadow: none !important; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .55)); }
+.sname-gold, .sname-aurora, .sname-neon, .sname-rainbow { background-size: 200% 100%; animation: sname 4s linear infinite; }
+@keyframes sname { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .sname-c { animation: none; } }
+.badges { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.badge { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; color: var(--b); background: color-mix(in srgb, var(--b) 20%, #120c18); border: 1px solid color-mix(in srgb, var(--b) 55%, transparent); }
+
+/* ---- editor: live preview, sets, name styles, banners, locks ---- */
+.pe-preview { position: sticky; top: calc(var(--nav-h, 76px) + 6px); z-index: 6; padding: 4px 0 6px; background: linear-gradient(var(--bg, #120C18) 85%, transparent); }
+.pe-preview .pf-wrap.has-pf { margin: 22px 0 30px; }
+.pe-preview .pframe { --pf: 112px; }
+.pe-preview .acct-hero { padding: 16px 18px; }
+.pe-preview .acct-name { font-size: 20px; }
+.pe-note { color: var(--accent); }
+.pe-sub0 { margin: -4px 0 10px; }
+.pe-h3b { margin-top: 18px !important; }
+.pe-opt.locked > :first-child { filter: grayscale(.85) brightness(.7); }
+.pe-lock { position: absolute; z-index: 5; top: 4px; right: 5px; display: inline-flex; align-items: center; gap: 3px; padding: 1px 5px; border-radius: 6px; background: rgba(18, 12, 24, .82); color: #ffd36b; font-size: 9px; font-style: normal; font-weight: 800; }
+.pe-namesw { display: grid; place-items: center; width: 100%; height: 46px; border-radius: 8px; background-color: #1d1424; font-size: 24px; font-weight: 700; color: #f6ece3; }
+.pe-namesw.sname-c { background-color: transparent; }
+.pe-sets { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.pe-setbg { display: flex; align-items: center; gap: 8px; width: 100%; height: 50px; padding: 0 10px; border-radius: 8px; overflow: visible; }
+.pe-setbg .sname { font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pe-part { color: #ffd36b; }
+.pe-banners { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
+.pe-ban { position: relative; aspect-ratio: 16 / 6; padding: 0; border: 2px solid transparent; border-radius: 10px; overflow: hidden; background: var(--surface); cursor: pointer; }
+.pe-ban img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pe-ban.on { border-color: var(--accent); }
+.pe-ban.skel { cursor: default; animation: pe-pulse 1.2s ease-in-out infinite; }
+/* share my profile card */
+.share-card { display: grid; gap: 10px; margin: -6px 0 18px; }
+.share-card > .btn { justify-self: start; }
+.sc-out img { width: 100%; max-width: 560px; border-radius: 12px; border: 1px solid var(--line); }
+.pe-preview .pc-banner { height: 64px; }
+@media (max-width: 600px) { .pe-preview .pc-banner { height: 44px; } .pe-preview .pframe { --pf: 84px; } }

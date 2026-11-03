@@ -184,6 +184,13 @@ alter table public.profiles add constraint discord_nameplate_ok check (
   or deco->>'dplate' ~ '^nameplates/[A-Za-z0-9_/-]+/$'
 );
 
+-- Profile banner: only pictures from TMDB, AniList or Discord
+alter table public.profiles drop constraint if exists banner_ok;
+alter table public.profiles add constraint banner_ok check (
+  coalesce(deco->>'banner', '') = ''
+  or deco->>'banner' ~ '^https://(image\.tmdb\.org|s4\.anilist\.co|cdn\.discordapp\.com)/'
+);
+
 alter table public.profiles enable row level security;
 
 drop policy if exists "read own or public profiles" on public.profiles;
