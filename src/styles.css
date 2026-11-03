@@ -1731,8 +1731,8 @@ html.light .sv-item { background: rgba(40, 20, 30, .04); }
 .auth-go:disabled { opacity: .55; box-shadow: none; }
 
 /* ---- Avatars, frames, nameplates, profile effects ---- */
-.av { position: relative; display: inline-grid; place-items: center; flex: none; border-radius: 50%; }
-.av-img { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: grid; place-items: center; color: #1a0d0a; font-weight: 900; }
+.av { position: relative; display: inline-block; flex: none; border-radius: 50%; vertical-align: middle; }
+.av-img { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; max-width: none; border-radius: 50%; object-fit: cover; object-position: center 20%; display: grid; place-items: center; color: #1a0d0a; font-weight: 900; overflow: hidden; }
 .av-deco { position: absolute; z-index: 3; width: 120%; height: 120%; left: -10%; top: -10%; pointer-events: none; }
 /* frames: a ring drawn just outside the picture */
 .av-frame::before { content: ''; position: absolute; z-index: 0; inset: calc(var(--av) * -0.09); border-radius: 50%; }
@@ -1814,7 +1814,10 @@ html.light .sv-item { background: rgba(40, 20, 30, .04); }
 .pe-color.on { border-color: var(--text); box-shadow: 0 0 0 3px var(--accent); }
 .pe-pics { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; margin-top: 10px; }
 .pe-pic { aspect-ratio: 1; padding: 0; border: 2px solid transparent; border-radius: 50%; overflow: hidden; background: var(--surface); cursor: pointer; }
-.pe-pic img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.pe-pic { position: relative; }
+.pe-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
+.pe-pic-name { display: none; }
+.pe-sub { margin: 10px 0 0; }
 .pe-pic.on { border-color: var(--accent); }
 .pe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
 .pe-opt { position: relative; display: grid; justify-items: center; gap: 6px; padding: 12px 6px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); cursor: pointer; font: inherit; }
@@ -1834,3 +1837,6 @@ html.light .sv-item { background: rgba(40, 20, 30, .04); }
 .pp-item small { font-weight: 700; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pp-item em { font-style: normal; font-size: 12px; color: var(--muted); }
 html.light .acct-panel, html.light .pe-block { background: rgba(255, 255, 255, .7); }
+.pe-pic.skel { cursor: default; animation: pe-pulse 1.2s ease-in-out infinite; }
+@keyframes pe-pulse { 50% { opacity: .45; } }
+.pe-pic img, img.av-img { color: transparent; font-size: 0; }

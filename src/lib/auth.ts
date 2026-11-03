@@ -206,6 +206,26 @@ export function oauthUrl(provider: OAuthProvider): string {
   return `${BASE}/auth/v1/authorize?provider=${provider}&redirect_to=${encodeURIComponent(back)}${scopes ? `&scopes=${encodeURIComponent(scopes)}` : ''}`;
 }
 
+/** Link Discord to the account that's signed in now (needs "Manual linking" on in Supabase). Sends the browser to Discord. */
+export async function linkDiscord(accessToken: string): Promise<void> {
+  const back = `${location.origin}${location.pathname}`;
+  const q = `provider=discord&redirect_to=${encodeURIComponent(back)}&scopes=${encodeURIComponent('identify email guilds.join')}&skip_http_redirect=true`;
+  let r: Response;
+  try {
+    r = await fetch(`${BASE}/auth/v1/user/identities/authorize?${q}`, { headers: { apikey: KEY, Authorization: `Bearer ${accessToken}` } });
+  } catch {
+    throw new AuthError('Check your connection and try again.');
+  }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.url) {
+    console.error('[auth] link Discord', r.status, j);
+    if (/manual linking/i.test(JSON.stringify(j))) throw new AuthError("Connecting Discord isn't switched on yet. Try again later.");
+    if (/already/i.test(JSON.stringify(j))) throw new AuthError('That Discord account is already connected to another Comvie account.');
+    throw new AuthError("Couldn't start connecting Discord. Try again.");
+  }
+  location.href = j.url;
+}
+
 /** The sign-in Supabase put in the address after Discord (and clears it from the address bar). */
 export function takeOAuthResult(): { session: Session; providerToken: string | null } | { error: string } | null {
   if (typeof location === 'undefined' || !location.hash) return null;

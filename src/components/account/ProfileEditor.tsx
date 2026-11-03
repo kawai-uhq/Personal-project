@@ -14,13 +14,16 @@ type PicTab = 'letter' | 'anime' | 'stars' | 'discord';
 interface Pic { url: string; name: string }
 
 async function searchCharacters(q: string): Promise<Pic[]> {
-  const d = await gql(`query($s:String){ Page(perPage:18){ characters(search:$s, sort:FAVOURITES_DESC){ name{ full } image{ large } } } }`, { s: q });
+  const d = q
+    ? await gql(`query($s:String){ Page(perPage:24){ characters(search:$s, sort:FAVOURITES_DESC){ name{ full } image{ large } } } }`, { s: q })
+    : await gql(`query{ Page(perPage:30){ characters(sort:FAVOURITES_DESC){ name{ full } image{ large } } } }`, {});
   return ((d?.Page?.characters ?? []) as any[]).filter((c) => c.image?.large && !/default\.jpg$/.test(c.image.large)).map((c) => ({ url: c.image.large, name: c.name?.full ?? '' }));
 }
 async function searchStars(q: string): Promise<Pic[]> {
-  const r = await fetch('/api/tmdb?path=' + encodeURIComponent(`/search/person?query=${encodeURIComponent(q)}&include_adult=false&language=en-US&page=1`));
+  const path = q ? `/search/person?query=${encodeURIComponent(q)}&include_adult=false&language=en-US&page=1` : '/person/popular?language=en-US&page=1';
+  const r = await fetch('/api/tmdb?path=' + encodeURIComponent(path));
   const j = r.ok ? await r.json() : null;
-  return ((j?.results ?? []) as any[]).filter((p) => p.profile_path).slice(0, 18).map((p) => ({ url: `https://image.tmdb.org/t/p/w185${p.profile_path}`, name: p.name }));
+  return ((j?.results ?? []) as any[]).filter((p) => p.profile_path && !p.adult).slice(0, 24).map((p) => ({ url: `https://image.tmdb.org/t/p/w185${p.profile_path}`, name: p.name }));
 }
 
 /** Username, picture, decorations and the public profile switch. */
@@ -33,10 +36,29 @@ export default function ProfileEditor() {
   const [tab, setTab] = useState<PicTab>('letter');
   const [q, setQ] = useState('');
   const [pics, setPics] = useState<Pic[] | null>(null);
+  const [shown, setShown] = useState(''); // what the pictures below are for ('' = popular)
+  const [round, setRound] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const discord = discordInfo();
 
   useEffect(() => setName(profile?.username ?? ''), [profile?.username]);
+
+  // open a picture tab -> the most popular characters / stars appear right away
+  useEffect(() => {
+    if (tab !== 'anime' && tab !== 'stars') return;
+    let live = true;
+    setPics(null);
+    setShown('');
+    (tab === 'stars' ? searchStars('') : searchCharacters(''))
+      .then((x) => live && setPics(x))
+      .catch((e) => {
+        console.error('[profile] popular pictures', e);
+        if (live) setPics([]);
+      });
+    return () => {
+      live = false;
+    };
+  }, [tab, round]);
 
   // live "is it free?" check while typing a username
   useEffect(() => {
@@ -78,11 +100,13 @@ export default function ProfileEditor() {
 
   const search = async () => {
     const t = q.trim();
-    if (t.length < 2) return;
+    if (t.length === 1) return;
     setPics(null);
+    setShown(t);
     try {
       setPics(tab === 'stars' ? await searchStars(t) : await searchCharacters(t));
-    } catch {
+    } catch (e) {
+      console.error('[profile] picture search', e);
       setPics([]);
     }
   };
@@ -132,7 +156,7 @@ export default function ProfileEditor() {
         <h3>Picture</h3>
         <div className="seg pe-tabs" role="tablist">
           {(['letter', 'anime', 'stars', ...(discord?.avatar ? ['discord'] : [])] as PicTab[]).map((t) => (
-            <button key={t} type="button" role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => { setTab(t); setPics(null); setQ(''); }}>
+            <button key={t} type="button" role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => { setTab(t); setQ(''); }}>
               {t === 'letter' ? 'Letter' : t === 'anime' ? 'Anime character' : t === 'stars' ? 'Movie & TV star' : 'Discord'}
             </button>
           ))}
@@ -152,7 +176,11 @@ export default function ProfileEditor() {
               <span className="auth-input"><Icon name="search" size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === 'anime' ? 'Search a character (e.g. Frieren)' : 'Search an actor (e.g. Zendaya)'} /></span>
               <button className="btn" type="submit">Search</button>
             </form>
-            {pics && (pics.length === 0 ? <p className="muted small">Nothing found.</p> : (
+            <p className="muted small pe-sub">
+              {shown ? <>Results for “{shown}” · <button type="button" className="link" onClick={() => { setQ(''); setRound((n) => n + 1); }}>show popular</button></> : tab === 'anime' ? 'Most popular characters' : 'Popular right now'}
+            </p>
+            {!pics && <div className="pe-pics">{Array.from({ length: 12 }, (_, i) => <span key={i} className="pe-pic skel" />)}</div>}
+            {pics && (pics.length === 0 ? <p className="muted small">Nothing found. Try another name.</p> : (
               <div className="pe-pics">
                 {pics.map((p) => (
                   <button key={p.url} type="button" className={`pe-pic ${profile.avatar.url === p.url ? 'on' : ''}`} disabled={busy} onClick={() => setAvatar({ url: p.url })} title={p.name}>

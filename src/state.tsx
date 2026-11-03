@@ -260,6 +260,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         try { sessionStorage.setItem('comvie.discordToken', r.providerToken); } catch { /* storage blocked */ }
       }
       signedInRef.current({ ...r.session, email: u?.email || '' });
+      if (!u) console.error('[auth] Discord sign-in: account details could not be read');
+      window.setTimeout(() => window.dispatchEvent(new Event('comvie:discordback')), 300);
     })();
   }, []);
 

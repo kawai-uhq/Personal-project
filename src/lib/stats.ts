@@ -51,6 +51,11 @@ export function watchStats(): WatchStats {
   }
   const now = new Date();
   const monthDays = new Set(times.filter((t) => { const d = new Date(t); return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth(); }).map(day));
-  const titles = new Set([...history.map((h) => `${h.media.type}:${h.media.id}`), ...animeHist.map((a) => `a:${a.id}`)]).size;
+  const titles = new Set([
+    ...history.map((h) => `${h.media.type}:${h.media.id}`),
+    ...keys.map((k) => k.split(':').slice(0, 2).join(':')),
+    ...animeHist.map((a) => `a:${a.id}`),
+    ...Object.keys(animeSeen).filter((id) => (animeSeen[id] ?? []).length).map((id) => `a:${id}`)
+  ]).size;
   return { movies, episodes, animeEpisodes, chapters, hours, streak, activeThisMonth: monthDays.size, titles };
 }
