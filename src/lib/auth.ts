@@ -223,24 +223,75 @@ export async function linkDiscord(accessToken: string): Promise<void> {
     if (/already/i.test(JSON.stringify(j))) throw new AuthError('That Discord account is already connected to another Comvie account.');
     throw new AuthError("Couldn't start connecting Discord. Try again.");
   }
+  markOAuthStart();
   location.href = j.url;
 }
 
-/** The sign-in Supabase put in the address after Discord (and clears it from the address bar). */
-export function takeOAuthResult(): { session: Session; providerToken: string | null } | { error: string } | null {
-  if (typeof location === 'undefined' || !location.hash) return null;
-  const h = new URLSearchParams(location.hash.slice(1));
-  const clear = () => history.replaceState(null, '', location.pathname + location.search);
-  if (h.get('error') || h.get('error_description')) {
-    clear();
-    return { error: (h.get('error_description') || h.get('error') || 'Sign-in was cancelled.').replace(/\+/g, ' ') };
+// The address's "#…" and "?…" exactly as the page opened with them. Other start-up code (e.g. the AniList connect
+// return) also reads and tidies the address, so the sign-in is always taken from this copy.
+const HASH_AT_LOAD = typeof location !== 'undefined' ? location.hash : '';
+const SEARCH_AT_LOAD = typeof location !== 'undefined' ? location.search : '';
+const PENDING = 'comvie.oauthPending';
+let oauthTaken = false;
+
+/** Note that a Discord sign-in / connect was started in this tab (so an error coming back is known to be ours). */
+export function markOAuthStart() {
+  try { sessionStorage.setItem(PENDING, String(Date.now())); } catch { /* storage blocked */ }
+}
+const oauthPending = () => {
+  try {
+    const t = Number(sessionStorage.getItem(PENDING) || 0);
+    sessionStorage.removeItem(PENDING);
+    return Date.now() - t < 30 * 60 * 1000;
+  } catch {
+    return false;
   }
+};
+
+/** A Comvie (Supabase) sign-in in an address "#…": it always carries a refresh token, an AniList return never does. */
+export const isSignInHash = (hash: string) => /(^|[#&])(refresh_token|provider_token)=/.test(hash);
+
+const claimsOf = (jwt: string): Record<string, unknown> => {
+  try {
+    return JSON.parse(atob(jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+  } catch {
+    return {};
+  }
+};
+
+/** The sign-in Supabase put in the address after Discord (and tidies it out of the address bar). */
+export function takeOAuthResult(): { session: Session; providerToken: string | null } | { error: string } | null {
+  if (oauthTaken || typeof location === 'undefined') return null;
+  const h = new URLSearchParams(HASH_AT_LOAD.replace(/^#/, ''));
+  const q = new URLSearchParams(SEARCH_AT_LOAD.replace(/^\?/, ''));
+  const tidy = () => {
+    try {
+      const keep = new URLSearchParams(location.search);
+      ['error', 'error_code', 'error_description'].forEach((k) => keep.delete(k));
+      const qs = keep.toString();
+      history.replaceState(history.state, '', location.pathname + (qs ? `?${qs}` : ''));
+    } catch { /* ignore */ }
+  };
+
   const access = h.get('access_token');
   const refresh = h.get('refresh_token');
-  if (!access || !refresh) return null;
-  clear();
-  return {
-    session: { accessToken: access, refreshToken: refresh, expiresAt: Date.now() + (Number(h.get('expires_in')) || 3600) * 1000, email: '' },
-    providerToken: h.get('provider_token')
-  };
+  if (access && refresh) {
+    oauthTaken = true;
+    oauthPending(); // clear the marker
+    tidy();
+    return {
+      session: { accessToken: access, refreshToken: refresh, expiresAt: Date.now() + (Number(h.get('expires_in')) || 3600) * 1000, email: String(claimsOf(access).email || '') },
+      providerToken: h.get('provider_token')
+    };
+  }
+
+  // an error coming back from a Discord sign-in this tab started (in the "#…" or, for some errors, the "?…")
+  const err = h.get('error_description') || h.get('error') || q.get('error_description') || q.get('error');
+  if (err && oauthPending()) {
+    oauthTaken = true;
+    tidy();
+    console.error('[auth] Discord sign-in came back with an error', err, h.get('error_code') || q.get('error_code') || '');
+    return { error: /identity.*already|already.*linked/i.test(err) ? 'That Discord account is already connected to another Comvie account.' : err.replace(/\+/g, ' ') };
+  }
+  return null;
 }

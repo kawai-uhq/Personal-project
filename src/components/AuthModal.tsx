@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AuthError, oauthUrl, sendCode, signInComingSoon, signInPassword, signUpPassword, turnstileSiteKey, updatePassword, verifyCode } from '../lib/auth';
+import { AuthError, markOAuthStart, oauthUrl, sendCode, signInComingSoon, signInPassword, signUpPassword, turnstileSiteKey, updatePassword, verifyCode } from '../lib/auth';
 import DiscordIcon from './DiscordIcon';
 import { useApp } from '../state';
 import Icon from './Icon';
@@ -202,7 +202,7 @@ export default function AuthModal() {
               <>
                 {/* one tap, no password: Discord sign-in also adds them to the Discord server */}
                 <div className="auth-social">
-                  <a className="btn auth-discord" href={oauthUrl('discord')}><DiscordIcon size={18} />Continue with Discord</a>
+                  <a className="btn auth-discord" href={oauthUrl('discord')} onClick={markOAuthStart}><DiscordIcon size={18} />Continue with Discord</a>
                 </div>
                 <div className="auth-or"><span>or with email</span></div>
                 {mode === 'up' && (

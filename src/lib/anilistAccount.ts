@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { isSignInHash } from './auth';
 import { animeStore } from './animeStore';
 import type { AniLite } from './anilist';
 import { mangaStore } from './mangaStore';
@@ -88,6 +89,7 @@ async function call(token: string, query: string, variables: Record<string, unkn
 export async function captureAniListReturn(): Promise<void> {
   const h = location.hash;
   if (!h.includes('access_token=')) return;
+  if (isSignInHash(h)) return; // a Comvie sign-in coming back from Discord, not AniList: leave it for the sign-in code
   const p = new URLSearchParams(h.slice(1));
   const token = p.get('access_token') || '';
   const secs = Number(p.get('expires_in')) || 365 * 86400;

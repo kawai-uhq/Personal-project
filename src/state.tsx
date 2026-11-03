@@ -255,11 +255,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     void (async () => {
       const u = await getUser(r.session.accessToken);
-      if (r.providerToken && u?.providers.includes('discord')) {
+      if (r.providerToken && (!u || u.providers.includes('discord'))) {
         // used once, right after sign-in, to add them to the Discord server (see AccountRuntime)
         try { sessionStorage.setItem('comvie.discordToken', r.providerToken); } catch { /* storage blocked */ }
       }
-      signedInRef.current({ ...r.session, email: u?.email || '' });
+      signedInRef.current({ ...r.session, email: u?.email || r.session.email });
       if (!u) console.error('[auth] Discord sign-in: account details could not be read');
       window.setTimeout(() => window.dispatchEvent(new Event('comvie:discordback')), 300);
     })();
