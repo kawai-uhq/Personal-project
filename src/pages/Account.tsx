@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon';
+import type { IconName } from '../components/Icon';
+import DiscordCard from '../components/account/DiscordCard';
 import { askConfirm } from '../components/Confirm';
 import SettingsPanel from '../components/SettingsPanel';
 import AniListCard from '../components/AniListCard';
@@ -19,15 +21,33 @@ import { hasDiscord, useProfile } from '../lib/profile';
 import { watchStats } from '../lib/stats';
 import { useApp } from '../state';
 
+type Tab = 'general' | 'appearance' | 'connections' | 'security' | 'data';
+const TABS: [Tab, string, IconName][] = [
+  ['general', 'General', 'settings'],
+  ['appearance', 'Appearance', 'sparkles'],
+  ['connections', 'Connections', 'link'],
+  ['security', 'Security', 'shield'],
+  ['data', 'Data', 'database']
+];
+
 /** Your account: who you're signed in as, what's saved, and signing out. */
 export default function Account() {
   const { session, openAuth, signOut, getToken, favorites, loved, history } = useApp();
   const section = useSection();
   const nav = useNavigate();
   const { hash } = useLocation();
+  const fromHash = (h: string): Tab => (h === '#settings' ? 'general' : (TABS.find(([id]) => `#${id}` === h)?.[0] ?? 'general'));
+  const [tab, setTab] = useState<Tab>(() => fromHash(hash));
   useEffect(() => {
-    if (hash === '#settings') window.setTimeout(() => document.getElementById('settings')?.scrollIntoView({ behavior: 'smooth' }), 60);
+    if (!hash) return;
+    setTab(fromHash(hash));
+    window.setTimeout(() => document.querySelector('.acct-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hash]);
+  const openTab = (t: Tab) => {
+    setTab(t);
+    try { history.replaceState(history.state, '', `${location.pathname}${location.search}#${t}`); } catch { /* ignore */ }
+  };
   const profile = useProfile();
   // redraw once the account reports its linked sign-ins (the Discord badge depends on it)
   const [, bump] = useState(0);
@@ -104,52 +124,85 @@ export default function Account() {
         <StatsGrid stats={ws} />
         <p className="muted small">{ws.titles} titles started · active {ws.activeThisMonth} {ws.activeThisMonth === 1 ? 'day' : 'days'} this month. Hours are an estimate.</p>
 
-        <h2 className="section">Profile</h2>
-        <ProfileEditor />
-
-        <h2 className="section">Sign-in & security</h2>
-        <AccountDetails />
-
-        <h2 className="section">Devices</h2>
-        <Devices />
-
-        <h2 className="section">Your library</h2>
-        <div className="acct-stats">
-          {stats.map(([label, n]) => (
-            <div key={label} className="acct-stat"><strong>{n}</strong><small>{label}</small></div>
+        <div className="acct-tabs" role="tablist" aria-label="Account sections">
+          {TABS.map(([id, label, icon]) => (
+            <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? 'on' : ''} onClick={() => openTab(id)}>
+              <Icon name={icon} size={15} />{label}
+            </button>
           ))}
         </div>
-        <p className="muted small">Your cinema, anime and manga lists are saved to your account, so they follow you to other devices.</p>
 
-        <div className="acct-actions">
-          <Link className="btn ghost" to={libraryLink}><Icon name="bookmark" size={16} />Open my library</Link>
-          <button
-            className="btn ghost danger"
-            onClick={async () => {
-              const yes = await askConfirm({
-                title: 'Sign out?',
-                text: `You'll be signed out of ${session.email} on this device. Your lists stay saved to your account.`,
-                ok: 'Sign out',
-                danger: true,
-                icon: 'login'
-              });
-              if (!yes) return;
-              signOut();
-              nav('/');
-            }}
-          >
-            <Icon name="login" size={16} />Sign out
-          </button>
-          <button className="btn ghost danger" onClick={() => void deleteAccount()}>
-            <Icon name="trash" size={16} />Delete account
-          </button>
-        </div>
+        {tab === 'general' && (
+          <section className="acct-sec" id="settings">
+            <SettingsPanel part="general" />
+          </section>
+        )}
 
-        <h2 className="section">Connected services</h2>
-        <AniListCard />
+        {tab === 'appearance' && (
+          <section className="acct-sec">
+            <h2 className="section">Site appearance</h2>
+            <SettingsPanel part="appearance" />
+            <h2 className="section">Profile appearance</h2>
+            <ProfileEditor />
+          </section>
+        )}
 
-        <h2 className="section" id="settings">Settings</h2>
-        <SettingsPanel />
+        {tab === 'connections' && (
+          <section className="acct-sec">
+            <div className="conn-list">
+              <AniListCard />
+              <DiscordCard />
+            </div>
+          </section>
+        )}
+
+        {tab === 'security' && (
+          <section className="acct-sec">
+            <h2 className="section">Email and password</h2>
+            <AccountDetails />
+            <h2 className="section">Devices</h2>
+            <Devices />
+            <h2 className="section">Account</h2>
+            <div className="acct-actions">
+              <button
+                className="btn ghost danger"
+                onClick={async () => {
+                  const yes = await askConfirm({
+                    title: 'Sign out?',
+                    text: `You'll be signed out of ${session.email} on this device. Your lists stay saved to your account.`,
+                    ok: 'Sign out',
+                    danger: true,
+                    icon: 'login'
+                  });
+                  if (!yes) return;
+                  signOut();
+                  nav('/');
+                }}
+              >
+                <Icon name="login" size={16} />Sign out
+              </button>
+              <button className="btn ghost danger" onClick={() => void deleteAccount()}>
+                <Icon name="trash" size={16} />Delete account
+              </button>
+            </div>
+          </section>
+        )}
+
+        {tab === 'data' && (
+          <section className="acct-sec">
+            <h2 className="section">Your library</h2>
+            <div className="acct-stats">
+              {stats.map(([label, n]) => (
+                <div key={label} className="acct-stat"><strong>{n}</strong><small>{label}</small></div>
+              ))}
+            </div>
+            <p className="muted small">Your cinema, anime and manga lists are saved to your account, so they follow you to other devices.</p>
+            <div className="acct-actions">
+              <Link className="btn ghost" to={libraryLink}><Icon name="bookmark" size={16} />Open my library</Link>
+            </div>
+            <SettingsPanel part="data" />
+          </section>
+        )}
       </div>
     </main>
   );

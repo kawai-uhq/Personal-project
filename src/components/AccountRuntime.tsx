@@ -24,6 +24,35 @@ export function buildPublicData(favorites: { id: number; type: string; title: st
   };
 }
 
+/** Read the linked Discord account again (with the bot) and keep this device's copy and the profile's Discord items current. */
+export async function syncDiscord(token: string): Promise<boolean> {
+  try {
+    const r = await fetch('/api/account', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'discordsync' }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      console.error('[discord] sync', r.status, j);
+      return false;
+    }
+    const plate = j.nameplate && DPLATE_RE.test(String(j.nameplate.asset || '')) ? { asset: String(j.nameplate.asset), palette: String(j.nameplate.palette || '') } : null;
+    const banner = typeof j.banner === 'string' && j.banner.startsWith('https://cdn.discordapp.com/banners/') ? j.banner : null;
+    saveDiscordInfo({ name: j.name || '', avatar: j.avatar || null, decoration: j.decoration || null, nameplate: plate, banner, at: Date.now() });
+    // Discord items already in use follow what's on Discord now
+    const p = currentProfile();
+    if (p) {
+      const deco = { ...p.deco };
+      if (deco.discord) deco.discord = j.decoration || '';
+      if (deco.dplate) deco.dplate = plate?.asset || '';
+      if (deco.banner?.startsWith('https://cdn.discordapp.com/banners/')) deco.banner = banner || '';
+      if (JSON.stringify(deco) !== JSON.stringify(p.deco)) await saveProfile(token, { deco }).catch(() => undefined);
+    }
+    window.dispatchEvent(new Event('comvie:linked'));
+    return true;
+  } catch (e) {
+    console.error('[discord] sync', e);
+    return false;
+  }
+}
+
 /** Background account work while signed in: load the profile, record this device, finish "Continue with Discord"
  *  (join the server, offer the Discord picture), and keep a public profile up to date. Renders nothing. */
 /** Just came back from "Continue with Discord": join the server, keep the Discord picture / decoration, and say what happened. */
@@ -111,6 +140,9 @@ export default function AccountRuntime() {
       if (u && live) {
         saveLinked(u.providers);
         window.dispatchEvent(new Event('comvie:linked'));
+        // Discord linked: refresh its picture / decoration / nameplate / banner every few hours (no sign-in needed)
+        const info = discordInfo();
+        if (u.providers.includes('discord') && (!info || info.banner === undefined || !info.at || Date.now() - info.at > SIX_HOURS)) await syncDiscord(token);
       }
       // record / refresh this device every few hours
       try {

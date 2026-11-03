@@ -1916,3 +1916,19 @@ button.badge:focus-visible { outline: 2px solid var(--b); outline-offset: 2px; }
 /* the editor's live preview is the same size as the main card; it stays pinned while scrolling only on big screens */
 .pe-preview { padding: 4px 0 6px; }
 @media (min-width: 900px) and (min-height: 820px) { .pe-preview { position: sticky; top: calc(var(--nav-h, 76px) + 6px); z-index: 6; background: linear-gradient(#120C18 88%, transparent); } }
+
+/* ---- account sections ---- */
+.acct-tabs { position: sticky; top: calc(var(--nav-h, 76px) + 4px); z-index: 7; display: flex; gap: 6px; margin: 26px 0 6px; padding: 5px; overflow-x: auto; scrollbar-width: none; border-radius: 16px; border: 1px solid var(--line); background: rgba(26, 18, 32, .88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.acct-tabs::-webkit-scrollbar { display: none; }
+.acct-tabs button { flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: transparent; color: var(--muted); font: inherit; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.acct-tabs button.on { background: var(--accent); color: var(--accent-ink); }
+.acct-sec > .section:first-child { margin-top: 18px; }
+.acct-sec > .settings:first-child { margin-top: 16px; }
+html.light .acct-tabs { background: rgba(255, 255, 255, .85); }
+.conn .acct-line > div { flex: 1; }
+.conn-ico { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; flex: none; color: #fff; }
+.conn-ico.discord { background: #5865F2; }
+.conn-items { display: flex; align-items: center; gap: 12px; padding: 6px 0 2px 2px; }
+.conn-banner { height: 44px; width: auto; max-width: 220px; border-radius: 8px; object-fit: cover; }
+.conn-list { display: grid; gap: 14px; margin-top: 18px; }
+@media (max-width: 600px) { .conn .acct-line { flex-wrap: wrap; } .conn .acct-line > .btn { flex: 1 0 100%; justify-content: center; } }

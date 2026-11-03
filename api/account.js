@@ -41,6 +41,21 @@ const header = (req, k) => {
   }
 };
 
+/** What the site shows from someone's Discord account (picture, decoration, nameplate, banner) */
+function discordProfile(du) {
+  const ext = du.avatar && String(du.avatar).startsWith('a_') ? 'gif' : 'png';
+  // Discord nameplate (a path like "nameplates/nameplates/twilight/"); Discord doesn't share profile effects with sites
+  const plate = du.collectibles?.nameplate;
+  const plateAsset = plate && /^nameplates\/[A-Za-z0-9_\/-]+\/$/.test(String(plate.asset || '')) ? String(plate.asset) : null;
+  return {
+    name: du.global_name || du.username,
+    avatar: du.avatar ? `https://cdn.discordapp.com/avatars/${du.id}/${du.avatar}.${ext}?size=256` : null,
+    decoration: du.avatar_decoration_data?.asset ? `https://cdn.discordapp.com/avatar-decoration-presets/${du.avatar_decoration_data.asset}.png?size=240&passthrough=true` : null,
+    nameplate: plateAsset ? { asset: plateAsset, palette: String(plate.palette || '') } : null,
+    banner: du.banner ? `https://cdn.discordapp.com/banners/${du.id}/${du.banner}.${String(du.banner).startsWith('a_') ? 'gif' : 'png'}?size=600` : null
+  };
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const B = base();
@@ -145,6 +160,21 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    // ---- the Discord account linked to this sign-in, read with the bot (picture, decoration, nameplate, banner)
+    if (req.method === 'POST' && action === 'discordsync') {
+      const ident = (user.identities || []).find((i) => i.provider === 'discord');
+      if (!ident) return res.status(404).json({ error: 'Discord is not connected to this account.' });
+      const id = String(ident.identity_data?.provider_id || ident.identity_data?.sub || ident.id);
+      const bot = process.env.DISCORD_BOT_TOKEN;
+      if (!bot || !/^\d+$/.test(id)) return res.status(500).json({ error: "Couldn't read your Discord profile right now." });
+      const r = await fetch(`https://discord.com/api/v10/users/${id}`, { headers: { Authorization: `Bot ${bot}` } });
+      if (!r.ok) {
+        console.error('[account] discord profile', r.status, await r.text().catch(() => ''));
+        return res.status(502).json({ error: "Couldn't read your Discord profile right now." });
+      }
+      return res.status(200).json(discordProfile(await r.json()));
+    }
+
     // ---- "Continue with Discord": join the server, share the Discord avatar / decoration
     if (req.method === 'POST' && action === 'discord') {
       const providerToken = String(b.providerToken || '');
@@ -168,18 +198,7 @@ export default async function handler(req, res) {
         joined = j.status === 201 ? 'joined' : j.status === 204 ? 'already' : 'failed';
         if (joined === 'failed') console.error('[account] discord join failed', j.status, await j.text().catch(() => ''));
       }
-      const ext = du.avatar && String(du.avatar).startsWith('a_') ? 'gif' : 'png';
-      // Discord nameplate (a path like "nameplates/nameplates/twilight/"); Discord doesn't share profile effects with sites
-      const plate = du.collectibles?.nameplate;
-      const plateAsset = plate && /^nameplates\/[A-Za-z0-9_\/-]+\/$/.test(String(plate.asset || '')) ? String(plate.asset) : null;
-      return res.status(200).json({
-        joined,
-        name: du.global_name || du.username,
-        avatar: du.avatar ? `https://cdn.discordapp.com/avatars/${du.id}/${du.avatar}.${ext}?size=256` : null,
-        decoration: du.avatar_decoration_data?.asset ? `https://cdn.discordapp.com/avatar-decoration-presets/${du.avatar_decoration_data.asset}.png?size=240&passthrough=true` : null,
-        nameplate: plateAsset ? { asset: plateAsset, palette: String(plate.palette || '') } : null,
-        banner: du.banner ? `https://cdn.discordapp.com/banners/${du.id}/${du.banner}.${String(du.banner).startsWith('a_') ? 'gif' : 'png'}?size=600` : null
-      });
+      return res.status(200).json({ joined, ...discordProfile(du) });
     }
   } catch (e) {
     console.error('[account]', action, e);

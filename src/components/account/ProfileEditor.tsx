@@ -59,6 +59,13 @@ export default function ProfileEditor() {
   const [shown, setShown] = useState(''); // what the pictures below are for ('' = popular)
   const [round, setRound] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [, bumpLinked] = useState(0);
+  useEffect(() => {
+    // the Discord picture / decoration / nameplate / banner arrive a moment after the page opens
+    const f = () => bumpLinked((n) => n + 1);
+    window.addEventListener('comvie:linked', f);
+    return () => window.removeEventListener('comvie:linked', f);
+  }, []);
   const discord = discordInfo();
   const stats = useMemo(() => watchStats(), []);
   const [peek, setPeek] = useState<Deco | null>(null); // what the live preview shows while hovering an item
@@ -378,7 +385,7 @@ export default function ProfileEditor() {
       <div className="pe-block">
         <h3>Profile banner</h3>
         <div className="seg pe-tabs" role="tablist">
-          {(['tmdb', 'anime', ...(discord?.banner ? ['discord'] : [])] as ('tmdb' | 'anime' | 'discord')[]).map((t) => (
+          {(['tmdb', 'anime', ...(discord?.banner || hasDiscord() ? ['discord'] : [])] as ('tmdb' | 'anime' | 'discord')[]).map((t) => (
             <button key={t} type="button" role="tab" aria-selected={btab === t} className={btab === t ? 'on' : ''} onClick={() => { setBtab(t); setBq(''); }}>
               {t === 'tmdb' ? 'Movies & TV' : t === 'anime' ? 'Anime' : 'Discord'}
             </button>
@@ -405,14 +412,16 @@ export default function ProfileEditor() {
               </div>
             ))}
           </>
+        ) : discord?.banner ? (
+          <div className="pe-banners">
+            <button type="button" className={`pe-ban ${profile.deco.banner === discord.banner ? 'on' : ''}`} disabled={busy} onClick={() => setDeco({ banner: discord.banner! })} {...peekProps({ banner: discord.banner })}>
+              <img src={discord.banner} alt="My Discord banner" referrerPolicy="no-referrer" />
+            </button>
+          </div>
         ) : (
-          discord?.banner && (
-            <div className="pe-banners">
-              <button type="button" className={`pe-ban ${profile.deco.banner === discord.banner ? 'on' : ''}`} disabled={busy} onClick={() => setDeco({ banner: discord.banner! })} {...peekProps({ banner: discord.banner })}>
-                <img src={discord.banner} alt="My Discord banner" referrerPolicy="no-referrer" />
-              </button>
-            </div>
-          )
+          <p className="muted small pe-sub">
+            {discord ? "Your Discord profile doesn't have a banner. Add one on Discord, then tap Update from Discord in Connections." : 'Loading your Discord banner… If it doesn’t appear, tap Update from Discord in Connections.'}
+          </p>
         )}
       </div>
 

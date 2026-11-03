@@ -50,7 +50,8 @@ function Slider({ value, min, max, unit, onChange, label }: { value: number; min
 }
 
 /** Appearance, layout, playback and data settings (saved on this device). */
-export default function SettingsPanel() {
+/** Site settings, one part at a time: General (playback), Appearance (look of the site) or Data (backup and clearing). */
+export default function SettingsPanel({ part }: { part: 'general' | 'appearance' | 'data' }) {
   const p = usePrefs();
   const set = (v: Partial<Prefs>) => setPrefs(v);
   const { history, removeWatch, favorites, toggleFavorite } = useApp();
@@ -111,8 +112,9 @@ export default function SettingsPanel() {
 
   return (
     <div className="settings">
+      {part === 'general' && (
       <section className="set-card">
-        <h3>General</h3>
+        <h3>Playback</h3>
         <Row title="Switch servers automatically" hint="If a server doesn't load, the player moves to the next one, and remembers which server worked for each title">
           <Switch label="Switch servers automatically" on={autoSwitch} onChange={(v) => { setAutoSwitch(v); store.saveAutoSwitch(v); }} />
         </Row>
@@ -132,9 +134,12 @@ export default function SettingsPanel() {
           <Switch label="Pop-up protection" on={shield} onChange={(v) => { setShield(v); store.saveProtect(v); }} />
         </Row>
       </section>
+      )}
 
+      {part === 'appearance' && (
+      <>
       <section className="set-card">
-        <h3>Appearance</h3>
+        <h3>Theme</h3>
         <Row title="Theme" stack>
           <Seg label="Theme" value={p.theme} onChange={(v) => set({ theme: v })} options={[['dark', 'Dark'], ['light', 'Light (beta)']]} />
         </Row>
@@ -169,19 +174,6 @@ export default function SettingsPanel() {
         <Row title="Show ratings"><Switch label="Show ratings" on={p.ratings} onChange={(v) => set({ ratings: v })} /></Row>
         <Row title="Show titles under posters"><Switch label="Show titles under posters" on={p.titles} onChange={(v) => set({ titles: v })} /></Row>
         <Row title="Animations" hint="Background drift and transitions"><Switch label="Animations" on={p.motion} onChange={(v) => set({ motion: v })} /></Row>
-      </section>
-
-      <section className="set-card">
-        <h3>Data</h3>
-        <div className="set-grid">
-          <button className="btn ghost" onClick={doExport}><Icon name="download" size={15} />Export</button>
-          <button className="btn ghost" onClick={() => file.current?.click()}><Icon name="upload" size={15} />Import</button>
-          <button className="btn ghost" onClick={() => void clearHistory()}><Icon name="trash" size={15} />Clear history</button>
-          <button className="btn ghost" onClick={() => void clearList()}><Icon name="trash" size={15} />Clear My List</button>
-        </div>
-        <input ref={file} type="file" accept="application/json,.json" hidden onChange={(e) => void doImport(e.target.files?.[0])} />
-        <p className="muted small">Export includes your settings, history and lists from this site. It never includes your sign-in.</p>
-        {note && <p className="set-note" role="status">{note}</p>}
         <button
           className="btn ghost wide"
           onClick={async () => {
@@ -192,6 +184,23 @@ export default function SettingsPanel() {
           <Icon name="refresh" size={15} />Reset appearance
         </button>
       </section>
+      </>
+      )}
+
+      {part === 'data' && (
+      <section className="set-card">
+        <h3>Backup and clearing</h3>
+        <div className="set-grid">
+          <button className="btn ghost" onClick={doExport}><Icon name="download" size={15} />Export</button>
+          <button className="btn ghost" onClick={() => file.current?.click()}><Icon name="upload" size={15} />Import</button>
+          <button className="btn ghost" onClick={() => void clearHistory()}><Icon name="trash" size={15} />Clear history</button>
+          <button className="btn ghost" onClick={() => void clearList()}><Icon name="trash" size={15} />Clear My List</button>
+        </div>
+        <input ref={file} type="file" accept="application/json,.json" hidden onChange={(e) => void doImport(e.target.files?.[0])} />
+        <p className="muted small">Export includes your settings, history and lists from this site. It never includes your sign-in.</p>
+        {note && <p className="set-note" role="status">{note}</p>}
+      </section>
+      )}
     </div>
   );
 }

@@ -178,6 +178,7 @@ export interface DiscordInfo {
   decoration: string | null;
   nameplate?: { asset: string; palette: string } | null;
   banner?: string | null;
+  at?: number; // when this was last read from Discord
 }
 export const discordInfo = (): DiscordInfo | null => {
   try {

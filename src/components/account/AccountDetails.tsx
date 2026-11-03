@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Icon from '../Icon';
-import { linkDiscord, updateEmail, updatePassword } from '../../lib/auth';
-import { discordInfo } from '../../lib/profile';
+import { updateEmail, updatePassword } from '../../lib/auth';
 import { useApp } from '../../state';
 
 /** Change password and change email. */
@@ -14,7 +13,6 @@ export default function AccountDetails() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   if (!session) return null;
-  const discord = discordInfo();
 
   const run = async (job: (token: string) => Promise<void>, done: string) => {
     setBusy(true);
@@ -78,13 +76,6 @@ export default function AccountDetails() {
         </form>
       )}
       {msg && <p className={`small ${msg.ok ? 'pe-ok' : 'error'}`}>{msg.text}</p>}
-      <div className="acct-line">
-        <div>
-          <strong>Discord</strong>
-          <small className="muted">{discord ? `Connected as ${discord.name || 'your Discord account'}` : 'Connect Discord to use your Discord picture and decoration, and join our server.'}</small>
-        </div>
-        <button className="btn small ghost" disabled={busy} onClick={() => void run(async (t) => { await linkDiscord(t); await new Promise(() => undefined); }, '')}>{discord ? 'Refresh' : 'Connect Discord'}</button>
-      </div>
     </div>
   );
 }
