@@ -21,10 +21,11 @@ import { hasDiscord, useProfile } from '../lib/profile';
 import { watchStats } from '../lib/stats';
 import { useApp } from '../state';
 
-type Tab = 'general' | 'appearance' | 'connections' | 'security' | 'data';
+type Tab = 'general' | 'site' | 'profile' | 'connections' | 'security' | 'data';
 const TABS: [Tab, string, IconName][] = [
   ['general', 'General', 'settings'],
-  ['appearance', 'Appearance', 'sparkles'],
+  ['site', 'Site appearance', 'sparkles'],
+  ['profile', 'Profile appearance', 'user'],
   ['connections', 'Connections', 'link'],
   ['security', 'Security', 'shield'],
   ['data', 'Data', 'database']
@@ -36,7 +37,7 @@ export default function Account() {
   const section = useSection();
   const nav = useNavigate();
   const { hash } = useLocation();
-  const fromHash = (h: string): Tab => (h === '#settings' ? 'general' : (TABS.find(([id]) => `#${id}` === h)?.[0] ?? 'general'));
+  const fromHash = (h: string): Tab => (h === '#settings' ? 'general' : h === '#appearance' ? 'site' : (TABS.find(([id]) => `#${id}` === h)?.[0] ?? 'general'));
   const [tab, setTab] = useState<Tab>(() => fromHash(hash));
   useEffect(() => {
     if (!hash) return;
@@ -138,11 +139,14 @@ export default function Account() {
           </section>
         )}
 
-        {tab === 'appearance' && (
+        {tab === 'site' && (
           <section className="acct-sec">
-            <h2 className="section">Site appearance</h2>
             <SettingsPanel part="appearance" />
-            <h2 className="section">Profile appearance</h2>
+          </section>
+        )}
+
+        {tab === 'profile' && (
+          <section className="acct-sec">
             <ProfileEditor />
           </section>
         )}

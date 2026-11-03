@@ -76,6 +76,7 @@ const P = {
 } as const;
 
 export type IconName = keyof typeof P;
+export const ICON_PATHS: Record<IconName, string> = P;
 
 export default function Icon({
   name,

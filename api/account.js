@@ -56,7 +56,32 @@ function discordProfile(du) {
   };
 }
 
+/** GET /api/account?action=img&u=<url>: hands back a profile picture, banner or decoration from the image hosts
+ *  profiles may use, from this site's own address, so the share card can draw it onto a picture. */
+const IMG_RE = /^https:\/\/(image\.tmdb\.org|s4\.anilist\.co|cdn\.discordapp\.com|media\.discordapp\.net)\//;
+async function imageRelay(req, res) {
+  const u = String(req.query.u || '');
+  if (!IMG_RE.test(u)) return res.status(400).end();
+  try {
+    const r = await fetch(u, { headers: { Accept: 'image/*' } });
+    const type = r.headers.get('content-type') || '';
+    if (!r.ok || !type.startsWith('image/')) {
+      console.error('[account img]', r.status, u);
+      return res.status(404).end();
+    }
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length > 12e6) return res.status(413).end();
+    res.setHeader('Content-Type', type);
+    res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800');
+    return res.status(200).send(buf);
+  } catch (e) {
+    console.error('[account img]', e);
+    return res.status(502).end();
+  }
+}
+
 export default async function handler(req, res) {
+  if (req.method === 'GET' && req.query?.action === 'img') return imageRelay(req, res);
   res.setHeader('Cache-Control', 'no-store');
   const B = base();
   if (!B.startsWith('https://') || !secret()) return res.status(500).json({ error: "Accounts aren't fully set up yet." });
