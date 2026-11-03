@@ -234,15 +234,17 @@ export default function ProfileEditor() {
             {...peekProps({ [key]: it.id })}
           >
             {key === 'frame' ? (
-              <Avatar avatar={profile.avatar} deco={{ frame: it.id }} letter={letter} size={46} />
+              <Avatar avatar={profile.avatar} deco={{ frame: it.id }} letter={letter} size={46} still />
             ) : key === 'pframe' ? (
-              <span className="pe-mini pf-wrap has-pf"><span className="pe-mini-card" /><ProfileFrame id={it.id} /></span>
+              <span className="pe-mini pf-wrap has-pf"><span className="pe-mini-card" /><ProfileFrame id={it.id} still /></span>
             ) : key === 'nameColor' ? (
               <span className={`pe-namesw sname sname-c sname-${it.id}`} style={{ backgroundImage: (it as NameStyle).css }}>Aa</span>
             ) : key === 'nameFont' ? (
               <span className="pe-namesw" style={{ fontFamily: (it as NameFont).family }}>Aa</span>
             ) : (
-              <span className={`pe-swatch ${key === 'nameplate' ? `np-${it.id}` : 'pe-fx'}`}>{key === 'effect' && <span className={`fx fx-${it.id}`} />}</span>
+              <span className={`pe-swatch ${key === 'nameplate' ? `np-${it.id}` : 'pe-fx'}`} style={key === 'nameplate' ? { backgroundImage: `url(/deco/nameplates/${it.id}-still.svg)` } : undefined}>
+                {key === 'effect' && <span className={`fx fx-${it.id}`} style={{ backgroundImage: `url(/deco/effects/${it.id}-still.svg)` }} />}
+              </span>
             )}
             <small>{it.name}</small>
             {locked ? (
@@ -279,8 +281,8 @@ export default function ProfileEditor() {
             const font = NAME_FONTS.find((x) => x.id === bd.deco.nameFont);
             return (
               <button key={bd.id} type="button" className="pe-opt pe-set" disabled={busy} onClick={() => wearSet(bd)} {...peekProps({ ...bd.deco, discord: '', dplate: '' })}>
-                <span className={`pe-setbg np-${bd.deco.nameplate}`}>
-                  <Avatar avatar={profile.avatar} deco={{ frame: bd.deco.frame }} letter={letter} size={34} />
+                <span className={`pe-setbg np-${bd.deco.nameplate}`} style={{ backgroundImage: `url(/deco/nameplates/${bd.deco.nameplate}-still.svg)` }}>
+                  <Avatar avatar={profile.avatar} deco={{ frame: bd.deco.frame }} letter={letter} size={34} still />
                   <span className={`sname ${color ? `sname-c sname-${color.id}` : ''}`} style={{ backgroundImage: color?.css, fontFamily: font?.family }}>{profile.username || 'you'}</span>
                 </span>
                 <small>{bd.name}</small>

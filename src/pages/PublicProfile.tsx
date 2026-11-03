@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ProfileCard from '../components/ProfileCard';
+import { earnedBadges } from '../lib/badges';
 import Icon from '../components/Icon';
 import StatsGrid from '../components/account/StatsGrid';
 import { publicProfile } from '../lib/profile';
@@ -67,7 +68,7 @@ export default function PublicProfile() {
   return (
     <main className="page pad-top">
       <div className="container mid acct">
-        <ProfileCard avatar={p.avatar} deco={deco} name={`@${p.username}`} badges={d.badges} size={92} className="pp-card">
+        <ProfileCard avatar={p.avatar} deco={deco} name={`@${p.username}`} badges={d.badges ?? earnedBadges(d.stats, { joined: p.created_at })} size={92} className="pp-card">
           <p className="muted"><Icon name="calendar" size={14} /> Joined {joined}</p>
         </ProfileCard>
 

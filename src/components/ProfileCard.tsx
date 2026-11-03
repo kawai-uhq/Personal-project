@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 import Avatar from './Avatar';
 import Icon from './Icon';
@@ -36,16 +37,78 @@ export function StyledName({ text, deco, as: Tag = 'span', className = '' }: { t
   );
 }
 
+/** Badges next to a name. Tapping one opens a panel with what it means and every badge there is to earn. */
 export function BadgeRow({ ids }: { ids?: string[] }) {
+  const [open, setOpen] = useState<{ id: string; x: number; y: number } | null>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: Event) => {
+      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !panel.current?.contains(e.target as Node)) setOpen(null);
+    };
+    const t = window.setTimeout(() => {
+      document.addEventListener('pointerdown', close);
+      document.addEventListener('keydown', close);
+      window.addEventListener('scroll', close as EventListener, { passive: true });
+    }, 0);
+    return () => {
+      window.clearTimeout(t);
+      document.removeEventListener('pointerdown', close);
+      document.removeEventListener('keydown', close);
+      window.removeEventListener('scroll', close as EventListener);
+    };
+  }, [open]);
   const list = BADGES.filter((b) => ids?.includes(b.id));
   if (!list.length) return null;
+  const sel = BADGES.find((b) => b.id === open?.id);
   return (
     <span className="badges">
       {list.map((b) => (
-        <span key={b.id} className="badge" style={{ ['--b' as any]: b.color }} title={`${b.name}: ${b.how}`} aria-label={b.name}>
+        <button
+          key={b.id}
+          type="button"
+          className={`badge ${open?.id === b.id ? 'on' : ''}`}
+          style={{ ['--b' as any]: b.color }}
+          title={b.name}
+          aria-label={`${b.name}: ${b.how}`}
+          aria-expanded={open?.id === b.id}
+          onClick={(e) => {
+            const r = e.currentTarget.getBoundingClientRect();
+            setOpen(open?.id === b.id ? null : { id: b.id, x: Math.max(8, Math.min(r.left - 12, window.innerWidth - 300)), y: r.bottom + 8 });
+          }}
+        >
           <Icon name={b.icon} size={13} />
-        </span>
+        </button>
       ))}
+      {open && sel &&
+        createPortal(
+          <div className="badge-pop" ref={panel} role="dialog" aria-label="Badges" style={{ left: open.x, top: open.y }}>
+            <div className="bp-head" style={{ ['--b' as any]: sel.color }}>
+              <span className="badge big"><Icon name={sel.icon} size={18} /></span>
+              <div>
+                <strong>{sel.name}</strong>
+                <small>{sel.how}</small>
+              </div>
+            </div>
+            <p className="bp-title">All badges</p>
+            <ul className="bp-list">
+              {BADGES.map((b) => {
+                const has = ids?.includes(b.id);
+                return (
+                  <li key={b.id} className={has ? 'has' : ''} style={{ ['--b' as any]: b.color }}>
+                    <span className="badge"><Icon name={b.icon} size={12} /></span>
+                    <span>
+                      <b>{b.name}</b>
+                      <small>{b.how}</small>
+                    </span>
+                    {has && <Icon name="check" size={13} />}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>,
+          document.body
+        )}
     </span>
   );
 }

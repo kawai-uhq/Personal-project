@@ -134,7 +134,9 @@ export default function AccountRuntime() {
   useEffect(() => {
     if (!session || !profile?.is_public) return;
     const last = profile.public_data?.updated ?? 0;
-    if (Date.now() - last < 3600 * 1000) return;
+    const now = earnedBadges(watchStats(), { joined: profile.created_at, discord: !!discordInfo() });
+    const same = JSON.stringify(now) === JSON.stringify(profile.public_data?.badges ?? null);
+    if (same && Date.now() - last < 3600 * 1000) return;
     void (async () => {
       const token = await getToken();
       if (token) await saveProfile(token, { public_data: buildPublicData(loved, history) }).catch(() => undefined);

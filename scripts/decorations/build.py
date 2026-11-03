@@ -62,7 +62,7 @@ def rad(id_, sts, cx=.5, cy=.5, r=.5, fx=None, fy=None, user=False):
     return f'<radialGradient id="{id_}" cx="{f(cx)}" cy="{f(cy)}" r="{f(r)}"{fxy}{u}>{stops(sts)}</radialGradient>'
 
 
-REDUCE = '@media (prefers-reduced-motion:reduce){*{animation:none!important}}'
+REDUCE = '.glw{opacity:.28}@media (prefers-reduced-motion:reduce){*{animation:none!important}}'
 
 
 EDGE = {}  # nameplate -> the solid colour its left edge fades into (also used by the page's CSS)
@@ -189,6 +189,9 @@ def write(kind, name, text):
     os.makedirs(d, exist_ok=True)
     with open(os.path.join(d, name + '.svg'), 'w') as fh:
         fh.write(text)
+    # a frozen copy (first frame) for small previews, so pickers full of items don't animate dozens of pictures at once
+    with open(os.path.join(d, name + '-still.svg'), 'w') as fh:
+        fh.write(text.replace('<style>', '<style>*{animation-play-state:paused!important}', 1))
 
 
 SPIN = '@keyframes spin{to{transform:rotate(360deg)}}'
@@ -558,7 +561,7 @@ def frame_premiere():
 
 
 def frame_neon():
-    defs = ('<filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.6"/></filter>'
+    defs = (''
             + lin('cap', [(0, '#9AA0AC'), (.5, '#3B3F48'), (1, '#1B1D22')], 0, 0, 0, 1)
             + lin('tube', [(0, '#FF7BE5'), (.5, '#FF4FD8'), (1, '#A56BFF')], 20, 20, 220, 220, True)
             + lin('tubeg', [(0, '#FF2FCB'), (1, '#8A4BFF')], 20, 20, 220, 220, True))
@@ -566,13 +569,13 @@ def frame_neon():
     a0, a1 = 146, 124 + 360
     p0, p1 = pol(106, a0), pol(106, a1)
     ring = f'M{P(p0)}A106,106 0 1 1 {P(p1)}'
-    b.append(f'<g class="hum"><path d="{ring}" fill="none" stroke="url(#tubeg)" stroke-width="10" stroke-linecap="round" filter="url(#glow)" opacity=".9"/></g>')
+    b.append(f'<g class="hum"><path d="{ring}" fill="none" stroke="url(#tubeg)" stroke-width="10" stroke-linecap="round" class="glw" opacity=".9"/></g>')
     b.append(f'<path d="{ring}" fill="none" stroke="url(#tube)" stroke-width="3.8" stroke-linecap="round"/>')
     b.append(f'<path d="{ring}" fill="none" stroke="#FFF0FB" stroke-width="1.4" stroke-linecap="round"/>')
     # a second, cyan tube on the upper right
     q0, q1 = pol(113.5, -78), pol(113.5, 18)
     tube2 = f'M{P(q0)}A113.5,113.5 0 0 1 {P(q1)}'
-    b.append(f'<path d="{tube2}" fill="none" stroke="#18E4FF" stroke-width="8" stroke-linecap="round" filter="url(#glow)" opacity=".8"/>')
+    b.append(f'<path d="{tube2}" fill="none" stroke="#18E4FF" stroke-width="8" stroke-linecap="round" class="glw" opacity=".8"/>')
     b.append(f'<path d="{tube2}" fill="none" stroke="#6CF4FF" stroke-width="3" stroke-linecap="round"/>')
     b.append(f'<path d="{tube2}" fill="none" stroke="#F0FFFF" stroke-width="1.1" stroke-linecap="round"/>')
     # electrode caps where the pink tube ends
@@ -590,13 +593,13 @@ def frame_neon():
              f'C{f(hx + 7 * s)},{f(hy - 15 * s)} {f(hx + 15 * s)},{f(hy - 12 * s)} {f(hx + 15 * s)},{f(hy - 5 * s)}'
              f'C{f(hx + 15 * s)},{f(hy + 3 * s)} {f(hx + 4 * s)},{f(hy + 9 * s)} {f(hx)},{f(hy + 13 * s)}Z')
     b.append(f'<g class="flick"><path d="{heart}" fill="#120A18" opacity=".55"/>'
-             f'<path d="{heart}" fill="none" stroke="#18E4FF" stroke-width="7" filter="url(#glow)" stroke-linejoin="round"/>'
+             f'<path d="{heart}" fill="none" stroke="#18E4FF" stroke-width="7" class="glw" stroke-linejoin="round"/>'
              f'<path d="{heart}" fill="none" stroke="#6CF4FF" stroke-width="2.8" stroke-linejoin="round"/>'
              f'<path d="{heart}" fill="none" stroke="#F0FFFF" stroke-width="1" stroke-linejoin="round"/></g>')
     # a little yellow neon star, top left
     sx, sy = 30, 40
     st = star5(sx, sy, 10, .48)
-    b.append(f'<path d="{st}" fill="none" stroke="#FFE45C" stroke-width="6" filter="url(#glow)" stroke-linejoin="round"/>'
+    b.append(f'<path d="{st}" fill="none" stroke="#FFE45C" stroke-width="6" class="glw" stroke-linejoin="round"/>'
              f'<path d="{st}" fill="none" stroke="#FFF08A" stroke-width="2.4" stroke-linejoin="round"/>'
              f'<path d="{st}" fill="none" stroke="#FFFDE8" stroke-width=".9" stroke-linejoin="round"/>')
     style = ('.hum{animation:hum 3s ease-in-out infinite alternate}@keyframes hum{from{opacity:.7}to{opacity:1}}'
@@ -1344,7 +1347,7 @@ def fx_petals():
     defs = (lin('p1', [(0, '#EC6A9C'), (1, '#FFE8F0')], 0, 1, 0, 0) + lin('p2', [(0, '#F7A1C0'), (1, '#FFF6F9')], 0, 1, 0, 0)
             + lin('p3', [(0, '#E0558C'), (1, '#FFC9DB')], 0, 1, 0, 0))
     out = ''
-    for i in range(54):
+    for i in range(34):
         x, y = rnd.uniform(-40, EW + 40), rnd.uniform(-60, 40)
         depth = rnd.random()
         s = 9 + depth * 15
@@ -1366,7 +1369,7 @@ def fx_sparkles():
     rnd = random.Random(92)
     defs = rad('gl', [(0, '#FFF4C8', .85), (1, '#FFE08A', 0)])
     out = ''
-    for i in range(40):
+    for i in range(26):
         x, y = rnd.uniform(20, EW - 20), rnd.uniform(14, EH - 14)
         r = rnd.uniform(9, 19)
         col = rnd.choice(['#FFFFFF', '#FFF2B8', '#FFE08A', '#FFFFFF'])
@@ -1375,7 +1378,7 @@ def fx_sparkles():
                 f'<circle cx="{f(x)}" cy="{f(y)}" r="{f(r * 1.2)}" fill="url(#gl)"/><path d="{star4(x, y, r, .13)}" fill="{col}"/>'
                 f'<path d="{star4(x, y, r * .45, .2)}" fill="#fff" transform="rotate(45 {f(x)} {f(y)})"/></g>')
     dots = ''
-    for i in range(70):
+    for i in range(36):
         x, y = rnd.uniform(0, EW), rnd.uniform(0, EH)
         dots += f'<circle class="dt" cx="{f(x)}" cy="{f(y)}" r="{f(rnd.uniform(.8, 1.8))}" style="transform-origin:{f(x)}px {f(y)}px;animation-delay:-{f(rnd.uniform(0, 3))}s"/>'
     style = ('.sp{opacity:0;animation:sp 3.4s ease-in-out infinite}'
@@ -1387,7 +1390,7 @@ def fx_sparkles():
 def fx_stars():
     rnd = random.Random(93)
     defs = (lin('tail', [(0, '#FFFFFF', 0), (1, '#FFFFFF', .95)], 0, 0, 1, 0) + rad('head', [(0, '#FFFFFF'), (.4, '#DDF1FF', .8), (1, '#9FD4FF', 0)]))
-    dots = stars_field(rnd, 190, 0, EW, 0, EH, .7, 2.1, 3)
+    dots = stars_field(rnd, 120, 0, EW, 0, EH, .7, 2.1, 5)
     big = ''
     for i in range(12):
         x, y = rnd.uniform(20, EW - 20), rnd.uniform(10, EH - 10)
@@ -1410,7 +1413,7 @@ def fx_embers():
     defs = (rad('emb', [(0, '#FFF6C8'), (.3, '#FFC04A'), (.65, '#FF6A1A', .6), (1, '#FF4A0A', 0)])
             + lin('heat', [(0, '#FF5A14', 0), (1, '#FF5A14', .22)], 0, 0, 0, 1))
     out = f'<rect y="120" width="{EW}" height="80" fill="url(#heat)"/>'
-    for i in range(72):
+    for i in range(44):
         x, y = rnd.uniform(-20, EW + 20), rnd.uniform(170, 230)
         r = rnd.uniform(2.2, 5.2)
         d = rnd.uniform(4.5, 8.5)
@@ -1528,23 +1531,23 @@ def pf_sakura(corner):
 def pf_neon(corner):
     cx, cy, ix, iy = CORNER[corner]
     col, core = ('#FF4FD8', '#FFE6FA') if corner in ('tl', 'br') else ('#2EE6FF', '#E6FDFF')
-    defs = '<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>'
+    defs = ''
     o = 7
     x0, y0 = cx - ix * o, cy - iy * o
     path = f'M{x0},{y0 + iy * 70}V{y0 + iy * 14}Q{x0},{y0} {x0 + ix * 14},{y0}H{x0 + ix * 110}'
-    b = [f'<g class="hum"><path d="{path}" fill="none" stroke="{col}" stroke-width="10" stroke-linecap="round" filter="url(#glow)"/></g>',
+    b = [f'<g class="hum"><path d="{path}" fill="none" stroke="{col}" stroke-width="10" stroke-linecap="round" class="glw"/></g>',
          f'<path d="{path}" fill="none" stroke="{col}" stroke-width="4" stroke-linecap="round"/>',
          f'<path d="{path}" fill="none" stroke="{core}" stroke-width="1.5" stroke-linecap="round"/>']
     for (x, y) in [(x0, y0 + iy * 70), (x0 + ix * 110, y0)]:
         b.append(f'<circle cx="{x}" cy="{y}" r="3.2" fill="#2B2E36" stroke="#0D0E11" stroke-width=".6"/>')
     if corner == 'tl':
         st = star5(cx + 26, cy - 20, 11, .48)
-        b.append(f'<g class="flick"><path d="{st}" fill="none" stroke="#FFE45C" stroke-width="6" filter="url(#glow)"/><path d="{st}" fill="none" stroke="#FFF08A" stroke-width="2.4" stroke-linejoin="round"/><path d="{st}" fill="none" stroke="#FFFDE8" stroke-width=".9"/></g>')
+        b.append(f'<g class="flick"><path d="{st}" fill="none" stroke="#FFE45C" stroke-width="6" class="glw"/><path d="{st}" fill="none" stroke="#FFF08A" stroke-width="2.4" stroke-linejoin="round"/><path d="{st}" fill="none" stroke="#FFFDE8" stroke-width=".9"/></g>')
     if corner == 'br':
         hx, hy = cx - 30, cy + 20
         heart = (f'M{hx},{hy + 9}C{hx - 3},{hy + 6} {hx - 11},{hy + 2} {hx - 11},{hy - 4}C{hx - 11},{hy - 9} {hx - 5},{hy - 11} {hx},{hy - 6}'
                  f'C{hx + 5},{hy - 11} {hx + 11},{hy - 9} {hx + 11},{hy - 4}C{hx + 11},{hy + 2} {hx + 3},{hy + 6} {hx},{hy + 9}Z')
-        b.append(f'<g class="flick f2"><path d="{heart}" fill="none" stroke="#2EE6FF" stroke-width="6" filter="url(#glow)"/><path d="{heart}" fill="none" stroke="#7CF4FF" stroke-width="2.4"/><path d="{heart}" fill="none" stroke="#F0FFFF" stroke-width=".9"/></g>')
+        b.append(f'<g class="flick f2"><path d="{heart}" fill="none" stroke="#2EE6FF" stroke-width="6" class="glw"/><path d="{heart}" fill="none" stroke="#7CF4FF" stroke-width="2.4"/><path d="{heart}" fill="none" stroke="#F0FFFF" stroke-width=".9"/></g>')
     style = ('.hum{animation:hum 3s ease-in-out infinite alternate}@keyframes hum{from{opacity:.6}to{opacity:1}}'
              '.flick{animation:flick 5s linear infinite}.f2{animation-delay:-2.2s}'
              '@keyframes flick{0%,40%,45%,47%,100%{opacity:1}42%,46%{opacity:.15}43%{opacity:.8}}')
