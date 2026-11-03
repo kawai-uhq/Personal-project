@@ -1840,3 +1840,6 @@ html.light .acct-panel, html.light .pe-block { background: rgba(255, 255, 255, .
 .pe-pic.skel { cursor: default; animation: pe-pulse 1.2s ease-in-out infinite; }
 @keyframes pe-pulse { 50% { opacity: .45; } }
 .pe-pic img, img.av-img { color: transparent; font-size: 0; }
+
+/* Bumped when a stale cached copy of this stylesheet needs to be retired: any change gives the built file a new name. */
+:root { --cv-styles: 2; }
