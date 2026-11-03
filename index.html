@@ -29,6 +29,36 @@
   <body>
     <div id="root"></div>
     <script>
+      // Self-repair: if the site's stylesheet didn't apply (blocked, cached wrong, or served with the wrong type),
+      // fetch it again and put the styles straight into the page.
+      (function () {
+        var styled = function () { return !!getComputedStyle(document.documentElement).getPropertyValue('--line').trim(); };
+        var sheets = function () { return Array.prototype.slice.call(document.querySelectorAll('link[rel="stylesheet"][href*="/assets/"]')); };
+        function inject() {
+          sheets().forEach(function (l) {
+            var url = l.href.split('?')[0] + '?r=' + Date.now();
+            fetch(url, { cache: 'no-store' })
+              .then(function (r) {
+                if (!r.ok) throw new Error('status ' + r.status + ' (' + (r.headers.get('content-type') || 'no type') + ')');
+                return r.text();
+              })
+              .then(function (css) {
+                if (!css || css.charAt(0) === '<') throw new Error('got a page instead of styles');
+                var st = document.createElement('style');
+                st.setAttribute('data-repaired', '');
+                st.textContent = css;
+                document.head.appendChild(st);
+                console.warn('[comvie] stylesheet repaired', l.href);
+              })
+              .catch(function (e) { console.error('[comvie] stylesheet could not load', l.href, e && e.message); });
+          });
+        }
+        function check() { if (!styled()) inject(); }
+        if (document.readyState === 'complete') setTimeout(check, 1500);
+        else window.addEventListener('load', function () { setTimeout(check, 1500); });
+      })();
+    </script>
+    <script>
       // Fallback for when the site's code can't even start: show what happened instead of a white page.
       (function () {
         var last = '';
